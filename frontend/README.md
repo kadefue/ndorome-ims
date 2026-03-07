@@ -1,22 +1,16 @@
-# Ndorome Spare Parts — Frontend (React + Vite)
+# React + Vite
 
-## Setup
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-```bash
-npm create vite@latest . -- --template react
-npm install
-npm install recharts
-```
+Currently, two official plugins are available:
 
-Then replace `src/App.jsx` with the provided `App.jsx` from the project root.
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-```bash
-npm run dev
-```
+## React Compiler
 
-Frontend runs at: **http://localhost:5173**
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Environment
+## Expanding the ESLint configuration
 
-The frontend connects to the backend API at `http://localhost:8000` by default.  
-To change this, edit the `API` constant at the top of `src/App.jsx`.
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.

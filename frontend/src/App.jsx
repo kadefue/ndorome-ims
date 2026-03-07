@@ -349,6 +349,26 @@ const css = `
   .role-employee { background: rgba(63,185,80,0.15); color: #3FB950; }
 `;
 
+const themeCss = `
+  /* Light theme overrides applied when body has class 'theme-light' */
+  .theme-light body {
+    background: #F6F8FA;
+    color: #0D1117;
+  }
+  .theme-light .sidebar { background: #FFFFFF; border-right-color: #E6EDF3; }
+  .theme-light .sidebar-logo h1 { color: #C8860A; }
+  .theme-light .sidebar-logo span, .theme-light .user-info span, .theme-light .td-muted, .theme-light .page-subtitle { color: #6B7280; }
+  .theme-light .user-avatar { color: #FFFFFF; }
+  .theme-light .main { background: #F6F8FA; }
+  .theme-light .topbar, .theme-light .card, .theme-light .login-card, .theme-light .stat-card, .theme-light .modal { background: #FFFFFF; border-color: #E6EDF3; }
+  .theme-light .card-title, .theme-light .page-title, .theme-light .stat-value, .theme-light td { color: #0D1117; }
+  .theme-light .nav-item { color: #374151; }
+  .theme-light .nav-item:hover { background: #F3F4F6; }
+  .theme-light .form-control { background: #FFFFFF; color: #0D1117; border: 1px solid #E6EDF3; }
+  .theme-light thead th { background: rgba(15,23,42,0.02); color: #6B7280; border-bottom-color: #EEF2F7; }
+  .theme-light .badge { background: rgba(0,0,0,0.03); color: #0D1117; }
+`;
+
 // ── Utilities ─────────────────────────────────────────────────────────────────
 const fmt = (n) => `KES ${Number(n).toLocaleString()}`;
 const initials = (name) => name?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2);
@@ -1118,6 +1138,7 @@ const PAGE_TITLES = {dashboard:"Dashboard",inventory:"Inventory Management",sale
 
 function AppShell({ user, onLogout }) {
   const [page, setPage] = useState("dashboard");
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
 
   const navItems = NAV.filter(n => !n.roles || n.roles.includes(user.role));
 
@@ -1168,6 +1189,12 @@ function AppShell({ user, onLogout }) {
         <div className="topbar">
           <h2>{PAGE_TITLES[page]}</h2>
           <div className="topbar-actions">
+            <button className="btn btn-secondary btn-sm" onClick={() => {
+              const next = theme === "dark" ? "light" : "dark";
+              setTheme(next);
+              try { localStorage.setItem("theme", next); } catch {};
+              if (next === "light") document.documentElement.classList.add("theme-light"); else document.documentElement.classList.remove("theme-light");
+            }}>{theme === "dark" ? "☀️ Light" : "🌙 Dark"}</button>
             <span className={`badge role-${user.role}`} style={{padding:"4px 12px",fontSize:12}}>{user.role}</span>
             <div className="user-avatar" style={{width:32,height:32,fontSize:12}}>{initials(user.name)}</div>
           </div>
@@ -1186,13 +1213,20 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("user")); } catch { return null; }
   });
 
+  // Theme state persisted across sessions
+  useEffect(() => {
+    const t = localStorage.getItem("theme") || "dark";
+    if (t === "light") document.documentElement.classList.add("theme-light");
+    else document.documentElement.classList.remove("theme-light");
+  }, []);
+
   function handleLogin(u) { setUser(u); }
   function handleLogout() { localStorage.removeItem("token"); localStorage.removeItem("user"); setUser(null); }
 
   return (
     <>
-      <style>{css}</style>
-      {user ? <AppShell user={user} onLogout={handleLogout}/> : <LoginPage onLogin={handleLogin}/>}
+      <style>{css + themeCss}</style>
+      {user ? <AppShell user={user} onLogout={handleLogout}/> : <LoginPage onLogin={handleLogin}/>} 
     </>
   );
 }

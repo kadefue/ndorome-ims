@@ -371,7 +371,7 @@ const themeCss = `
 `;
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
-const fmt = (n) => `KES ${Number(n).toLocaleString()}`;
+const fmt = (n) => `TZS ${Number(n).toLocaleString()}`;
 const initials = (name) => name?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2);
 
 function statusBadge(s) {
@@ -688,7 +688,7 @@ function Inventory() {
                 <input className="form-control" value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/>
               </div>
             ))}
-            {[["quantity","Quantity"],["min_quantity","Min Qty"],["unit_price","Unit Price (KES)"]].map(([k,l])=>(
+            {[["quantity","Quantity"],["min_quantity","Min Qty"],["unit_price","Unit Price (TZS)"]].map(([k,l])=>(
               <div key={k} className="form-group">
                 <label className="form-label">{l}</label>
                 <input className="form-control" type="number" value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/>
@@ -890,7 +890,7 @@ function Orders() {
           </div>
           <div className="form-grid">
             <div className="form-group"><label className="form-label">Quantity</label><input className="form-control" type="number" value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/></div>
-            <div className="form-group"><label className="form-label">Unit Price (KES)</label><input className="form-control" type="number" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})}/></div>
+            <div className="form-group"><label className="form-label">Unit Price (TZS)</label><input className="form-control" type="number" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})}/></div>
           </div>
           <div className="form-group"><label className="form-label">Supplier</label><input className="form-control" value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})}/></div>
           <div className="form-group"><label className="form-label">Expected Delivery Date</label><input className="form-control" type="date" value={form.expected_delivery} onChange={e=>setForm({...form,expected_delivery:e.target.value})}/></div>

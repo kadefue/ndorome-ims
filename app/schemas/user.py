@@ -1,12 +1,15 @@
 # app/schemas/user.py
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+
+# Using a regex-validated str instead of EmailStr to avoid the
+# optional `email-validator` dependency that EmailStr requires.
 
 
 class UserCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
-    email: EmailStr
+    email: str = Field(..., pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=150)
     password: str = Field(..., min_length=6)
     role: str = Field(default="employee", pattern="^(owner|manager|employee)$")
 

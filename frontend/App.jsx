@@ -1,0 +1,1198 @@
+import { useState, useEffect, createContext, useContext } from "react";
+import {
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from "recharts";
+
+// ── Auth Context ──────────────────────────────────────────────────────────────
+const AuthContext = createContext(null);
+const API = "http://localhost:8000";
+
+function useAuth() { return useContext(AuthContext); }
+
+// ── API Helper ────────────────────────────────────────────────────────────────
+async function apiFetch(path, options = {}) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Request failed");
+  }
+  return res.json();
+}
+
+// ── Colors & Theme ────────────────────────────────────────────────────────────
+const C = {
+  primary: "#C8860A",
+  primaryDark: "#9E6A08",
+  primaryLight: "#F5B942",
+  bg: "#0D1117",
+  bgCard: "#161B22",
+  bgHover: "#1C2333",
+  border: "#21262D",
+  text: "#E6EDF3",
+  textMuted: "#8B949E",
+  success: "#3FB950",
+  danger: "#F85149",
+  warning: "#D29922",
+  info: "#58A6FF",
+  purple: "#BC8CFF",
+};
+
+const PIE_COLORS = ["#C8860A", "#58A6FF", "#3FB950", "#F85149", "#BC8CFF", "#D29922"];
+
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0D1117;
+    color: #E6EDF3;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0D1117; }
+  ::-webkit-scrollbar-thumb { background: #21262D; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #C8860A; }
+
+  .app { display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: #161B22;
+    border-right: 1px solid #21262D;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid #21262D;
+  }
+  .sidebar-logo h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: #C8860A;
+    line-height: 1.1;
+    letter-spacing: -0.3px;
+  }
+  .sidebar-logo span {
+    font-size: 11px;
+    color: #8B949E;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .sidebar-user {
+    padding: 14px 20px;
+    border-bottom: 1px solid #21262D;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .user-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, #C8860A, #9E6A08);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px;
+    color: #0D1117; flex-shrink: 0;
+  }
+  .user-info { overflow: hidden; }
+  .user-info p { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-info span { font-size: 11px; color: #8B949E; text-transform: capitalize; }
+  .nav-section { padding: 16px 12px 8px; }
+  .nav-label { font-size: 10px; font-weight: 600; color: #8B949E; text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    font-size: 13.5px; font-weight: 400; color: #8B949E;
+    transition: all 0.15s ease; margin-bottom: 2px;
+  }
+  .nav-item:hover { background: #1C2333; color: #E6EDF3; }
+  .nav-item.active { background: rgba(200,134,10,0.15); color: #C8860A; font-weight: 500; }
+  .nav-item .icon { font-size: 16px; width: 18px; text-align: center; }
+  .sidebar-footer {
+    margin-top: auto; padding: 16px 12px;
+    border-top: 1px solid #21262D;
+  }
+  .logout-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    font-size: 13.5px; color: #F85149;
+    transition: background 0.15s; width: 100%;
+    background: none; border: none;
+  }
+  .logout-btn:hover { background: rgba(248,81,73,0.1); }
+
+  /* ── Main Content ── */
+  .main { margin-left: 240px; flex: 1; min-width: 0; }
+  .topbar {
+    background: #161B22; border-bottom: 1px solid #21262D;
+    padding: 0 28px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar h2 {
+    font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700;
+    color: #E6EDF3;
+  }
+  .topbar-actions { display: flex; align-items: center; gap: 12px; }
+  .badge-pill {
+    background: rgba(200,134,10,0.2);
+    color: #C8860A; border: 1px solid rgba(200,134,10,0.3);
+    border-radius: 20px; font-size: 11px; font-weight: 600;
+    padding: 3px 10px; letter-spacing: 0.3px;
+  }
+  .page { padding: 28px; }
+
+  /* ── Cards ── */
+  .card {
+    background: #161B22; border: 1px solid #21262D;
+    border-radius: 12px; overflow: hidden;
+  }
+  .card-header {
+    padding: 16px 20px; border-bottom: 1px solid #21262D;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: #E6EDF3;
+  }
+  .card-body { padding: 20px; }
+
+  /* ── Stat Cards ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: #161B22; border: 1px solid #21262D;
+    border-radius: 12px; padding: 20px;
+    position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .stat-card.gold::before { background: linear-gradient(90deg, #C8860A, #F5B942); }
+  .stat-card.blue::before { background: linear-gradient(90deg, #58A6FF, #1F6FEB); }
+  .stat-card.green::before { background: linear-gradient(90deg, #3FB950, #2EA043); }
+  .stat-card.red::before { background: linear-gradient(90deg, #F85149, #DA3633); }
+  .stat-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 12px;
+  }
+  .stat-icon.gold { background: rgba(200,134,10,0.15); }
+  .stat-icon.blue { background: rgba(88,166,255,0.15); }
+  .stat-icon.green { background: rgba(63,185,80,0.15); }
+  .stat-icon.red { background: rgba(248,81,73,0.15); }
+  .stat-label { font-size: 12px; color: #8B949E; margin-bottom: 6px; font-weight: 400; }
+  .stat-value {
+    font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800;
+    color: #E6EDF3; line-height: 1;
+  }
+  .stat-sub { font-size: 11px; color: #8B949E; margin-top: 6px; }
+
+  /* ── Charts Grid ── */
+  .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+  
+  /* ── Tables ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; padding: 10px 14px;
+    color: #8B949E; font-weight: 500; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid #21262D;
+    background: rgba(28,35,51,0.5);
+  }
+  tbody tr { border-bottom: 1px solid #1C2333; transition: background 0.1s; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  tbody tr:last-child { border-bottom: none; }
+  td { padding: 12px 14px; color: #E6EDF3; }
+  .td-muted { color: #8B949E; }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block; border-radius: 6px;
+    font-size: 11px; font-weight: 600; padding: 3px 8px;
+  }
+  .badge-success { background: rgba(63,185,80,0.15); color: #3FB950; }
+  .badge-warning { background: rgba(210,153,34,0.15); color: #D29922; }
+  .badge-danger  { background: rgba(248,81,73,0.15); color: #F85149; }
+  .badge-info    { background: rgba(88,166,255,0.15); color: #58A6FF; }
+  .badge-purple  { background: rgba(188,140,255,0.15); color: #BC8CFF; }
+  .badge-gold    { background: rgba(200,134,10,0.15); color: #C8860A; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    cursor: pointer; border: none; transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-primary {
+    background: #C8860A; color: #0D1117;
+  }
+  .btn-primary:hover { background: #F5B942; }
+  .btn-secondary {
+    background: #21262D; color: #E6EDF3; border: 1px solid #30363D;
+  }
+  .btn-secondary:hover { background: #1C2333; border-color: #C8860A; color: #C8860A; }
+  .btn-danger { background: rgba(248,81,73,0.15); color: #F85149; border: 1px solid rgba(248,81,73,0.3); }
+  .btn-danger:hover { background: rgba(248,81,73,0.25); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* ── Forms & Modals ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+  .modal {
+    background: #161B22; border: 1px solid #30363D;
+    border-radius: 16px; width: 100%; max-width: 520px;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal-header {
+    padding: 20px 24px; border-bottom: 1px solid #21262D;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid #21262D; display: flex; justify-content: flex-end; gap: 10px; }
+  .close-btn {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: #21262D; border: none; color: #8B949E;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; transition: all 0.1s;
+  }
+  .close-btn:hover { background: rgba(248,81,73,0.2); color: #F85149; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 12px; font-weight: 500; color: #8B949E; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-control {
+    width: 100%; background: #0D1117; border: 1px solid #30363D;
+    border-radius: 8px; padding: 10px 12px; color: #E6EDF3;
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .form-control:focus { border-color: #C8860A; box-shadow: 0 0 0 3px rgba(200,134,10,0.1); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* ── Search ── */
+  .search-wrap { position: relative; }
+  .search-wrap input { padding-left: 34px; }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #8B949E; font-size: 14px; }
+
+  /* ── Login ── */
+  .login-page {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: #0D1117;
+    background-image: radial-gradient(ellipse at 20% 50%, rgba(200,134,10,0.07) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 20%, rgba(88,166,255,0.05) 0%, transparent 50%);
+  }
+  .login-card {
+    background: #161B22; border: 1px solid #21262D;
+    border-radius: 20px; padding: 40px; width: 100%; max-width: 400px;
+  }
+  .login-logo { text-align: center; margin-bottom: 32px; }
+  .login-logo h1 { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: #C8860A; }
+  .login-logo p { font-size: 13px; color: #8B949E; margin-top: 4px; }
+  .login-btn {
+    width: 100%; padding: 12px; background: #C8860A; color: #0D1117;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: 'Syne', sans-serif; transition: all 0.15s;
+    margin-top: 8px;
+  }
+  .login-btn:hover { background: #F5B942; }
+  .login-hint {
+    text-align: center; margin-top: 20px; padding: 12px;
+    background: #0D1117; border-radius: 8px; font-size: 12px; color: #8B949E;
+  }
+  .login-hint strong { color: #C8860A; }
+  .error-msg { background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3); color: #F85149; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
+
+  /* ── Low Stock Alert ── */
+  .alert-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.2); margin-bottom: 8px; }
+  .alert-dot { width: 8px; height: 8px; border-radius: 50%; background: #F85149; flex-shrink: 0; }
+
+  /* ── Section Tabs ── */
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .page-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
+  .page-subtitle { font-size: 13px; color: #8B949E; margin-top: 2px; }
+
+  /* ── Loading ── */
+  .loading { display: flex; align-items: center; justify-content: center; padding: 60px; color: #8B949E; gap: 12px; }
+  .spinner { width: 24px; height: 24px; border: 2px solid #21262D; border-top-color: #C8860A; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Tooltip override ── */
+  .recharts-tooltip-wrapper .recharts-default-tooltip {
+    background: #1C2333 !important; border-color: #30363D !important;
+    border-radius: 8px !important;
+  }
+
+  /* ── Role badge colors ── */
+  .role-owner { background: rgba(200,134,10,0.15); color: #C8860A; }
+  .role-manager { background: rgba(88,166,255,0.15); color: #58A6FF; }
+  .role-employee { background: rgba(63,185,80,0.15); color: #3FB950; }
+`;
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+const fmt = (n) => `KES ${Number(n).toLocaleString()}`;
+const initials = (name) => name?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2);
+
+function statusBadge(s) {
+  const map = {
+    completed: "badge-success", received: "badge-success",
+    pending: "badge-warning", in_transit: "badge-info",
+    delivered: "badge-success", cancelled: "badge-danger",
+  };
+  return <span className={`badge ${map[s] || "badge-gold"}`}>{s?.replace("_"," ")}</span>;
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function Modal({ title, onClose, children, footer }) {
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <span className="modal-title">{title}</span>
+          <button className="close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">{children}</div>
+        {footer && <div className="modal-footer">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── Login Page ────────────────────────────────────────────────────────────────
+function LoginPage({ onLogin }) {
+  const [form, setForm] = useState({ username: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    setError(""); setLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append("username", form.username);
+      fd.append("password", form.password);
+      const res = await fetch(`${API}/auth/token`, { method: "POST", body: fd });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.detail); }
+      const data = await res.json();
+      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      onLogin(data.user);
+    } catch (err) {
+      setError(err.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-logo">
+          <div style={{fontSize:36,marginBottom:8}}>🔧</div>
+          <h1>Ndorome Spare Parts</h1>
+          <p>Inventory Management System</p>
+        </div>
+        {error && <div className="error-msg">{error}</div>}
+        <form onSubmit={handleLogin}>
+          <div className="form-group">
+            <label className="form-label">Email Address</label>
+            <input className="form-control" type="email" value={form.username}
+              onChange={e => setForm({...form, username:e.target.value})}
+              placeholder="your@email.com" required />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <input className="form-control" type="password" value={form.password}
+              onChange={e => setForm({...form, password:e.target.value})}
+              placeholder="••••••••" required />
+          </div>
+          <button className="login-btn" type="submit" disabled={loading}>
+            {loading ? "Signing in…" : "Sign In"}
+          </button>
+        </form>
+        <div className="login-hint">
+          <div><strong>Owner:</strong> owner@ndorome.com / owner123</div>
+          <div><strong>Manager:</strong> manager@ndorome.com / manager123</div>
+          <div><strong>Employee:</strong> employee@ndorome.com / emp123</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+function Dashboard() {
+  const [stats, setStats] = useState(null);
+  useEffect(() => { apiFetch("/dashboard/stats").then(setStats); }, []);
+
+  if (!stats) return <div className="loading"><div className="spinner"/><span>Loading dashboard…</span></div>;
+
+  const monthlyData = Object.entries(stats.monthly_sales).map(([m,v]) => ({month:m, revenue:v}));
+  const catData = Object.entries(stats.category_stock).map(([name,value]) => ({name,value}));
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <div className="page-title">Dashboard</div>
+          <div className="page-subtitle">Welcome back! Here's what's happening at Ndorome Spare Parts.</div>
+        </div>
+        <span className="badge-pill">📅 {new Date().toLocaleDateString("en-KE",{dateStyle:"long"})}</span>
+      </div>
+
+      <div className="stats-grid">
+        <div className="stat-card gold">
+          <div className="stat-icon gold">💰</div>
+          <div className="stat-label">Total Revenue</div>
+          <div className="stat-value">{fmt(stats.total_revenue)}</div>
+          <div className="stat-sub">All-time sales</div>
+        </div>
+        <div className="stat-card blue">
+          <div className="stat-icon blue">🛒</div>
+          <div className="stat-label">Total Sales</div>
+          <div className="stat-value">{stats.total_sales}</div>
+          <div className="stat-sub">Transactions recorded</div>
+        </div>
+        <div className="stat-card green">
+          <div className="stat-icon green">📦</div>
+          <div className="stat-label">Inventory Value</div>
+          <div className="stat-value">{fmt(stats.inventory_value)}</div>
+          <div className="stat-sub">{stats.total_products} product types</div>
+        </div>
+        <div className="stat-card red">
+          <div className="stat-icon red">⚠️</div>
+          <div className="stat-label">Low Stock Alerts</div>
+          <div className="stat-value">{stats.low_stock_count}</div>
+          <div className="stat-sub">Items need reordering</div>
+        </div>
+      </div>
+
+      <div className="charts-grid">
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Monthly Revenue Trend</span>
+            <span className="badge-pill">2024</span>
+          </div>
+          <div className="card-body">
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={monthlyData}>
+                <defs>
+                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#C8860A" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#C8860A" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#21262D"/>
+                <XAxis dataKey="month" tick={{fill:"#8B949E",fontSize:11}} axisLine={false} tickLine={false}/>
+                <YAxis tick={{fill:"#8B949E",fontSize:11}} axisLine={false} tickLine={false} tickFormatter={v=>`${v/1000}k`}/>
+                <Tooltip formatter={v=>[fmt(v),"Revenue"]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:12}}/>
+                <Area type="monotone" dataKey="revenue" stroke="#C8860A" strokeWidth={2} fill="url(#revGrad)"/>
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Stock by Category</span>
+          </div>
+          <div className="card-body">
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={catData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value">
+                  {catData.map((e,i) => <Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>)}
+                </Pie>
+                <Tooltip contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:12}}/>
+                <Legend iconSize={10} wrapperStyle={{fontSize:11,color:"#8B949E"}}/>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">⚠️ Low Stock Alerts</span>
+            <span className="badge badge-danger">{stats.low_stock_count} items</span>
+          </div>
+          <div className="card-body">
+            {stats.low_stock_items.map(p => (
+              <div key={p.id} className="alert-row">
+                <div className="alert-dot"/>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:500}}>{p.name}</div>
+                  <div style={{fontSize:11,color:"#8B949E"}}>{p.sku}</div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:13,color:"#F85149",fontWeight:700}}>{p.quantity} left</div>
+                  <div style={{fontSize:11,color:"#8B949E"}}>Min: {p.min_quantity}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">🕐 Recent Sales</span>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Product</th><th>Customer</th><th>Amount</th></tr></thead>
+              <tbody>
+                {stats.recent_sales.map(s => (
+                  <tr key={s.id}>
+                    <td><div style={{fontSize:13}}>{s.product_name}</div><div style={{fontSize:11,color:"#8B949E"}}>{s.date}</div></td>
+                    <td className="td-muted">{s.customer}</td>
+                    <td style={{color:"#3FB950",fontWeight:600}}>{fmt(s.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Inventory ─────────────────────────────────────────────────────────────────
+function Inventory() {
+  const { user } = useAuth();
+  const [products, setProducts] = useState([]);
+  const [search, setSearch] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState({name:"",sku:"",category:"",quantity:"",min_quantity:"",unit_price:"",supplier:"",location:""});
+  const canEdit = user.role !== "employee";
+
+  const load = () => apiFetch("/products").then(setProducts);
+  useEffect(()=>{ load(); },[]);
+
+  const filtered = products.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    p.sku.toLowerCase().includes(search.toLowerCase()) ||
+    p.category.toLowerCase().includes(search.toLowerCase())
+  );
+
+  function openAdd() { setEditing(null); setForm({name:"",sku:"",category:"",quantity:"",min_quantity:"",unit_price:"",supplier:"",location:""}); setShowModal(true); }
+  function openEdit(p) { setEditing(p); setForm({...p}); setShowModal(true); }
+
+  async function save() {
+    const body = {...form, quantity:+form.quantity, min_quantity:+form.min_quantity, unit_price:+form.unit_price};
+    if (editing) await apiFetch(`/products/${editing.id}`,{method:"PUT",body:JSON.stringify(body)});
+    else await apiFetch("/products",{method:"POST",body:JSON.stringify(body)});
+    setShowModal(false); load();
+  }
+  async function del(id) {
+    if (!confirm("Delete this product?")) return;
+    await apiFetch(`/products/${id}`,{method:"DELETE"}); load();
+  }
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <div className="page-title">Inventory</div>
+          <div className="page-subtitle">{products.length} products · {products.filter(p=>p.quantity<=p.min_quantity).length} low stock</div>
+        </div>
+        {canEdit && <button className="btn btn-primary" onClick={openAdd}>＋ Add Product</button>}
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">Product Stock</span>
+          <div className="search-wrap">
+            <span className="search-icon">🔍</span>
+            <input className="form-control" style={{width:220}} placeholder="Search products…" value={search} onChange={e=>setSearch(e.target.value)}/>
+          </div>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Product</th><th>SKU</th><th>Category</th><th>Qty</th><th>Unit Price</th><th>Supplier</th><th>Location</th><th>Status</th>{canEdit&&<th>Actions</th>}</tr>
+            </thead>
+            <tbody>
+              {filtered.map(p => (
+                <tr key={p.id}>
+                  <td><div style={{fontWeight:500}}>{p.name}</div></td>
+                  <td className="td-muted" style={{fontFamily:"monospace",fontSize:12}}>{p.sku}</td>
+                  <td><span className="badge badge-info">{p.category}</span></td>
+                  <td style={{fontWeight:700,color: p.quantity<=p.min_quantity?"#F85149":p.quantity<=p.min_quantity*2?"#D29922":"#3FB950"}}>{p.quantity}</td>
+                  <td style={{color:"#C8860A",fontWeight:600}}>{fmt(p.unit_price)}</td>
+                  <td className="td-muted">{p.supplier}</td>
+                  <td className="td-muted">{p.location}</td>
+                  <td>{p.quantity<=p.min_quantity ? <span className="badge badge-danger">Low Stock</span> : <span className="badge badge-success">In Stock</span>}</td>
+                  {canEdit && <td>
+                    <div style={{display:"flex",gap:6}}>
+                      <button className="btn btn-secondary btn-sm" onClick={()=>openEdit(p)}>Edit</button>
+                      <button className="btn btn-danger btn-sm" onClick={()=>del(p.id)}>Del</button>
+                    </div>
+                  </td>}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showModal && (
+        <Modal title={editing?"Edit Product":"Add Product"} onClose={()=>setShowModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancel</button><button className="btn btn-primary" onClick={save}>Save</button></>}>
+          <div className="form-grid">
+            {[["name","Product Name"],["sku","SKU"],["category","Category"],["supplier","Supplier"],["location","Location"]].map(([k,l])=>(
+              <div key={k} className="form-group">
+                <label className="form-label">{l}</label>
+                <input className="form-control" value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/>
+              </div>
+            ))}
+            {[["quantity","Quantity"],["min_quantity","Min Qty"],["unit_price","Unit Price (KES)"]].map(([k,l])=>(
+              <div key={k} className="form-group">
+                <label className="form-label">{l}</label>
+                <input className="form-control" type="number" value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/>
+              </div>
+            ))}
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── Sales ─────────────────────────────────────────────────────────────────────
+function Sales() {
+  const { user } = useAuth();
+  const [sales, setSales] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [search, setSearch] = useState("");
+  const [form, setForm] = useState({product_id:"",quantity:"",customer:"",payment:"Cash"});
+
+  const load = () => Promise.all([apiFetch("/sales"),apiFetch("/products")]).then(([s,p])=>{setSales(s);setProducts(p);});
+  useEffect(()=>{ load(); },[]);
+
+  const filtered = sales.filter(s =>
+    s.customer?.toLowerCase().includes(search.toLowerCase()) ||
+    s.product_name?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalRevenue = sales.reduce((a,s)=>a+s.total,0);
+  const todaySales = sales.filter(s=>s.date===new Date().toISOString().slice(0,10));
+
+  const selProd = products.find(p=>p.id===form.product_id);
+  const calcTotal = selProd ? selProd.unit_price * (+form.quantity||0) : 0;
+
+  async function saveSale() {
+    if (!form.product_id||!form.quantity||!form.customer) return alert("Fill all fields");
+    const body = {
+      product_id:form.product_id, product_name:selProd?.name,
+      quantity:+form.quantity, unit_price:selProd?.unit_price,
+      total:calcTotal, customer:form.customer, payment:form.payment
+    };
+    await apiFetch("/sales",{method:"POST",body:JSON.stringify(body)});
+    setShowModal(false); setForm({product_id:"",quantity:"",customer:"",payment:"Cash"}); load();
+  }
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <div className="page-title">Sales</div>
+          <div className="page-subtitle">{sales.length} transactions · {fmt(totalRevenue)} total revenue</div>
+        </div>
+        <button className="btn btn-primary" onClick={()=>setShowModal(true)}>＋ New Sale</button>
+      </div>
+
+      <div className="stats-grid" style={{gridTemplateColumns:"repeat(3,1fr)",marginBottom:20}}>
+        <div className="stat-card gold"><div className="stat-icon gold">💰</div><div className="stat-label">Total Revenue</div><div className="stat-value">{fmt(totalRevenue)}</div></div>
+        <div className="stat-card blue"><div className="stat-icon blue">📋</div><div className="stat-label">Total Transactions</div><div className="stat-value">{sales.length}</div></div>
+        <div className="stat-card green"><div className="stat-icon green">📅</div><div className="stat-label">Today's Sales</div><div className="stat-value">{todaySales.length}</div></div>
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">Transaction History</span>
+          <div className="search-wrap">
+            <span className="search-icon">🔍</span>
+            <input className="form-control" style={{width:220}} placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
+          </div>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Product</th><th>Customer</th><th>Qty</th><th>Unit Price</th><th>Total</th><th>Payment</th><th>Employee</th><th>Status</th></tr></thead>
+            <tbody>
+              {filtered.map(s=>(
+                <tr key={s.id}>
+                  <td className="td-muted" style={{fontSize:12}}>{s.date}</td>
+                  <td style={{fontWeight:500}}>{s.product_name}</td>
+                  <td className="td-muted">{s.customer}</td>
+                  <td style={{textAlign:"center"}}>{s.quantity}</td>
+                  <td>{fmt(s.unit_price)}</td>
+                  <td style={{color:"#3FB950",fontWeight:700}}>{fmt(s.total)}</td>
+                  <td><span className="badge badge-purple">{s.payment}</span></td>
+                  <td className="td-muted" style={{fontSize:12}}>{s.employee_name}</td>
+                  <td>{statusBadge(s.status)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showModal && (
+        <Modal title="Record New Sale" onClose={()=>setShowModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancel</button><button className="btn btn-primary" onClick={saveSale}>Record Sale</button></>}>
+          <div className="form-group">
+            <label className="form-label">Product</label>
+            <select className="form-control" value={form.product_id} onChange={e=>setForm({...form,product_id:e.target.value})}>
+              <option value="">-- Select Product --</option>
+              {products.map(p=><option key={p.id} value={p.id}>{p.name} (Stock: {p.quantity})</option>)}
+            </select>
+          </div>
+          {selProd && <div style={{padding:"10px 12px",background:"rgba(200,134,10,0.1)",borderRadius:8,marginBottom:16,fontSize:13}}>Unit Price: <strong style={{color:"#C8860A"}}>{fmt(selProd.unit_price)}</strong></div>}
+          <div className="form-grid">
+            <div className="form-group">
+              <label className="form-label">Quantity</label>
+              <input className="form-control" type="number" min="1" max={selProd?.quantity} value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Payment Method</label>
+              <select className="form-control" value={form.payment} onChange={e=>setForm({...form,payment:e.target.value})}>
+                {["Cash","M-Pesa","Bank Transfer","Credit"].map(p=><option key={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Customer Name</label>
+            <input className="form-control" placeholder="Full name" value={form.customer} onChange={e=>setForm({...form,customer:e.target.value})}/>
+          </div>
+          {calcTotal > 0 && <div style={{padding:"12px 16px",background:"rgba(63,185,80,0.1)",border:"1px solid rgba(63,185,80,0.2)",borderRadius:8,fontSize:14}}>Total: <strong style={{color:"#3FB950",fontSize:18}}>{fmt(calcTotal)}</strong></div>}
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── Orders ────────────────────────────────────────────────────────────────────
+function Orders() {
+  const { user } = useAuth();
+  const [orders, setOrders] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({product_id:"",product_name:"",quantity:"",unit_price:"",supplier:"",expected_delivery:""});
+  const canManage = user.role !== "employee";
+
+  const load = () => Promise.all([apiFetch("/orders"),apiFetch("/products")]).then(([o,p])=>{setOrders(o);setProducts(p);});
+  useEffect(()=>{ load(); },[]);
+
+  async function saveOrder() {
+    const selProd = products.find(p=>p.id===form.product_id);
+    const body = {...form, product_name:selProd?.name||form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, total:+form.quantity * +form.unit_price};
+    await apiFetch("/orders",{method:"POST",body:JSON.stringify(body)});
+    setShowModal(false); load();
+  }
+
+  async function updateStatus(id, status) {
+    await apiFetch(`/orders/${id}`,{method:"PUT",body:JSON.stringify({status})});
+    load();
+  }
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <div className="page-title">Purchase Orders</div>
+          <div className="page-subtitle">{orders.length} orders · {orders.filter(o=>o.status==="pending").length} pending</div>
+        </div>
+        {canManage && <button className="btn btn-primary" onClick={()=>setShowModal(true)}>＋ New Order</button>}
+      </div>
+
+      <div className="card">
+        <div className="card-header"><span className="card-title">Order Records</span></div>
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Product</th><th>Supplier</th><th>Qty</th><th>Total</th><th>Expected Delivery</th><th>Ordered By</th><th>Status</th>{canManage&&<th>Actions</th>}</tr></thead>
+            <tbody>
+              {orders.map(o=>(
+                <tr key={o.id}>
+                  <td className="td-muted" style={{fontSize:12}}>{o.date}</td>
+                  <td style={{fontWeight:500}}>{o.product_name}</td>
+                  <td className="td-muted">{o.supplier}</td>
+                  <td style={{textAlign:"center"}}>{o.quantity}</td>
+                  <td style={{color:"#C8860A",fontWeight:600}}>{fmt(o.total)}</td>
+                  <td className="td-muted" style={{fontSize:12}}>{o.expected_delivery}</td>
+                  <td className="td-muted" style={{fontSize:12}}>{o.ordered_by_name}</td>
+                  <td>{statusBadge(o.status)}</td>
+                  {canManage && <td>
+                    <select className="form-control" style={{padding:"4px 8px",fontSize:12,width:"auto"}}
+                      value={o.status} onChange={e=>updateStatus(o.id,e.target.value)}>
+                      {["pending","in_transit","delivered","cancelled"].map(s=><option key={s} value={s}>{s.replace("_"," ")}</option>)}
+                    </select>
+                  </td>}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showModal && (
+        <Modal title="Create Purchase Order" onClose={()=>setShowModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancel</button><button className="btn btn-primary" onClick={saveOrder}>Place Order</button></>}>
+          <div className="form-group">
+            <label className="form-label">Product</label>
+            <select className="form-control" value={form.product_id} onChange={e=>{ const p=products.find(x=>x.id===e.target.value); setForm({...form,product_id:e.target.value,supplier:p?.supplier||"",unit_price:p?.unit_price||""}); }}>
+              <option value="">-- Select Product --</option>
+              {products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+          <div className="form-grid">
+            <div className="form-group"><label className="form-label">Quantity</label><input className="form-control" type="number" value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/></div>
+            <div className="form-group"><label className="form-label">Unit Price (KES)</label><input className="form-control" type="number" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})}/></div>
+          </div>
+          <div className="form-group"><label className="form-label">Supplier</label><input className="form-control" value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})}/></div>
+          <div className="form-group"><label className="form-label">Expected Delivery Date</label><input className="form-control" type="date" value={form.expected_delivery} onChange={e=>setForm({...form,expected_delivery:e.target.value})}/></div>
+          {form.quantity&&form.unit_price&&<div style={{padding:"12px 16px",background:"rgba(200,134,10,0.1)",borderRadius:8,fontSize:14}}>Order Total: <strong style={{color:"#C8860A"}}>{fmt(+form.quantity * +form.unit_price)}</strong></div>}
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── Deliveries ────────────────────────────────────────────────────────────────
+function Deliveries() {
+  const { user } = useAuth();
+  const [deliveries, setDeliveries] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({order_id:"",product_id:"",product_name:"",quantity:"",supplier:"",notes:""});
+  const canManage = user.role !== "employee";
+
+  const load = () => Promise.all([apiFetch("/deliveries"),apiFetch("/orders"),apiFetch("/products")]).then(([d,o,p])=>{setDeliveries(d);setOrders(o);setProducts(p);});
+  useEffect(()=>{ load(); },[]);
+
+  const pendingOrders = orders.filter(o=>["pending","in_transit"].includes(o.status));
+
+  async function saveDelivery() {
+    const selOrder = orders.find(o=>o.id===form.order_id);
+    const body = {...form, product_id:selOrder?.product_id, product_name:selOrder?.product_name||form.product_name, quantity:+form.quantity, supplier:selOrder?.supplier||form.supplier};
+    await apiFetch("/deliveries",{method:"POST",body:JSON.stringify(body)});
+    setShowModal(false); load();
+  }
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <div className="page-title">Deliveries</div>
+          <div className="page-subtitle">{deliveries.length} deliveries recorded · {pendingOrders.length} orders in transit</div>
+        </div>
+        {canManage && <button className="btn btn-primary" onClick={()=>setShowModal(true)}>＋ Record Delivery</button>}
+      </div>
+
+      <div className="card">
+        <div className="card-header"><span className="card-title">Delivery Records</span></div>
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Product</th><th>Supplier</th><th>Qty Received</th><th>Order Ref</th><th>Received By</th><th>Notes</th><th>Status</th></tr></thead>
+            <tbody>
+              {deliveries.map(d=>(
+                <tr key={d.id}>
+                  <td className="td-muted" style={{fontSize:12}}>{d.date}</td>
+                  <td style={{fontWeight:500}}>{d.product_name}</td>
+                  <td className="td-muted">{d.supplier}</td>
+                  <td style={{textAlign:"center",color:"#3FB950",fontWeight:700}}>{d.quantity}</td>
+                  <td className="td-muted" style={{fontFamily:"monospace",fontSize:12}}>{d.order_id}</td>
+                  <td className="td-muted" style={{fontSize:12}}>{d.received_by_name}</td>
+                  <td className="td-muted" style={{fontSize:12,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.notes}</td>
+                  <td>{statusBadge(d.status)}</td>
+                </tr>
+              ))}
+              {deliveries.length===0 && <tr><td colSpan={8} style={{textAlign:"center",color:"#8B949E",padding:40}}>No deliveries recorded yet</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showModal && (
+        <Modal title="Record Incoming Delivery" onClose={()=>setShowModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancel</button><button className="btn btn-primary" onClick={saveDelivery}>Record</button></>}>
+          <div className="form-group">
+            <label className="form-label">Linked Purchase Order</label>
+            <select className="form-control" value={form.order_id} onChange={e=>{
+              const o=orders.find(x=>x.id===e.target.value);
+              setForm({...form,order_id:e.target.value,product_name:o?.product_name||"",supplier:o?.supplier||"",quantity:o?.quantity||""});
+            }}>
+              <option value="">-- Select Order --</option>
+              {pendingOrders.map(o=><option key={o.id} value={o.id}>{o.product_name} ({o.supplier})</option>)}
+            </select>
+          </div>
+          <div className="form-grid">
+            <div className="form-group"><label className="form-label">Product Name</label><input className="form-control" value={form.product_name} onChange={e=>setForm({...form,product_name:e.target.value})}/></div>
+            <div className="form-group"><label className="form-label">Quantity Received</label><input className="form-control" type="number" value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/></div>
+          </div>
+          <div className="form-group"><label className="form-label">Supplier</label><input className="form-control" value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})}/></div>
+          <div className="form-group"><label className="form-label">Notes / Condition</label><textarea className="form-control" rows={3} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="e.g. All items in good condition"/></div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── Reports ───────────────────────────────────────────────────────────────────
+function Reports() {
+  const [stats, setStats] = useState(null);
+  const [sales, setSales] = useState([]);
+  useEffect(()=>{ Promise.all([apiFetch("/dashboard/stats"),apiFetch("/sales")]).then(([s,sl])=>{setStats(s);setSales(sl);}); },[]);
+
+  if (!stats) return <div className="loading"><div className="spinner"/></div>;
+
+  const monthlyData = Object.entries(stats.monthly_sales).map(([m,v])=>({month:m,revenue:v}));
+  const catData = Object.entries(stats.category_stock).map(([name,value])=>({name,value}));
+
+  const paymentBreakdown = sales.reduce((acc,s)=>{acc[s.payment]=(acc[s.payment]||0)+s.total;return acc;},{});
+  const payData = Object.entries(paymentBreakdown).map(([name,value])=>({name,value}));
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div><div className="page-title">Reports & Analytics</div><div className="page-subtitle">Visual insights into business performance</div></div>
+      </div>
+
+      <div className="stats-grid">
+        <div className="stat-card gold"><div className="stat-icon gold">💰</div><div className="stat-label">Total Revenue</div><div className="stat-value">{fmt(stats.total_revenue)}</div></div>
+        <div className="stat-card blue"><div className="stat-icon blue">📦</div><div className="stat-label">Inventory Value</div><div className="stat-value">{fmt(stats.inventory_value)}</div></div>
+        <div className="stat-card green"><div className="stat-icon green">🛒</div><div className="stat-label">Total Sales</div><div className="stat-value">{stats.total_sales}</div></div>
+        <div className="stat-card red"><div className="stat-icon red">⚠️</div><div className="stat-label">Low Stock</div><div className="stat-value">{stats.low_stock_count}</div></div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+        <div className="card">
+          <div className="card-header"><span className="card-title">Monthly Revenue</span></div>
+          <div className="card-body">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#21262D"/>
+                <XAxis dataKey="month" tick={{fill:"#8B949E",fontSize:10}} axisLine={false} tickLine={false}/>
+                <YAxis tick={{fill:"#8B949E",fontSize:10}} axisLine={false} tickLine={false} tickFormatter={v=>`${v/1000}k`}/>
+                <Tooltip formatter={v=>[fmt(v)]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:12}}/>
+                <Bar dataKey="revenue" fill="#C8860A" radius={[4,4,0,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header"><span className="card-title">Payment Methods</span></div>
+          <div className="card-body">
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={payData} cx="50%" cy="50%" outerRadius={75} dataKey="value" label={({name,percent})=>`${name} ${(percent*100).toFixed(0)}%`} labelLine={{stroke:"#8B949E"}}>
+                  {payData.map((e,i)=><Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>)}
+                </Pie>
+                <Tooltip formatter={v=>[fmt(v)]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:12}}/>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header"><span className="card-title">Inventory by Category</span></div>
+        <div className="card-body">
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={catData} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#21262D"/>
+              <XAxis type="number" tick={{fill:"#8B949E",fontSize:11}} axisLine={false} tickLine={false}/>
+              <YAxis type="category" dataKey="name" tick={{fill:"#8B949E",fontSize:12}} axisLine={false} tickLine={false} width={100}/>
+              <Tooltip contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:12}}/>
+              <Bar dataKey="value" fill="#58A6FF" radius={[0,4,4,0]}/>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Users Management ──────────────────────────────────────────────────────────
+function Users() {
+  const { user } = useAuth();
+  const [users, setUsers] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({name:"",email:"",password:"",role:"employee"});
+
+  const load = () => apiFetch("/auth/users").then(setUsers);
+  useEffect(()=>{ load(); },[]);
+
+  async function saveUser() {
+    await apiFetch("/auth/users",{method:"POST",body:JSON.stringify(form)});
+    setShowModal(false); setForm({name:"",email:"",password:"",role:"employee"}); load();
+  }
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div><div className="page-title">User Management</div><div className="page-subtitle">{users.length} system users</div></div>
+        {user.role==="owner" && <button className="btn btn-primary" onClick={()=>setShowModal(true)}>＋ Add User</button>}
+      </div>
+
+      <div className="card">
+        <div className="card-header"><span className="card-title">System Users</span></div>
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
+            <tbody>
+              {users.map(u=>(
+                <tr key={u.id}>
+                  <td>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div className="user-avatar">{initials(u.name)}</div>
+                      <div style={{fontWeight:500}}>{u.name}</div>
+                    </div>
+                  </td>
+                  <td className="td-muted">{u.email}</td>
+                  <td><span className={`badge role-${u.role}`}>{u.role}</span></td>
+                  <td><span className={`badge ${u.active?"badge-success":"badge-danger"}`}>{u.active?"Active":"Inactive"}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showModal && (
+        <Modal title="Add System User" onClose={()=>setShowModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancel</button><button className="btn btn-primary" onClick={saveUser}>Create User</button></>}>
+          <div className="form-group"><label className="form-label">Full Name</label><input className="form-control" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></div>
+          <div className="form-group"><label className="form-label">Email</label><input className="form-control" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></div>
+          <div className="form-group"><label className="form-label">Password</label><input className="form-control" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})}/></div>
+          <div className="form-group">
+            <label className="form-label">Role</label>
+            <select className="form-control" value={form.role} onChange={e=>setForm({...form,role:e.target.value})}>
+              <option value="employee">Employee</option>
+              <option value="manager">Manager</option>
+              {user.role==="owner" && <option value="owner">Owner</option>}
+            </select>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── App Shell ─────────────────────────────────────────────────────────────────
+const NAV = [
+  { id:"dashboard", label:"Dashboard", icon:"📊" },
+  { id:"inventory", label:"Inventory", icon:"📦" },
+  { id:"sales",     label:"Sales",     icon:"🛒" },
+  { id:"orders",    label:"Orders",    icon:"📋" },
+  { id:"deliveries",label:"Deliveries",icon:"🚚" },
+  { id:"reports",   label:"Reports",   icon:"📈" },
+  { id:"users",     label:"Users",     icon:"👥", roles:["owner","manager"] },
+];
+
+const PAGE_TITLES = {dashboard:"Dashboard",inventory:"Inventory Management",sales:"Sales Management",orders:"Purchase Orders",deliveries:"Deliveries",reports:"Reports & Analytics",users:"User Management"};
+
+function AppShell({ user, onLogout }) {
+  const [page, setPage] = useState("dashboard");
+
+  const navItems = NAV.filter(n => !n.roles || n.roles.includes(user.role));
+
+  const renderPage = () => {
+    switch(page) {
+      case "dashboard": return <Dashboard/>;
+      case "inventory": return <Inventory/>;
+      case "sales":     return <Sales/>;
+      case "orders":    return <Orders/>;
+      case "deliveries":return <Deliveries/>;
+      case "reports":   return <Reports/>;
+      case "users":     return <Users/>;
+      default:          return <Dashboard/>;
+    }
+  };
+
+  return (
+    <div className="app">
+      <aside className="sidebar">
+        <div className="sidebar-logo">
+          <h1>🔧 Ndorome</h1>
+          <span>Spare Parts IMS</span>
+        </div>
+        <div className="sidebar-user">
+          <div className="user-avatar">{initials(user.name)}</div>
+          <div className="user-info">
+            <p>{user.name}</p>
+            <span>{user.role}</span>
+          </div>
+        </div>
+        <div className="nav-section">
+          <div className="nav-label">Navigation</div>
+          {navItems.map(n => (
+            <div key={n.id} className={`nav-item ${page===n.id?"active":""}`} onClick={()=>setPage(n.id)}>
+              <span className="icon">{n.icon}</span>
+              {n.label}
+            </div>
+          ))}
+        </div>
+        <div className="sidebar-footer">
+          <button className="logout-btn" onClick={onLogout}>
+            <span>🚪</span> Sign Out
+          </button>
+        </div>
+      </aside>
+
+      <main className="main">
+        <div className="topbar">
+          <h2>{PAGE_TITLES[page]}</h2>
+          <div className="topbar-actions">
+            <span className={`badge role-${user.role}`} style={{padding:"4px 12px",fontSize:12}}>{user.role}</span>
+            <div className="user-avatar" style={{width:32,height:32,fontSize:12}}>{initials(user.name)}</div>
+          </div>
+        </div>
+        <AuthContext.Provider value={{ user }}>
+          {renderPage()}
+        </AuthContext.Provider>
+      </main>
+    </div>
+  );
+}
+
+// ── Root ──────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("user")); } catch { return null; }
+  });
+
+  function handleLogin(u) { setUser(u); }
+  function handleLogout() { localStorage.removeItem("token"); localStorage.removeItem("user"); setUser(null); }
+
+  return (
+    <>
+      <style>{css}</style>
+      {user ? <AppShell user={user} onLogout={handleLogout}/> : <LoginPage onLogin={handleLogin}/>}
+    </>
+  );
+}

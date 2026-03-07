@@ -297,7 +297,7 @@ const css = `
 
   /* ── Login ── */
   .login-page {
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px;
     background: #0D1117;
     background-image: radial-gradient(ellipse at 20% 50%, rgba(200,134,10,0.07) 0%, transparent 60%),
                       radial-gradient(ellipse at 80% 20%, rgba(88,166,255,0.05) 0%, transparent 50%);
@@ -305,6 +305,7 @@ const css = `
   .login-card {
     background: #161B22; border: 1px solid #21262D;
     border-radius: 20px; padding: 40px; width: 100%; max-width: 400px;
+    margin: 0 auto;
   }
   .login-logo { text-align: center; margin-bottom: 32px; }
   .login-logo h1 { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: #C8860A; }

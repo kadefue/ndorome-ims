@@ -1,21 +1,19 @@
-# app/schemas/user.py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
 from datetime import datetime
-
-# Using a regex-validated str instead of EmailStr to avoid the
-# optional `email-validator` dependency that EmailStr requires.
 
 
 class UserCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
-    email: str = Field(..., pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=150)
+    email: EmailStr
     password: str = Field(..., min_length=6)
     role: str = Field(default="employee", pattern="^(owner|manager|employee)$")
 
 
 class UserUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=100)
+    email: Optional[EmailStr] = None
+    password: Optional[str] = Field(None, min_length=6)
     role: Optional[str] = Field(None, pattern="^(owner|manager|employee)$")
     active: Optional[bool] = None
 
@@ -23,10 +21,11 @@ class UserUpdate(BaseModel):
 class UserResponse(BaseModel):
     id: int
     name: str
-    email: str
+    email: EmailStr
     role: str
     active: bool
     created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -34,7 +33,7 @@ class UserResponse(BaseModel):
 class UserListResponse(BaseModel):
     id: int
     name: str
-    email: str
+    email: EmailStr
     role: str
     active: bool
 
@@ -44,8 +43,5 @@ class UserListResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
-    user: UserResponse
+    user: Optional[UserResponse] = None
 
-
-class TokenData(BaseModel):
-    email: Optional[str] = None

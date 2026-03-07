@@ -708,7 +708,7 @@ function Sales() {
   const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
-  const [form, setForm] = useState({product_id:"",quantity:"",customer:"",payment:"Cash"});
+  const [form, setForm] = useState({product_id:"",quantity:"",customer:"",customer_email:"",customer_phone:"",payment:"Cash"});
 
   const load = () => Promise.all([apiFetch("/sales"),apiFetch("/products")]).then(([s,p])=>{setSales(s);setProducts(p);});
   useEffect(()=>{ load(); },[]);
@@ -725,14 +725,19 @@ function Sales() {
   const calcTotal = selProd ? selProd.unit_price * (+form.quantity||0) : 0;
 
   async function saveSale() {
-    if (!form.product_id||!form.quantity||!form.customer) return alert("Fill all fields");
+    if (!form.product_id || !form.quantity) return alert("Fill product and quantity");
+    if (!form.customer && !form.customer_email && !form.customer_phone) {
+      // Allow anonymous sale but warn user; change this if you prefer to require at least one
+      if (!confirm("No customer name, email or phone provided. Continue?")) return;
+    }
     const body = {
-      product_id:form.product_id, product_name:selProd?.name,
-      quantity:+form.quantity, unit_price:selProd?.unit_price,
-      total:calcTotal, customer:form.customer, payment:form.payment
+      product_id: form.product_id, product_name: selProd?.name,
+      quantity: +form.quantity, unit_price: selProd?.unit_price,
+      total: calcTotal, customer: form.customer || null, payment: form.payment,
+      customer_email: form.customer_email || null, customer_phone: form.customer_phone || null,
     };
     await apiFetch("/sales",{method:"POST",body:JSON.stringify(body)});
-    setShowModal(false); setForm({product_id:"",quantity:"",customer:"",payment:"Cash"}); load();
+    setShowModal(false); setForm({product_id:"",quantity:"",customer:"",payment:"Cash",customer_email:"",customer_phone:""}); load();
   }
 
   return (
@@ -807,6 +812,16 @@ function Sales() {
           <div className="form-group">
             <label className="form-label">Customer Name</label>
             <input className="form-control" placeholder="Full name" value={form.customer} onChange={e=>setForm({...form,customer:e.target.value})}/>
+          </div>
+          <div className="form-grid">
+            <div className="form-group">
+              <label className="form-label">Customer Email (optional)</label>
+              <input className="form-control" type="email" placeholder="email@example.com" value={form.customer_email} onChange={e=>setForm({...form,customer_email:e.target.value})}/>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Customer Phone (optional)</label>
+              <input className="form-control" type="tel" placeholder="+2557XXXXXXX" value={form.customer_phone} onChange={e=>setForm({...form,customer_phone:e.target.value})}/>
+            </div>
           </div>
           {calcTotal > 0 && <div style={{padding:"12px 16px",background:"rgba(63,185,80,0.1)",border:"1px solid rgba(63,185,80,0.2)",borderRadius:8,fontSize:14}}>Total: <strong style={{color:"#3FB950",fontSize:18}}>{fmt(calcTotal)}</strong></div>}
         </Modal>

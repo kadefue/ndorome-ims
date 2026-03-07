@@ -15,6 +15,8 @@ class Sale(Base):
     unit_price   = Column(Float, nullable=False)      # Price captured at time of sale
     total        = Column(Float, nullable=False)
     customer     = Column(String(150), nullable=True)
+    customer_email = Column(String(150), nullable=True)
+    customer_phone = Column(String(50), nullable=True)
     payment      = Column(String(50), default="Cash") # Cash | M-Pesa | Bank Transfer | Credit
     status       = Column(String(30), default="completed")
     notes        = Column(String(500), nullable=True)

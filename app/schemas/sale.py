@@ -10,6 +10,8 @@ class SaleCreate(BaseModel):
     product_id: int
     quantity: int = Field(..., gt=0)
     customer: Optional[str] = Field(None, max_length=150)
+    customer_email: Optional[str] = Field(None, max_length=150)
+    customer_phone: Optional[str] = Field(None, max_length=50)
     payment: str = Field(default="Cash", pattern="^(Cash|M-Pesa|Bank Transfer|Credit)$")
     notes: Optional[str] = Field(None, max_length=500)
 

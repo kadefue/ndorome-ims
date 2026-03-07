@@ -52,6 +52,8 @@ def create_sale(db: Session, sale_in: SaleCreate, employee_id: int) -> Sale:
         unit_price=product.unit_price,   # Snapshot price at sale time
         total=total,
         customer=sale_in.customer,
+        customer_email=getattr(sale_in, 'customer_email', None),
+        customer_phone=getattr(sale_in, 'customer_phone', None),
         payment=sale_in.payment,
         status="completed",
         notes=sale_in.notes,

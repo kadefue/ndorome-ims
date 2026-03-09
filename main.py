@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import engine, Base, SessionLocal
+from sqlalchemy import text
 from app.seed import seed_database
 
 # Import all models so SQLAlchemy registers them before create_all
@@ -27,6 +28,20 @@ async def lifespan(app: FastAPI):
         seed_database(db)
     finally:
         db.close()
+
+    # Lightweight in-place migration: add new sale columns if they don't exist.
+    # This avoids failing when the code expects `customer_email`/`customer_phone`.
+    with engine.connect() as conn:
+        try:
+            rows = conn.execute(text("PRAGMA table_info('sales')")).fetchall()
+            col_names = [r[1] for r in rows]
+            if 'customer_email' not in col_names:
+                conn.execute(text("ALTER TABLE sales ADD COLUMN customer_email VARCHAR(150)"))
+            if 'customer_phone' not in col_names:
+                conn.execute(text("ALTER TABLE sales ADD COLUMN customer_phone VARCHAR(50)"))
+        except Exception:
+            # If anything goes wrong here, continue — app will still run and surface errors.
+            pass
 
     yield  # Application runs here
 

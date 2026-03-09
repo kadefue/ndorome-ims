@@ -61,6 +61,11 @@ def create_order(db: Session, order_in: OrderCreate, ordered_by_id: int) -> Orde
 def update_order(db: Session, order: Order, order_in: OrderUpdate) -> Order:
     update_data = order_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
+        # Avoid overwriting non-nullable DB columns with None
+        col = getattr(order.__table__.c, field, None)
+        if col is not None and value is None and not col.nullable:
+            # skip assignment to preserve existing non-nullable value
+            continue
         setattr(order, field, value)
     db.commit()
     db.refresh(order)

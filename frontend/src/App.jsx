@@ -374,6 +374,15 @@ const themeCss = `
 const fmt = (n) => `TZS ${Number(n).toLocaleString()}`;
 const initials = (name) => name?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2);
 
+const humanDate = (d) => {
+  if (!d) return "";
+  try {
+    const dt = new Date(d);
+    if (isNaN(dt)) return d;
+    return dt.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  } catch (e) { return d; }
+};
+
 function statusBadge(s) {
   const map = {
     completed: "badge-success", received: "badge-success",
@@ -446,7 +455,7 @@ function LoginPage({ onLogin }) {
       <div className="login-card">
         <div className="login-logo">
           <div style={{fontSize:36,marginBottom:8}}>🔧</div>
-          <h1>Ndorome Spare Parts</h1>
+          <h1>Supa Kariakoo Spare Parts Centre</h1>
           <p>Inventory Management System</p>
         </div>
         {error && <div className="error-msg">{error}</div>}
@@ -492,7 +501,7 @@ function Dashboard() {
       <div className="page-header">
         <div>
           <div className="page-title">Dashboard</div>
-          <div className="page-subtitle">Welcome back! Here's what's happening at Ndorome Spare Parts.</div>
+          <div className="page-subtitle">Welcome back! Here's what's happening at Supa Kariakoo Spare Parts Centre.</div>
         </div>
         <span className="badge-pill">📅 {new Date().toLocaleDateString("en-KE",{dateStyle:"long"})}</span>
       </div>
@@ -938,13 +947,13 @@ function Orders() {
             <tbody>
               {orders.map(o=>(
                 <tr key={o.id}>
-                  <td className="td-muted" style={{fontSize:12}}>{o.date}</td>
-                  <td style={{fontWeight:500}}>{o.product_name}</td>
+                  <td className="td-muted" style={{fontSize:12}}>{humanDate(o.date)}</td>
+                  <td style={{fontWeight:500}}>{o.product?.name || o.product_name || (products.find(p=>p.id===o.product_id)?.name) || "—"}</td>
                   <td className="td-muted">{o.supplier}</td>
                   <td style={{textAlign:"center"}}>{o.quantity}</td>
                   <td style={{color:"#C8860A",fontWeight:600}}>{fmt(o.total)}</td>
-                  <td className="td-muted" style={{fontSize:12}}>{o.expected_delivery}</td>
-                  <td className="td-muted" style={{fontSize:12}}>{o.ordered_by_name}</td>
+                  <td className="td-muted" style={{fontSize:12}}>{o.expected_delivery ? new Date(o.expected_delivery).toLocaleDateString() : "—"}</td>
+                  <td className="td-muted" style={{fontSize:12}}>{o.ordered_by_user?.name || o.ordered_by_name || o.ordered_by_id || "—"}</td>
                   <td>{statusBadge(o.status)}</td>
                   {canManage && <td>
                     <select className="form-control" style={{padding:"4px 8px",fontSize:12,width:"auto"}}
@@ -1241,7 +1250,7 @@ function AppShell({ user, onLogout }) {
     <div className="app">
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <h1>🔧 Ndorome</h1>
+          <h1>🔧 Supa Kariakoo</h1>
           <span>Spare Parts IMS</span>
         </div>
         <div className="sidebar-user">

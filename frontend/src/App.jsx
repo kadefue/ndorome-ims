@@ -421,6 +421,7 @@ const TRANSLATIONS = {
     "btn.new_order": "＋ New Order",
     "btn.record_delivery": "＋ Record Delivery",
     "btn.edit_product": "Edit Product",
+     "btn.edit_order": "Edit Order",
     "btn.add_user": "＋ Add User",
     "sign_out": "Sign Out",
     "theme.light": "☀️ Light",
@@ -623,6 +624,7 @@ const TRANSLATIONS = {
     "btn.new_order": "＋ Oda Mpya",
     "btn.record_delivery": "＋ Rekodi Upokeaji wa Bidhaa",
     "btn.edit_product": "Hariri Bidhaa",
+     "btn.edit_order": "Hariri Oda",
     "btn.add_user": "＋ Ongeza Mtumiaji",
     "sign_out": "Toka",
     "theme.light": "☀️ Mwanga",
@@ -1005,7 +1007,19 @@ function Inventory({ locale }) {
   const [form, setForm] = useState({name:"",sku:"",category:"",quantity:"",min_quantity:"",unit_price:"",supplier:"",location:"",name_select:"",sku_select:"",category_select:""});
   const canEdit = user.role !== "employee";
 
-  const load = () => apiFetch("/products").then(setProducts);
+  const load = async () => {
+    try {
+      const [pList, sList] = await Promise.all([apiFetch('/products'), apiFetch('/sales')]);
+      // mark products that have been sold below current unit_price
+      const withFlag = pList.map(p => {
+        const soldBelow = sList.some(s => ((s.product_id || s.product?.id) === p.id) && (s.unit_price < p.unit_price));
+        return { ...p, soldBelow };
+      });
+      setProducts(withFlag);
+    } catch (err) {
+      setProducts([]);
+    }
+  };
   useEffect(()=>{ load(); },[]);
   
   // For inventory we want to indicate products that have been sold below current product price
@@ -1065,7 +1079,7 @@ function Inventory({ locale }) {
             <tbody>
               {filtered.map(p => (
                 <tr key={p.id}>
-                  <td><div style={{fontWeight:500}}>{p.name}</div></td>
+                  <td><div style={{fontWeight:500}}>{p.name} {p.soldBelow && <span style={{marginLeft:8}} className="badge badge-danger">{t(locale,'inventory.sold_below')||'Sold below price'}</span>}</div></td>
                   <td className="td-muted" style={{fontFamily:"monospace",fontSize:12}}>{p.sku}</td>
                   <td><span className="badge badge-info">{p.category}</span></td>
                   <td style={{fontWeight:700,color: p.quantity<=p.min_quantity?"#F85149":p.quantity<=p.min_quantity*2?"#D29922":"#3FB950"}}>{p.quantity}</td>
@@ -1391,8 +1405,7 @@ function Orders({ locale }) {
                       {["pending","in_transit","delivered","cancelled"].map(s=><option key={s} value={s}>{s.replace("_"," ")}</option>)}
                     </select>
                     <button className="btn btn-secondary btn-sm" onClick={()=>openEditOrder(o)}>{t(locale,'btn.edit_order')||'Edit'}</button>
-                    <button className="btn btn-secondary btn-sm" onClick={()=>editProductById(o.product_id)} disabled={!o.product_id}>{t(locale,'btn.edit_product')||'Edit Product'}</button>
-                    <button className="btn btn-danger btn-sm" onClick={()=>deleteProductById(o.product_id)} disabled={!o.product_id}>{t(locale,'btn.delete')||'Delete Product'}</button>
+                   
                   </td>}
                 </tr>
               ))}
@@ -1426,14 +1439,7 @@ function Orders({ locale }) {
               {/* Edit/Delete moved to table actions */}
             </div>
           </div>
-          {/* Show SKU / Category / Location from selected product (read-only) */}
-          {form.product_id && (()=>{ const p = products.find(x=>x.id===form.product_id); return (
-            <div className="form-grid">
-              <div className="form-group"><label className="form-label">{t(locale,'form.sku')}</label><input className="form-control" value={p?.sku||""} readOnly/></div>
-              <div className="form-group"><label className="form-label">{t(locale,'form.category')}</label><input className="form-control" value={p?.category||""} readOnly/></div>
-              <div className="form-group"><label className="form-label">{t(locale,'form.location')}</label><input className="form-control" value={p?.location||""} readOnly/></div>
-            </div>
-          ); })()}
+          
           <div className="form-grid">
             <div className="form-group"><label className="form-label">{t(locale,'form.quantity')}</label><input className="form-control" type="number" value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/></div>
             <div className="form-group"><label className="form-label">{t(locale,'form.unit_price_tzs')}</label><input className="form-control" type="number" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})}/></div>

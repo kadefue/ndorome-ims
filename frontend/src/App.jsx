@@ -1330,6 +1330,7 @@ function Orders({ locale }) {
                   </td>}
                 </tr>
               ))}
+              {orders.length===0 && <tr><td colSpan={8} style={{textAlign:"center",color:"#8B949E",padding:40}}>{t(locale,'orders.no_records')}</td></tr>}
             </tbody>
           </table>
         </div>
@@ -1388,7 +1389,7 @@ function Deliveries({ locale }) {
           <div className="page-title">{t(locale,'page.deliveries') || 'Deliveries'}</div>
           <div className="page-subtitle">{deliveries.length} deliveries recorded · {pendingOrders.length} orders in transit</div>
         </div>
-        {canManage && <button className="btn btn-primary" onClick={()=>setShowModal(true)}>{t(locale,'btn.record_delivery') || '＋ Record Delivery'}</button>}
+       
       </div>
 
       <div className="card">

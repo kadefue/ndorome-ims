@@ -1246,6 +1246,7 @@ function Sales({ locale }) {
 function Orders({ locale }) {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
+  const [editingOrder, setEditingOrder] = useState(null);
   const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [productEditorShow, setProductEditorShow] = useState(false);
@@ -1259,15 +1260,29 @@ function Orders({ locale }) {
 
   async function saveOrder() {
     const selProd = products.find(p=>p.id===form.product_id);
-    const body = { product_id: +form.product_id, product_name: selProd?.name||form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, total:+form.quantity * +form.unit_price, supplier: form.supplier, expected_delivery: form.expected_delivery, notes: form.notes };
-    const created = await apiFetch("/orders",{method:"POST",body:JSON.stringify(body)});
-    // If user selected a status during creation, update it immediately (server requires OrderUpdate for status)
-    if (form.status) {
-      try {
-        await apiFetch(`/orders/${created.id}`, { method: 'PUT', body: JSON.stringify({ status: form.status }) });
-      } catch (err) { /* toast already shown in apiFetch */ }
+    const payload = { product_id: +form.product_id, product_name: selProd?.name||form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, supplier: form.supplier, expected_delivery: form.expected_delivery, notes: form.notes };
+    try {
+      if (editingOrder) {
+        await apiFetch(`/orders/${editingOrder.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+      } else {
+        const created = await apiFetch("/orders",{method:"POST",body:JSON.stringify(payload)});
+        // set status if user picked one
+        if (form.status) {
+          try { await apiFetch(`/orders/${created.id}`, { method: 'PUT', body: JSON.stringify({ status: form.status }) }); } catch {}
+        }
+      }
+      setShowModal(false);
+      setEditingOrder(null);
+      load();
+    } catch (err) {
+      // apiFetch shows toast
     }
-    setShowModal(false); load();
+  }
+
+  function openEditOrder(order) {
+    setEditingOrder(order);
+    setForm({ product_id: order.product_id?.toString() || '', product_name: order.product_name || '', quantity: order.quantity, unit_price: order.unit_price, supplier: order.supplier || '', expected_delivery: order.expected_delivery || '', status: order.status || 'pending', notes: order.notes || '' });
+    setShowModal(true);
   }
 
   function openProductEditorForSelected() {
@@ -1372,8 +1387,9 @@ function Orders({ locale }) {
                       value={o.status} onChange={e=>updateStatus(o.id,e.target.value)}>
                       {["pending","in_transit","delivered","cancelled"].map(s=><option key={s} value={s}>{s.replace("_"," ")}</option>)}
                     </select>
-                    <button className="btn btn-secondary btn-sm" onClick={()=>editProductById(o.product_id)} disabled={!o.product_id}>{t(locale,'btn.edit_product')||'Edit'}</button>
-                    <button className="btn btn-danger btn-sm" onClick={()=>deleteProductById(o.product_id)} disabled={!o.product_id}>{t(locale,'btn.delete')||'Delete'}</button>
+                    <button className="btn btn-secondary btn-sm" onClick={()=>openEditOrder(o)}>{t(locale,'btn.edit_order')||'Edit'}</button>
+                    <button className="btn btn-secondary btn-sm" onClick={()=>editProductById(o.product_id)} disabled={!o.product_id}>{t(locale,'btn.edit_product')||'Edit Product'}</button>
+                    <button className="btn btn-danger btn-sm" onClick={()=>deleteProductById(o.product_id)} disabled={!o.product_id}>{t(locale,'btn.delete')||'Delete Product'}</button>
                   </td>}
                 </tr>
               ))}

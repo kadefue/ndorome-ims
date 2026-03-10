@@ -1007,6 +1007,9 @@ function Inventory({ locale }) {
 
   const load = () => apiFetch("/products").then(setProducts);
   useEffect(()=>{ load(); },[]);
+  
+  // For inventory we want to indicate products that have been sold below current product price
+  // load will be replaced in Inventory component to fetch sales too
 
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||

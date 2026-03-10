@@ -67,6 +67,12 @@ def update_order(db: Session, order: Order, order_in: OrderUpdate) -> Order:
             # skip assignment to preserve existing non-nullable value
             continue
         setattr(order, field, value)
+    # Recalculate total if quantity or unit_price changed (or both)
+    if 'quantity' in update_data or 'unit_price' in update_data:
+        try:
+            order.total = order.quantity * order.unit_price
+        except Exception:
+            pass
     db.commit()
     db.refresh(order)
     return get_order(db, order.id)

@@ -19,6 +19,8 @@ class OrderUpdate(BaseModel):
     status: Optional[str] = Field(None, pattern="^(pending|in_transit|delivered|cancelled)$")
     expected_delivery: Optional[date] = None
     notes: Optional[str] = None
+    quantity: Optional[int] = Field(None, gt=0)
+    unit_price: Optional[float] = Field(None, gt=0)
 
 
 class OrderResponse(BaseModel):

@@ -399,6 +399,22 @@ function Modal({ title, onClose, children, footer }) {
   );
 }
 
+// ── Sidebar (right panel) ─────────────────────────────────────────────────
+function Sidebar({ title, onClose, children, footer, width = 480 }) {
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{position:"fixed",right:0,top:0,height:"100%",width,background:"#fff",boxShadow:"-10px 0 30px rgba(2,6,23,0.15)",display:"flex",flexDirection:"column"}}>
+        <div style={{padding:16,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #eee"}}>
+          <div style={{fontWeight:700}}>{title}</div>
+          <button className="close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div style={{padding:16,overflowY:"auto",flex:1}}>{children}</div>
+        {footer && <div style={{padding:12,borderTop:"1px solid #eee"}}>{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
 // ── Login Page ────────────────────────────────────────────────────────────────
 function LoginPage({ onLogin }) {
   const [form, setForm] = useState({ username: "", password: "" });
@@ -603,9 +619,9 @@ function Inventory() {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({name:"",sku:"",category:"",quantity:"",min_quantity:"",unit_price:"",supplier:"",location:""});
+  const [form, setForm] = useState({name:"",sku:"",category:"",quantity:"",min_quantity:"",unit_price:"",supplier:"",location:"",name_select:"",sku_select:"",category_select:""});
   const canEdit = user.role !== "employee";
 
   const load = () => apiFetch("/products").then(setProducts);
@@ -617,14 +633,25 @@ function Inventory() {
     p.category.toLowerCase().includes(search.toLowerCase())
   );
 
-  function openAdd() { setEditing(null); setForm({name:"",sku:"",category:"",quantity:"",min_quantity:"",unit_price:"",supplier:"",location:""}); setShowModal(true); }
-  function openEdit(p) { setEditing(p); setForm({...p}); setShowModal(true); }
+  function openAdd() { setEditing(null); setForm({name:"",sku:"",category:"",quantity:"",min_quantity:"",unit_price:"",supplier:"",location:"",name_select:"",sku_select:"",category_select:""}); setShowSidebar(true); }
+  function openEdit(p) { setEditing(p); setForm({...p, name_select:p.name, sku_select:p.sku, category_select:p.category}); setShowSidebar(true); }
 
   async function save() {
-    const body = {...form, quantity:+form.quantity, min_quantity:+form.min_quantity, unit_price:+form.unit_price};
+    // Resolve selected vs custom fields
+    const finalName = form.name_select === "__other" ? form.name.trim() : (form.name_select || form.name).trim();
+    const finalSku = form.sku_select === "__other" ? form.sku.trim() : (form.sku_select || form.sku).trim();
+    const finalCategory = form.category_select === "__other" ? form.category.trim() : (form.category_select || form.category).trim();
+
+    if (!finalName || !finalSku) return alert('Product name and SKU are required');
+
+    // Check if product exists (prevent duplicates on create)
+    const exists = products.find(p => p.sku === finalSku || (p.name && p.name.toLowerCase() === finalName.toLowerCase()));
+    if (!editing && exists) return alert('A product with that name or SKU already exists.');
+
+    const body = { ...form, name: finalName, sku: finalSku, category: finalCategory, quantity:+form.quantity, min_quantity:+form.min_quantity, unit_price:+form.unit_price };
     if (editing) await apiFetch(`/products/${editing.id}`,{method:"PUT",body:JSON.stringify(body)});
     else await apiFetch("/products",{method:"POST",body:JSON.stringify(body)});
-    setShowModal(false); load();
+    setShowSidebar(false); load();
   }
   async function del(id) {
     if (!confirm("Delete this product?")) return;
@@ -678,11 +705,50 @@ function Inventory() {
         </div>
       </div>
 
-      {showModal && (
-        <Modal title={editing?"Edit Product":"Add Product"} onClose={()=>setShowModal(false)}
-          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancel</button><button className="btn btn-primary" onClick={save}>Save</button></>}>
+      {showSidebar && (
+        <Sidebar title={editing?"Edit Product":"Add Product"} onClose={()=>setShowSidebar(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowSidebar(false)}>Cancel</button><button className="btn btn-primary" onClick={save}>Save</button></>}>
           <div className="form-grid">
-            {[["name","Product Name"],["sku","SKU"],["category","Category"],["supplier","Supplier"],["location","Location"]].map(([k,l])=>(
+            {/* Product Name (select + other) */}
+            <div className="form-group">
+              <label className="form-label">Product Name</label>
+              <select className="form-control" value={form.name_select || form.name} onChange={e=>{
+                const v = e.target.value; setForm({...form, name_select:v, name: v === "__other" ? "" : v});
+              }}>
+                <option value="">-- Select existing --</option>
+                {[...new Set(products.map(p=>p.name))].map(n=>n && <option key={n} value={n}>{n}</option>)}
+                <option value="__other">Other...</option>
+              </select>
+              {form.name_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder="Enter product name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>} 
+            </div>
+
+            {/* SKU (select + other) */}
+            <div className="form-group">
+              <label className="form-label">SKU</label>
+              <select className="form-control" value={form.sku_select || form.sku} onChange={e=>{
+                const v = e.target.value; setForm({...form, sku_select:v, sku: v === "__other" ? "" : v});
+              }}>
+                <option value="">-- Select existing --</option>
+                {[...new Set(products.map(p=>p.sku))].map(s=>s && <option key={s} value={s}>{s}</option>)}
+                <option value="__other">Other...</option>
+              </select>
+              {form.sku_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder="Enter SKU" value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})}/>} 
+            </div>
+
+            {/* Category (select + other) */}
+            <div className="form-group">
+              <label className="form-label">Category</label>
+              <select className="form-control" value={form.category_select || form.category} onChange={e=>{
+                const v = e.target.value; setForm({...form, category_select:v, category: v === "__other" ? "" : v});
+              }}>
+                <option value="">-- Select existing --</option>
+                {[...new Set(products.map(p=>p.category))].map(c=>c && <option key={c} value={c}>{c}</option>)}
+                <option value="__other">Other...</option>
+              </select>
+              {form.category_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder="Enter category" value={form.category} onChange={e=>setForm({...form,category:e.target.value})}/>} 
+            </div>
+
+            {[["supplier","Supplier"],["location","Location"]].map(([k,l])=>(
               <div key={k} className="form-group">
                 <label className="form-label">{l}</label>
                 <input className="form-control" value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/>
@@ -695,7 +761,7 @@ function Inventory() {
               </div>
             ))}
           </div>
-        </Modal>
+        </Sidebar>
       )}
     </div>
   );

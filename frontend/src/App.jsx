@@ -1000,11 +1000,12 @@ function Deliveries() {
   const [deliveries, setDeliveries] = useState([]);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
+  const [users, setUsers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({order_id:"",product_id:"",product_name:"",quantity:"",supplier:"",notes:""});
   const canManage = user.role !== "employee";
 
-  const load = () => Promise.all([apiFetch("/deliveries"),apiFetch("/orders"),apiFetch("/products")]).then(([d,o,p])=>{setDeliveries(d);setOrders(o);setProducts(p);});
+  const load = () => Promise.all([apiFetch("/deliveries"),apiFetch("/orders"),apiFetch("/products"),apiFetch("/auth/users")]).then(([d,o,p,u])=>{setDeliveries(d);setOrders(o);setProducts(p);setUsers(u);});
   useEffect(()=>{ load(); },[]);
 
   const pendingOrders = orders.filter(o=>["pending","in_transit"].includes(o.status));
@@ -1034,12 +1035,12 @@ function Deliveries() {
             <tbody>
               {deliveries.map(d=>(
                 <tr key={d.id}>
-                  <td className="td-muted" style={{fontSize:12}}>{d.date}</td>
-                  <td style={{fontWeight:500}}>{d.product_name}</td>
-                  <td className="td-muted">{d.supplier}</td>
-                  <td style={{textAlign:"center",color:"#3FB950",fontWeight:700}}>{d.quantity}</td>
-                  <td className="td-muted" style={{fontFamily:"monospace",fontSize:12}}>{d.order_id}</td>
-                  <td className="td-muted" style={{fontSize:12}}>{d.received_by_name}</td>
+                      <td className="td-muted" style={{fontSize:12}}>{humanDate(d.date)}</td>
+                      <td style={{fontWeight:500}}>{d.product?.name || d.product_name || (products.find(p=>p.id===d.product_id)?.name) || "—"}</td>
+                      <td className="td-muted">{d.supplier}</td>
+                      <td style={{textAlign:"center",color:"#3FB950",fontWeight:700}}>{d.quantity}</td>
+                      <td className="td-muted" style={{fontFamily:"monospace",fontSize:12}}>{d.order_id}</td>
+                      <td className="td-muted" style={{fontSize:12}}>{d.received_by_user?.name || d.received_by_name || (users.find(u=>u.id===d.received_by_id)?.name) || "—"}</td>
                   <td className="td-muted" style={{fontSize:12,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.notes}</td>
                   <td>{statusBadge(d.status)}</td>
                 </tr>

@@ -1250,6 +1250,7 @@ function Orders({ locale }) {
   const [showModal, setShowModal] = useState(false);
   const [productEditorShow, setProductEditorShow] = useState(false);
   const [productEditorForm, setProductEditorForm] = useState(null);
+  const [productEditorLoading, setProductEditorLoading] = useState(false);
   const [form, setForm] = useState({product_id:"",product_name:"",quantity:"",unit_price:"",supplier:"",expected_delivery:""});
   const canManage = user.role !== "employee";
 
@@ -1277,7 +1278,7 @@ function Orders({ locale }) {
   }
 
   async function saveProductEditor() {
-    if (!productEditorForm || !productEditorForm.id) return;
+    if (!productEditorForm) return;
     const body = {
       name: productEditorForm.name,
       sku: productEditorForm.sku,
@@ -1287,13 +1288,29 @@ function Orders({ locale }) {
       supplier: productEditorForm.supplier,
       location: productEditorForm.location,
     };
+    setProductEditorLoading(true);
     try {
-      await apiFetch(`/products/${productEditorForm.id}`, { method: 'PUT', body: JSON.stringify(body) });
+      let res;
+      if (productEditorForm.id) {
+        res = await apiFetch(`/products/${productEditorForm.id}`, { method: 'PUT', body: JSON.stringify(body) });
+      } else {
+        // when creating new product, only allow minimum quantity as initial stock
+        body.quantity = +productEditorForm.min_quantity;
+        // log payload for debugging when server-side validation fails
+        try { console.debug('Creating product payload', body); } catch {}
+        res = await apiFetch(`/products`, { method: 'POST', body: JSON.stringify(body) });
+      }
       setProductEditorShow(false);
-      // reload products and orders to reflect changes
-      await Promise.all([apiFetch('/products').then(setProducts), apiFetch('/orders').then(setOrders)]);
+      const [pList, oList] = await Promise.all([apiFetch('/products'), apiFetch('/orders')]);
+      setProducts(pList); setOrders(oList);
+      // if created new product, set it on the order form
+      if (!productEditorForm.id && res && res.id) {
+        setForm(f => ({ ...f, product_id: res.id, unit_price: res.unit_price, supplier: res.supplier, product_name: res.name }));
+      }
     } catch (err) {
-      alert(err.message || err);
+      try { window._app_show_toast && window._app_show_toast(err.message || JSON.stringify(err) || err, 'danger'); } catch {}
+    } finally {
+      setProductEditorLoading(false);
     }
   }
 
@@ -1349,9 +1366,20 @@ function Orders({ locale }) {
           <div className="form-group">
             <label className="form-label">{t(locale,'form.product_name')}</label>
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
-              <select className="form-control" value={form.product_id} onChange={e=>{ const p=products.find(x=>x.id===e.target.value); setForm({...form,product_id:e.target.value,supplier:p?.supplier||"",unit_price:p?.unit_price||""}); }}>
+              <select className="form-control" value={form.product_id} onChange={e=>{
+                const val = e.target.value;
+                if (val === "__new") {
+                  setProductEditorForm({ name: "", sku: "", category: "", min_quantity: 5, unit_price: 0, supplier: "", location: "" });
+                  setProductEditorShow(true);
+                  setForm(f => ({ ...f, product_id: "" }));
+                  return;
+                }
+                const p = products.find(x => x.id === val);
+                setForm({ ...form, product_id: val, supplier: p?.supplier || "", unit_price: p?.unit_price || "" });
+              }}>
                 <option value="">{t(locale,'form.select_product')}</option>
                 {products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+              <option value="__new">{t(locale,'orders.add_new_product') || '＋ Add new product'}</option>
               </select>
               {form.product_id && <button className="btn btn-secondary btn-sm" onClick={openProductEditorForSelected} style={{whiteSpace:'nowrap'}}>{t(locale,'btn.edit_product') || 'Edit'}</button>}
               {form.product_id && <button className="btn btn-danger btn-sm" onClick={()=>{ setForm({...form,product_id:"",product_name:"",unit_price:"",quantity:"",supplier:"",expected_delivery:"",status:""}); }}>{t(locale,'btn.delete') || 'Delete'}</button>}
@@ -1381,7 +1409,7 @@ function Orders({ locale }) {
       )}
       {productEditorShow && (
         <Sidebar title={t(locale,'btn.edit_product') || 'Edit Product'} onClose={()=>setProductEditorShow(false)}
-          footer={<><button className="btn btn-secondary" onClick={()=>setProductEditorShow(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveProductEditor}>{t(locale,'btn.save')}</button></>}>
+          footer={<><button className="btn btn-secondary" onClick={()=>setProductEditorShow(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveProductEditor} disabled={productEditorLoading}>{productEditorLoading ? (t(locale,'btn.saving')||'Saving...') : (t(locale,'btn.save')||'Save')}</button></>}>
           <div className="form-grid">
             <div className="form-group"><label className="form-label">{t(locale,'form.product_name')}</label><input className="form-control" value={productEditorForm?.name||""} onChange={e=>setProductEditorForm({...productEditorForm,name:e.target.value})}/></div>
             <div className="form-group"><label className="form-label">{t(locale,'form.sku')}</label><input className="form-control" value={productEditorForm?.sku||""} onChange={e=>setProductEditorForm({...productEditorForm,sku:e.target.value})}/></div>

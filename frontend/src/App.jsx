@@ -1310,7 +1310,7 @@ function Orders({ locale }) {
         <div className="card-header"><span className="card-title">{t(locale,'orders.records_title')}</span></div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>{t(locale,'table.date')}</th><th>{t(locale,'table.product')}</th><th>{t(locale,'table.supplier')}</th><th>{t(locale,'table.qty')}</th><th>{t(locale,'table.total')}</th><th>{t(locale,'orders.expected_delivery')}</th><th>{t(locale,'orders.ordered_by')}</th><th>{t(locale,'table.status')}</th>{canManage&&<th>{t(locale,'orders.actions')}</th>}</tr></thead>
+            <thead><tr><th>{t(locale,'table.date')}</th><th>{t(locale,'table.product')}</th><th>{t(locale,'table.supplier')}</th><th>{t(locale,'table.qty')}</th><th>Per Unit Price</th><th>{t(locale,'table.total')}</th><th>{t(locale,'orders.expected_delivery')}</th><th>{t(locale,'orders.ordered_by')}</th><th>{t(locale,'table.status')}</th>{canManage&&<th>{t(locale,'orders.actions')}</th>}</tr></thead>
             <tbody>
               {orders.map(o=>(
                 <tr key={o.id}>
@@ -1318,6 +1318,7 @@ function Orders({ locale }) {
                   <td style={{fontWeight:500}}>{o.product?.name || o.product_name || (products.find(p=>p.id===o.product_id)?.name) || "—"}</td>
                   <td className="td-muted">{o.supplier}</td>
                   <td style={{textAlign:"center",color:"#3FB950",fontWeight:700}}>{o.quantity}</td>
+                  <td style={{color:"#C8860A",fontWeight:600}}>{fmt(o.unit_price)}</td>
                   <td style={{color:"#C8860A",fontWeight:600}}>{fmt(o.total)}</td>
                   <td className="td-muted" style={{fontSize:12}}>{o.expected_delivery ? new Date(o.expected_delivery).toLocaleDateString() : "—"}</td>
                   <td className="td-muted" style={{fontSize:12}}>{o.ordered_by_user?.name || o.ordered_by_name || o.ordered_by_id || "—"}</td>

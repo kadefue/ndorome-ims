@@ -1067,7 +1067,7 @@ function Inventory({ locale }) {
                   {canEdit && <td>
                     <div style={{display:"flex",gap:6}}>
                       <button className="btn btn-secondary btn-sm" onClick={()=>openEdit(p)}>{t(locale,'btn.edit')}</button>
-                      <button className="btn btn-danger btn-sm" onClick={()=>del(p.id)}>{t(locale,'btn.delete')}</button>
+                    
                     </div>
                   </td>}
                 </tr>

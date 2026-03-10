@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.auth import get_current_user, require_manager_above
 from app.crud.delivery import get_all_deliveries, get_delivery, create_delivery
+from app.crud.delivery import approve_delivery
 from app.schemas.delivery import DeliveryCreate, DeliveryResponse
 from app.models.user import User
 
@@ -41,5 +42,18 @@ def record_delivery(
 ):
     try:
         return create_delivery(db, delivery_in, received_by_id=current_user.id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+
+@router.put("/{delivery_id}/approve", response_model=DeliveryResponse, summary="Approve a delivery")
+def approve_existing_delivery(
+    delivery_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_manager_above),
+):
+    try:
+        return approve_delivery(db, delivery_id, approver_id=current_user.id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -42,6 +42,12 @@ def create_delivery(db: Session, delivery_in: DeliveryCreate, received_by_id: in
     if not product:
         raise ValueError("Product not found")
 
+    # If linked to an order, prevent creating a new delivery when an approved delivery already exists
+    if delivery_in.order_id:
+        existing = db.query(Delivery).filter(Delivery.order_id == delivery_in.order_id).first()
+        if existing and existing.status == "approved":
+            raise ValueError("A delivery for this order has already been approved")
+
     db_delivery = Delivery(
         order_id=delivery_in.order_id,
         product_id=delivery_in.product_id,
@@ -65,3 +71,24 @@ def create_delivery(db: Session, delivery_in: DeliveryCreate, received_by_id: in
     db.commit()
     db.refresh(db_delivery)
     return get_delivery(db, db_delivery.id)
+
+
+def approve_delivery(db: Session, delivery_id: int, approver_id: int) -> Delivery:
+    delivery = db.query(Delivery).filter(Delivery.id == delivery_id).first()
+    if not delivery:
+        raise ValueError("Delivery not found")
+    if delivery.status == "approved":
+        raise ValueError("Delivery already approved")
+
+    # Mark delivery approved
+    delivery.status = "approved"
+
+    # Ensure linked order is marked delivered
+    if delivery.order_id:
+        order = db.query(Order).filter(Order.id == delivery.order_id).first()
+        if order and order.status != "delivered":
+            order.status = "delivered"
+
+    db.commit()
+    db.refresh(delivery)
+    return get_delivery(db, delivery.id)

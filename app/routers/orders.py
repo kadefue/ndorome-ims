@@ -6,6 +6,8 @@ from typing import Optional
 from app.database import get_db
 from app.auth import get_current_user, require_manager_above
 from app.crud.order import get_all_orders, get_order, create_order, update_order
+from app.schemas.delivery import DeliveryCreate
+from app.crud.delivery import create_delivery
 from app.schemas.order import OrderCreate, OrderUpdate, OrderResponse
 from app.models.user import User
 
@@ -56,4 +58,28 @@ def update_existing_order(
         raise HTTPException(status_code=404, detail="Order not found")
     if order.status == "delivered" and order_in.status and order_in.status != "delivered":
         raise HTTPException(status_code=400, detail="Cannot change status of a delivered order")
-    return update_order(db, order, order_in)
+    updated = update_order(db, order, order_in)
+
+    # If order was marked delivered, ensure a delivery record exists (auto-create)
+    try:
+        incoming_status = order_in.model_dump().get("status") if order_in is not None else None
+    except Exception:
+        incoming_status = None
+
+    if (incoming_status == "delivered" or (updated and updated.status == "delivered")):
+        # create delivery if not exists
+        if not updated.delivery:
+            delivery_payload = DeliveryCreate(
+                order_id=updated.id,
+                product_id=updated.product_id,
+                quantity=updated.quantity,
+                supplier=updated.supplier,
+                notes="Auto-created from order marked delivered",
+            )
+            try:
+                create_delivery(db, delivery_payload, received_by_id=current_user.id)
+            except ValueError:
+                # ignore if creation blocked (e.g., already approved)
+                pass
+
+    return get_order(db, order_id)

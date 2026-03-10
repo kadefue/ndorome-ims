@@ -505,6 +505,7 @@ const TRANSLATIONS = {
     "orders.ordered_by": "Ordered By",
     "orders.actions": "Actions",
     "deliveries.records_title": "Delivery Records",
+    "deliveries.approve_as_is": "Approve as is",
     "deliveries.linked_order_label": "Linked Purchase Order",
     "form.select_order": "-- Select Order --",
     "deliveries.notes_placeholder": "e.g. All items in good condition",
@@ -701,6 +702,7 @@ const TRANSLATIONS = {
     "orders.ordered_by": "Imeagizwa Na",
     "orders.actions": "Vitendo",
     "deliveries.records_title": "Rekodi za Upokeaji",
+    "deliveries.approve_as_is": "Kubali kama ilivyo",
     "deliveries.linked_order_label": "Oda ya Ununuzi Iliyohusishwa",
     "form.select_order": "-- Chagua Oda --",
     "deliveries.notes_placeholder": "mf: Bidhaa zote ziko katika hali nzuri",
@@ -1389,7 +1391,15 @@ function Deliveries({ locale }) {
                       <td className="td-muted" style={{fontFamily:"monospace",fontSize:12}}>{d.order_id}</td>
                       <td className="td-muted" style={{fontSize:12}}>{d.received_by_user?.name || d.received_by_name || (users.find(u=>u.id===d.received_by_id)?.name) || "—"}</td>
                   <td className="td-muted" style={{fontSize:12,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.notes}</td>
-                  <td>{statusBadge(d.status)}</td>
+                    <td style={{display:'flex',gap:8,alignItems:'center'}}>
+                      {statusBadge(d.status)}
+                      {canManage && d.status !== 'approved' && (
+                        <button className="btn btn-primary btn-sm" onClick={async()=>{
+                          if (!confirm(t(locale,'deliveries.approve_as_is'))) return;
+                          try { await apiFetch(`/deliveries/${d.id}/approve`,{method:'PUT'}); load(); } catch(err) { alert(err.message); }
+                        }}>{t(locale,'deliveries.approve_as_is')}</button>
+                      )}
+                    </td>
                 </tr>
               ))}
               {deliveries.length===0 && <tr><td colSpan={8} style={{textAlign:"center",color:"#8B949E",padding:40}}>{t(locale,'deliveries.no_records')}</td></tr>}

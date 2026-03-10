@@ -148,7 +148,7 @@ const css = `
   }
   .topbar h2 {
     font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700;
-    color: #E6EDF3;
+    color: #f9fafa;
   }
   .topbar-actions { display: flex; align-items: center; gap: 12px; }
   .badge-pill {
@@ -383,6 +383,122 @@ const humanDate = (d) => {
   } catch (e) { return d; }
 };
 
+// ── Translations ───────────────────────────────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    "nav.dashboard": "Dashboard",
+    "nav.inventory": "Inventory",
+    "nav.sales": "Sales",
+    "nav.orders": "Orders",
+    "nav.deliveries": "Deliveries",
+    "nav.reports": "Reports",
+    "nav.users": "Users",
+    "page.dashboard": "Dashboard",
+    "page.inventory": "Inventory Management",
+    "page.sales": "Sales Management",
+    "page.orders": "Purchase Orders",
+    "page.deliveries": "Deliveries",
+    "page.reports": "Reports & Analytics",
+    "page.users": "User Management",
+    "btn.add_product": "＋ Add Product",
+    "btn.new_sale": "＋ New Sale",
+    "btn.new_order": "＋ New Order",
+    "btn.record_delivery": "＋ Record Delivery",
+    "btn.edit_product": "Edit Product",
+    "btn.add_user": "＋ Add User",
+    "sign_out": "Sign Out",
+    "theme.light": "☀️ Light",
+    "theme.dark": "🌙 Dark",
+    "dashboard.welcome": "Welcome back! Here's what's happening at the store.",
+    "stat.total_revenue": "Total Revenue",
+    "stat.total_sales": "Total Sales",
+    "stat.inventory_value": "Inventory Value",
+    "stat.low_stock_alerts": "Low Stock Alerts",
+    "stat.all_time_sales": "All-time sales",
+    "stat.transactions_recorded": "Transactions recorded",
+    "stat.inventory_products": "{count} product types",
+    "charts.monthly_revenue": "Monthly Revenue Trend",
+    "charts.stock_by_category": "Stock by Category",
+    "inventory.product_stock": "Product Stock",
+    "inventory.search_placeholder": "Search products…",
+    "inventory.table.product": "Product",
+    "inventory.table.sku": "SKU",
+    "inventory.table.category": "Category",
+    "inventory.table.qty": "Qty",
+    "inventory.table.unit_price": "Unit Price",
+    "inventory.table.supplier": "Supplier",
+    "inventory.table.location": "Location",
+    "inventory.table.status": "Status",
+    "inventory.table.actions": "Actions",
+    "inventory.status.low": "Low Stock",
+    "inventory.status.in_stock": "In Stock",
+    "btn.cancel": "Cancel",
+    "btn.save": "Save",
+    "sales.record_sale": "Record New Sale",
+    "sales.transaction_history": "Transaction History",
+    "orders.create_order": "Create Purchase Order",
+    "deliveries.record_incoming": "Record Incoming Delivery",
+    "deliveries.no_records": "No deliveries recorded yet",
+  },
+  sw: {
+    "nav.dashboard": "Dashibodi",
+    "nav.inventory": "Orodha ya Stoku",
+    "nav.sales": "Mauzo",
+    "nav.orders": "Oda za Ununuzi",
+    "nav.deliveries": "Upokeaji wa Bidhaa",
+    "nav.reports": "Ripoti",
+    "nav.users": "Watumiaji",
+    "page.dashboard": "Dashibodi",
+    "page.inventory": "Usimamizi wa Stoku",
+    "page.sales": "Usimamizi wa Mauzo",
+    "page.orders": "Oda za Ununuzi",
+    "page.deliveries": "Upokeaji wa Bidhaa",
+    "page.reports": "Ripoti na Uchambuzi",
+    "page.users": "Usimamizi wa Watumiaji",
+    "btn.add_product": "＋ Ongeza Bidhaa",
+    "btn.new_sale": "＋ Mauzo Mapya",
+    "btn.new_order": "＋ Oda Mpya",
+    "btn.record_delivery": "＋ Rekodi Upokeaji wa Bidhaa",
+    "btn.edit_product": "Hariri Bidhaa",
+    "btn.add_user": "＋ Ongeza Mtumiaji",
+    "sign_out": "Toka",
+    "theme.light": "☀️ Mwanga",
+    "theme.dark": "🌙 Giza",
+    "dashboard.welcome": "Karibu tena! Haya ni yanayotokea kwenye duka.",
+    "stat.total_revenue": "Jumla ya Mapato",
+    "stat.total_sales": "Jumla ya Mauzo",
+    "stat.inventory_value": "Thamani ya Stoku",
+    "stat.low_stock_alerts": "Onyo: Stoku Kidogo",
+    "stat.all_time_sales": "Mauzo yote",
+    "stat.transactions_recorded": "Miamala iliyorekodiwa",
+    "stat.inventory_products": "{count} aina za bidhaa",
+    "charts.monthly_revenue": "Mwelekeo wa Mapato ya Mwezi",
+    "charts.stock_by_category": "Hali ya Stoku kwa Aina",
+    "inventory.product_stock": "Stoku za Bidhaa",
+    "inventory.search_placeholder": "Tafuta bidhaa…",
+    "inventory.table.product": "Bidhaa",
+    "inventory.table.sku": "SKU",
+    "inventory.table.category": "Aina",
+    "inventory.table.qty": "Idadi",
+    "inventory.table.unit_price": "Bei kwa Kifungu",
+    "inventory.table.supplier": "Mzabuni",
+    "inventory.table.location": "Mahali",
+    "inventory.table.status": "Hali",
+    "inventory.table.actions": "Vitendo",
+    "inventory.status.low": "Tahadhari: Stoku Kidogo",
+    "inventory.status.in_stock": "Stoku Ipo",
+    "btn.cancel": "Ghairi",
+    "btn.save": "Hifadhi",
+    "sales.record_sale": "Rekodi Mauzo Mapya",
+    "sales.transaction_history": "Rekodi za Miamala",
+    "orders.create_order": "Tengeneza Oda za Ununuzi",
+    "deliveries.record_incoming": "Rekodi Upokeaji wa Mzigo Unaokuja",
+    "deliveries.no_records": "Hakuna Upokeaji wa Mzigo ulioandikwa bado",
+  }
+};
+
+const t = (locale, key) => (TRANSLATIONS[locale] && TRANSLATIONS[locale][key]) || TRANSLATIONS.en[key] || key;
+
 function statusBadge(s) {
   const map = {
     completed: "badge-success", received: "badge-success",
@@ -487,7 +603,7 @@ function LoginPage({ onLogin }) {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function Dashboard() {
+function Dashboard({ locale }) {
   const [stats, setStats] = useState(null);
   useEffect(() => { apiFetch("/dashboard/stats").then(setStats); }, []);
 
@@ -500,8 +616,8 @@ function Dashboard() {
     <div className="page">
       <div className="page-header">
         <div>
-          <div className="page-title">Dashboard</div>
-          <div className="page-subtitle">Welcome back! Here's what's happening at Supa Kariakoo Spare Parts Centre.</div>
+          <div className="page-title">{t(locale,'page.dashboard') || 'Dashboard'}</div>
+          <div className="page-subtitle">{t(locale,'dashboard.welcome')}</div>
         </div>
         <span className="badge-pill">📅 {new Date().toLocaleDateString("en-KE",{dateStyle:"long"})}</span>
       </div>
@@ -509,25 +625,25 @@ function Dashboard() {
       <div className="stats-grid">
         <div className="stat-card gold">
           <div className="stat-icon gold">💰</div>
-          <div className="stat-label">Total Revenue</div>
+          <div className="stat-label">{t(locale,'stat.total_revenue')}</div>
           <div className="stat-value">{fmt(stats.total_revenue)}</div>
-          <div className="stat-sub">All-time sales</div>
+          <div className="stat-sub">{t(locale,'stat.all_time_sales')}</div>
         </div>
         <div className="stat-card blue">
           <div className="stat-icon blue">🛒</div>
-          <div className="stat-label">Total Sales</div>
+          <div className="stat-label">{t(locale,'stat.total_sales')}</div>
           <div className="stat-value">{stats.total_sales}</div>
-          <div className="stat-sub">Transactions recorded</div>
+          <div className="stat-sub">{t(locale,'stat.transactions_recorded')}</div>
         </div>
         <div className="stat-card green">
           <div className="stat-icon green">📦</div>
-          <div className="stat-label">Inventory Value</div>
+          <div className="stat-label">{t(locale,'stat.inventory_value')}</div>
           <div className="stat-value">{fmt(stats.inventory_value)}</div>
-          <div className="stat-sub">{stats.total_products} product types</div>
+          <div className="stat-sub">{t(locale,'stat.inventory_products').replace('{count}', stats.total_products)}</div>
         </div>
         <div className="stat-card red">
           <div className="stat-icon red">⚠️</div>
-          <div className="stat-label">Low Stock Alerts</div>
+          <div className="stat-label">{t(locale,'stat.low_stock_alerts')}</div>
           <div className="stat-value">{stats.low_stock_count}</div>
           <div className="stat-sub">Items need reordering</div>
         </div>
@@ -536,7 +652,7 @@ function Dashboard() {
       <div className="charts-grid">
         <div className="card">
           <div className="card-header">
-            <span className="card-title">Monthly Revenue Trend</span>
+            <span className="card-title">{t(locale,'charts.monthly_revenue')}</span>
             <span className="badge-pill">2024</span>
           </div>
           <div className="card-body">
@@ -560,7 +676,7 @@ function Dashboard() {
 
         <div className="card">
           <div className="card-header">
-            <span className="card-title">Stock by Category</span>
+            <span className="card-title">{t(locale,'charts.stock_by_category')}</span>
           </div>
           <div className="card-body">
             <ResponsiveContainer width="100%" height={220}>
@@ -624,7 +740,7 @@ function Dashboard() {
 }
 
 // ── Inventory ─────────────────────────────────────────────────────────────────
-function Inventory() {
+function Inventory({ locale }) {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
@@ -671,24 +787,24 @@ function Inventory() {
     <div className="page">
       <div className="page-header">
         <div>
-          <div className="page-title">Inventory</div>
+          <div className="page-title">{t(locale,'page.inventory') || 'Inventory'}</div>
           <div className="page-subtitle">{products.length} products · {products.filter(p=>p.quantity<=p.min_quantity).length} low stock</div>
         </div>
-        {canEdit && <button className="btn btn-primary" onClick={openAdd}>＋ Add Product</button>}
+        {canEdit && <button className="btn btn-primary" onClick={openAdd}>{t(locale,'btn.add_product')}</button>}
       </div>
 
       <div className="card">
         <div className="card-header">
-          <span className="card-title">Product Stock</span>
+            <span className="card-title">{t(locale,'inventory.product_stock')}</span>
           <div className="search-wrap">
             <span className="search-icon">🔍</span>
-            <input className="form-control" style={{width:220}} placeholder="Search products…" value={search} onChange={e=>setSearch(e.target.value)}/>
+            <input className="form-control" style={{width:220}} placeholder={t(locale,'inventory.search_placeholder')} value={search} onChange={e=>setSearch(e.target.value)}/>
           </div>
         </div>
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>Product</th><th>SKU</th><th>Category</th><th>Qty</th><th>Unit Price</th><th>Supplier</th><th>Location</th><th>Status</th>{canEdit&&<th>Actions</th>}</tr>
+              <tr><th>{t(locale,'inventory.table.product')}</th><th>{t(locale,'inventory.table.sku')}</th><th>{t(locale,'inventory.table.category')}</th><th>{t(locale,'inventory.table.qty')}</th><th>{t(locale,'inventory.table.unit_price')}</th><th>{t(locale,'inventory.table.supplier')}</th><th>{t(locale,'inventory.table.location')}</th><th>{t(locale,'inventory.table.status')}</th>{canEdit&&<th>{t(locale,'inventory.table.actions')}</th>}</tr>
             </thead>
             <tbody>
               {filtered.map(p => (
@@ -700,7 +816,7 @@ function Inventory() {
                   <td style={{color:"#C8860A",fontWeight:600}}>{fmt(p.unit_price)}</td>
                   <td className="td-muted">{p.supplier}</td>
                   <td className="td-muted">{p.location}</td>
-                  <td>{p.quantity<=p.min_quantity ? <span className="badge badge-danger">Low Stock</span> : <span className="badge badge-success">In Stock</span>}</td>
+                  <td>{p.quantity<=p.min_quantity ? <span className="badge badge-danger">{t(locale,'inventory.status.low')}</span> : <span className="badge badge-success">{t(locale,'inventory.status.in_stock')}</span>}</td>
                   {canEdit && <td>
                     <div style={{display:"flex",gap:6}}>
                       <button className="btn btn-secondary btn-sm" onClick={()=>openEdit(p)}>Edit</button>
@@ -715,8 +831,8 @@ function Inventory() {
       </div>
 
       {showSidebar && (
-        <Sidebar title={editing?"Edit Product":"Add Product"} onClose={()=>setShowSidebar(false)}
-          footer={<><button className="btn btn-secondary" onClick={()=>setShowSidebar(false)}>Cancel</button><button className="btn btn-primary" onClick={save}>Save</button></>}>
+        <Sidebar title={editing? (t(locale,'btn.edit_product') || "Edit Product") : t(locale,'btn.add_product')} onClose={()=>setShowSidebar(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowSidebar(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={save}>{t(locale,'btn.save')}</button></>}>
           <div className="form-grid">
             {/* Product Name (select + other) */}
             <div className="form-group">
@@ -777,7 +893,7 @@ function Inventory() {
 }
 
 // ── Sales ─────────────────────────────────────────────────────────────────────
-function Sales() {
+function Sales({ locale }) {
   const { user } = useAuth();
   const [sales, setSales] = useState([]);
   const [products, setProducts] = useState([]);
@@ -822,10 +938,10 @@ function Sales() {
     <div className="page">
       <div className="page-header">
         <div>
-          <div className="page-title">Sales</div>
+          <div className="page-title">{t(locale,'page.sales') || 'Sales'}</div>
           <div className="page-subtitle">{sales.length} transactions · {fmt(totalRevenue)} total revenue</div>
         </div>
-        <button className="btn btn-primary" onClick={()=>setShowModal(true)}>＋ New Sale</button>
+        <button className="btn btn-primary" onClick={()=>setShowModal(true)}>{t(locale,'btn.new_sale')}</button>
       </div>
 
       <div className="stats-grid" style={{gridTemplateColumns:"repeat(3,1fr)",marginBottom:20}}>
@@ -835,8 +951,8 @@ function Sales() {
       </div>
 
       <div className="card">
-        <div className="card-header">
-          <span className="card-title">Transaction History</span>
+          <div className="card-header">
+            <span className="card-title">{t(locale,'sales.transaction_history')}</span>
           <div className="search-wrap">
             <span className="search-icon">🔍</span>
             <input className="form-control" style={{width:220}} placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
@@ -909,7 +1025,7 @@ function Sales() {
 }
 
 // ── Orders ────────────────────────────────────────────────────────────────────
-function Orders() {
+function Orders({ locale }) {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
@@ -939,7 +1055,7 @@ function Orders() {
           <div className="page-title">Purchase Orders</div>
           <div className="page-subtitle">{orders.length} orders · {orders.filter(o=>o.status==="pending").length} pending</div>
         </div>
-        {canManage && <button className="btn btn-primary" onClick={()=>setShowModal(true)}>＋ New Order</button>}
+        {canManage && <button className="btn btn-primary" onClick={()=>setShowModal(true)}>{t(locale,'btn.new_order') || '＋ New Order'}</button>}
       </div>
 
       <div className="card">
@@ -995,7 +1111,7 @@ function Orders() {
 }
 
 // ── Deliveries ────────────────────────────────────────────────────────────────
-function Deliveries() {
+function Deliveries({ locale }) {
   const { user } = useAuth();
   const [deliveries, setDeliveries] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -1024,7 +1140,7 @@ function Deliveries() {
           <div className="page-title">Deliveries</div>
           <div className="page-subtitle">{deliveries.length} deliveries recorded · {pendingOrders.length} orders in transit</div>
         </div>
-        {canManage && <button className="btn btn-primary" onClick={()=>setShowModal(true)}>＋ Record Delivery</button>}
+        {canManage && <button className="btn btn-primary" onClick={()=>setShowModal(true)}>{t(locale,'btn.record_delivery') || '＋ Record Delivery'}</button>}
       </div>
 
       <div className="card">
@@ -1077,7 +1193,7 @@ function Deliveries() {
 }
 
 // ── Reports ───────────────────────────────────────────────────────────────────
-function Reports() {
+function Reports({ locale }) {
   const [stats, setStats] = useState(null);
   const [sales, setSales] = useState([]);
   useEffect(()=>{ Promise.all([apiFetch("/dashboard/stats"),apiFetch("/sales")]).then(([s,sl])=>{setStats(s);setSales(sl);}); },[]);
@@ -1153,7 +1269,7 @@ function Reports() {
 }
 
 // ── Users Management ──────────────────────────────────────────────────────────
-function Users() {
+function Users({ locale }) {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -1220,18 +1336,18 @@ function Users() {
 
 // ── App Shell ─────────────────────────────────────────────────────────────────
 const NAV = [
-  { id:"dashboard", label:"Dashboard", icon:"📊" },
-  { id:"inventory", label:"Inventory", icon:"📦" },
-  { id:"sales",     label:"Sales",     icon:"🛒" },
-  { id:"orders",    label:"Orders",    icon:"📋" },
-  { id:"deliveries",label:"Deliveries",icon:"🚚" },
-  { id:"reports",   label:"Reports",   icon:"📈" },
-  { id:"users",     label:"Users",     icon:"👥", roles:["owner","manager"] },
+  { id:"dashboard", labelKey:"nav.dashboard", icon:"📊" },
+  { id:"inventory", labelKey:"nav.inventory", icon:"📦" },
+  { id:"sales",     labelKey:"nav.sales",     icon:"🛒" },
+  { id:"orders",    labelKey:"nav.orders",    icon:"📋" },
+  { id:"deliveries",labelKey:"nav.deliveries",icon:"🚚" },
+  { id:"reports",   labelKey:"nav.reports",   icon:"📈" },
+  { id:"users",     labelKey:"nav.users",     icon:"👥", roles:["owner","manager"] },
 ];
 
-const PAGE_TITLES = {dashboard:"Dashboard",inventory:"Inventory Management",sales:"Sales Management",orders:"Purchase Orders",deliveries:"Deliveries",reports:"Reports & Analytics",users:"User Management"};
+const PAGE_TITLES = {dashboard:"page.dashboard",inventory:"page.inventory",sales:"page.sales",orders:"page.orders",deliveries:"page.deliveries",reports:"page.reports",users:"page.users"};
 
-function AppShell({ user, onLogout }) {
+function AppShell({ user, onLogout, locale, setLocale }) {
   const [page, setPage] = useState("dashboard");
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
 
@@ -1239,13 +1355,13 @@ function AppShell({ user, onLogout }) {
 
   const renderPage = () => {
     switch(page) {
-      case "dashboard": return <Dashboard/>;
-      case "inventory": return <Inventory/>;
-      case "sales":     return <Sales/>;
-      case "orders":    return <Orders/>;
-      case "deliveries":return <Deliveries/>;
-      case "reports":   return <Reports/>;
-      case "users":     return <Users/>;
+      case "dashboard": return <Dashboard locale={locale}/>;
+      case "inventory": return <Inventory locale={locale}/>;
+      case "sales":     return <Sales locale={locale}/>;
+      case "orders":    return <Orders locale={locale}/>;
+      case "deliveries":return <Deliveries locale={locale}/>;
+      case "reports":   return <Reports locale={locale}/>;
+      case "users":     return <Users locale={locale}/>;
       default:          return <Dashboard/>;
     }
   };
@@ -1269,27 +1385,31 @@ function AppShell({ user, onLogout }) {
           {navItems.map(n => (
             <div key={n.id} className={`nav-item ${page===n.id?"active":""}`} onClick={()=>setPage(n.id)}>
               <span className="icon">{n.icon}</span>
-              {n.label}
+              {t(locale, n.labelKey)}
             </div>
           ))}
         </div>
         <div className="sidebar-footer">
           <button className="logout-btn" onClick={onLogout}>
-            <span>🚪</span> Sign Out
+            <span>🚪</span> {t(locale,'sign_out')}
           </button>
         </div>
       </aside>
 
       <main className="main">
         <div className="topbar">
-          <h2>{PAGE_TITLES[page]}</h2>
+          <h2>{t(locale, `page.${page}`)}</h2>
           <div className="topbar-actions">
             <button className="btn btn-secondary btn-sm" onClick={() => {
               const next = theme === "dark" ? "light" : "dark";
               setTheme(next);
               try { localStorage.setItem("theme", next); } catch {};
               if (next === "light") document.documentElement.classList.add("theme-light"); else document.documentElement.classList.remove("theme-light");
-            }}>{theme === "dark" ? "☀️ Light" : "🌙 Dark"}</button>
+            }}>{theme === "dark" ? t(locale,'theme.light') : t(locale,'theme.dark')}</button>
+            <select value={locale} onChange={e=>{ setLocale(e.target.value); try{ localStorage.setItem('locale', e.target.value);}catch{} }} style={{marginLeft:8}}>
+              <option value="en">EN</option>
+              <option value="sw">SW</option>
+            </select>
             <span className={`badge role-${user.role}`} style={{padding:"4px 12px",fontSize:12}}>{user.role}</span>
             <div className="user-avatar" style={{width:32,height:32,fontSize:12}}>{initials(user.name)}</div>
           </div>
@@ -1308,6 +1428,8 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("user")); } catch { return null; }
   });
 
+  const [locale, setLocale] = useState(() => { try { return localStorage.getItem('locale') || 'en'; } catch { return 'en'; } });
+
   // Theme state persisted across sessions
   useEffect(() => {
     const t = localStorage.getItem("theme") || "dark";
@@ -1321,7 +1443,7 @@ export default function App() {
   return (
     <>
       <style>{css + themeCss}</style>
-      {user ? <AppShell user={user} onLogout={handleLogout}/> : <LoginPage onLogin={handleLogin}/>} 
+      {user ? <AppShell user={user} onLogout={handleLogout} locale={locale} setLocale={setLocale}/> : <LoginPage onLogin={handleLogin}/>} 
     </>
   );
 }

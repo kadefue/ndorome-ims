@@ -1404,7 +1404,13 @@ function Orders({ locale }) {
                       value={o.status} onChange={e=>updateStatus(o.id,e.target.value)}>
                       {["pending","in_transit","delivered","cancelled"].map(s=><option key={s} value={s}>{s.replace("_"," ")}</option>)}
                     </select>
-                    <button className="btn btn-secondary btn-sm" onClick={()=>openEditOrder(o)} disabled={o.delivery_status==='approved'} title={o.delivery_status==='approved'? 'Order has approved delivery and cannot be edited':''}>{t(locale,'btn.edit_order')||'Edit'}</button>
+                    <button className="btn btn-secondary btn-sm" onClick={()=>{
+                      if (o.delivery_status === 'approved') {
+                        try { window._app_show_toast && window._app_show_toast('Cannot edit order: delivery already approved', 'warning'); } catch {}
+                        return;
+                      }
+                      openEditOrder(o);
+                    }} title={o.delivery_status==='approved'? 'Order has approved delivery and cannot be edited':''}>{t(locale,'btn.edit_order')||'Edit'}</button>
                    
                   </td>}
                 </tr>

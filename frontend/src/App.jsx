@@ -23,7 +23,9 @@ async function apiFetch(path, options = {}) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || "Request failed");
+    const msg = err.detail || err.message || `Request failed (${res.status})`;
+    try { window._app_show_toast && window._app_show_toast(msg, 'danger'); } catch {}
+    throw new Error(msg);
   }
   return res.json();
 }
@@ -348,6 +350,20 @@ const css = `
   .role-owner { background: rgba(200,134,10,0.15); color: #C8860A; }
   .role-manager { background: rgba(88,166,255,0.15); color: #58A6FF; }
   .role-employee { background: rgba(63,185,80,0.15); color: #3FB950; }
+
+  /* ── Toasts ── */
+  .toasts-container { position: fixed; top: 16px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+  .toast {
+    background: #0F1720; border: 1px solid #21262D; color: #E6EDF3;
+    padding: 10px 14px; border-radius: 10px; min-width: 260px; box-shadow: 0 6px 20px rgba(2,6,23,0.6);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .toast .msg { flex: 1; font-size: 13px; color: #E6EDF3; }
+  .toast .close { background: transparent; border: none; color: #8B949E; cursor: pointer; padding: 6px; border-radius: 6px; }
+  .toast.success { border-left: 4px solid #3FB950; }
+  .toast.danger  { border-left: 4px solid #F85149; }
+  .toast.info    { border-left: 4px solid #58A6FF; }
+  .toast.warning { border-left: 4px solid #D29922; }
 `;
 
 const themeCss = `
@@ -798,7 +814,9 @@ function LoginPage({ onLogin, locale }) {
       localStorage.setItem("user", JSON.stringify(data.user));
       onLogin(data.user);
     } catch (err) {
-      setError(err.message || "Login failed");
+      const msg = err.message || "Login failed";
+      setError(msg);
+      try { window._app_show_toast && window._app_show_toast(msg, 'danger'); } catch {}
     } finally {
       setLoading(false);
     }
@@ -1240,8 +1258,14 @@ function Orders({ locale }) {
 
   async function saveOrder() {
     const selProd = products.find(p=>p.id===form.product_id);
-    const body = {...form, product_name:selProd?.name||form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, total:+form.quantity * +form.unit_price};
-    await apiFetch("/orders",{method:"POST",body:JSON.stringify(body)});
+    const body = { product_id: +form.product_id, product_name: selProd?.name||form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, total:+form.quantity * +form.unit_price, supplier: form.supplier, expected_delivery: form.expected_delivery, notes: form.notes };
+    const created = await apiFetch("/orders",{method:"POST",body:JSON.stringify(body)});
+    // If user selected a status during creation, update it immediately (server requires OrderUpdate for status)
+    if (form.status) {
+      try {
+        await apiFetch(`/orders/${created.id}`, { method: 'PUT', body: JSON.stringify({ status: form.status }) });
+      } catch (err) { /* toast already shown in apiFetch */ }
+    }
     setShowModal(false); load();
   }
 
@@ -1330,14 +1354,28 @@ function Orders({ locale }) {
                 {products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
               {form.product_id && <button className="btn btn-secondary btn-sm" onClick={openProductEditorForSelected} style={{whiteSpace:'nowrap'}}>{t(locale,'btn.edit_product') || 'Edit'}</button>}
+              {form.product_id && <button className="btn btn-danger btn-sm" onClick={()=>{ setForm({...form,product_id:"",product_name:"",unit_price:"",quantity:"",supplier:"",expected_delivery:"",status:""}); }}>{t(locale,'btn.delete') || 'Delete'}</button>}
             </div>
           </div>
+          {/* Show SKU / Category / Location from selected product (read-only) */}
+          {form.product_id && (()=>{ const p = products.find(x=>x.id===form.product_id); return (
+            <div className="form-grid">
+              <div className="form-group"><label className="form-label">{t(locale,'form.sku')}</label><input className="form-control" value={p?.sku||""} readOnly/></div>
+              <div className="form-group"><label className="form-label">{t(locale,'form.category')}</label><input className="form-control" value={p?.category||""} readOnly/></div>
+              <div className="form-group"><label className="form-label">{t(locale,'form.location')}</label><input className="form-control" value={p?.location||""} readOnly/></div>
+            </div>
+          ); })()}
           <div className="form-grid">
             <div className="form-group"><label className="form-label">{t(locale,'form.quantity')}</label><input className="form-control" type="number" value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/></div>
             <div className="form-group"><label className="form-label">{t(locale,'form.unit_price_tzs')}</label><input className="form-control" type="number" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})}/></div>
           </div>
           <div className="form-group"><label className="form-label">{t(locale,'form.supplier')}</label><input className="form-control" value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})}/></div>
           <div className="form-group"><label className="form-label">{t(locale,'orders.expected_delivery')}</label><input className="form-control" type="date" value={form.expected_delivery} onChange={e=>setForm({...form,expected_delivery:e.target.value})}/></div>
+          <div className="form-group"><label className="form-label">{t(locale,'table.status')}</label>
+            <select className="form-control" value={form.status||'pending'} onChange={e=>setForm({...form,status:e.target.value})}>
+              {['pending','in_transit','delivered','cancelled'].map(s=> <option key={s} value={s}>{s.replace('_',' ')}</option>)}
+            </select>
+          </div>
           {form.quantity&&form.unit_price&&<div style={{padding:"12px 16px",background:"rgba(200,134,10,0.1)",borderRadius:8,fontSize:14}}>Order Total: <strong style={{color:"#C8860A"}}>{fmt(+form.quantity * +form.unit_price)}</strong></div>}
         </Modal>
       )}
@@ -1687,6 +1725,23 @@ export default function App() {
 
   const [locale, setLocale] = useState(() => { try { return localStorage.getItem('locale') || 'en'; } catch { return 'en'; } });
 
+  // Toasts for error/notification surfacing
+  const [toasts, setToasts] = useState([]);
+  const addToast = (message, type = 'info', ttl = 5000) => {
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    const t = { id, message, type };
+    setToasts(s => [t, ...s]);
+    if (ttl > 0) setTimeout(() => setToasts(s => s.filter(x => x.id !== id)), ttl);
+    return id;
+  };
+  const removeToast = (id) => setToasts(s => s.filter(x => x.id !== id));
+
+  useEffect(() => {
+    // expose a global helper so top-level helpers can show toasts
+    window._app_show_toast = (msg, type = 'info') => { try { addToast(msg, type); } catch {} };
+    return () => { try { delete window._app_show_toast; } catch {} };
+  }, []);
+
   // Theme state persisted across sessions
   useEffect(() => {
     const t = localStorage.getItem("theme") || "dark";
@@ -1700,6 +1755,14 @@ export default function App() {
   return (
     <>
       <style>{css + themeCss}</style>
+      <div className="toasts-container" aria-live="polite">
+        {toasts.map(t => (
+          <div key={t.id} className={`toast ${t.type}`}>
+            <div className="msg">{t.message}</div>
+            <button className="close" onClick={() => removeToast(t.id)}>✕</button>
+          </div>
+        ))}
+      </div>
       {user ? <AppShell user={user} onLogout={handleLogout} locale={locale} setLocale={setLocale}/> : <LoginPage onLogin={handleLogin} locale={locale}/>} 
     </>
   );

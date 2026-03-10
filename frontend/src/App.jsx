@@ -1022,7 +1022,7 @@ function Inventory({ locale }) {
     if (!editing) return;
     const body = {
       unit_price: +form.unit_price,
-      quantity: +form.quantity,
+      // Do not allow direct quantity updates from Inventory UI; stock updates only via delivery approval
     };
     try {
       await apiFetch(`/products/${editing.id}`, { method: "PUT", body: JSON.stringify(body) });
@@ -1086,24 +1086,24 @@ function Inventory({ locale }) {
       {showSidebar && (
         <Sidebar title={editing? (t(locale,'btn.edit_product') || "Edit Product") : t(locale,'btn.add_product')} onClose={()=>setShowSidebar(false)}
           footer={<><button className="btn btn-secondary" onClick={()=>setShowSidebar(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={save}>{t(locale,'btn.save')}</button></>}>
-          <div className="form-grid">
-            <div style={{gridColumn: '1 / -1'}}>
-              <div style={{fontWeight:700,fontSize:14,marginBottom:8}}>{form.name || editing?.name}</div>
-              <div style={{fontSize:12,color:'#8B949E',marginBottom:12}}>SKU: {form.sku || editing?.sku}</div>
+            <div className="form-grid">
+              <div style={{gridColumn: '1 / -1'}}>
+                <div style={{fontWeight:700,fontSize:14,marginBottom:8}}>{form.name || editing?.name}</div>
+                <div style={{fontSize:12,color:'#8B949E',marginBottom:12}}>SKU: {form.sku || editing?.sku}</div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">{t(locale,'form.quantity')}</label>
+                <input className="form-control" type="number" value={editing?.quantity ?? 0} readOnly style={{background:'#0D1117',color:'#8B949E'}}/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">{t(locale,'form.unit_price_tzs')}</label>
+                {user.role === "manager" || user.role === "owner" ? (
+                  <input className="form-control" type="number" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})}/>
+                ) : (
+                  <input className="form-control" type="number" value={form.unit_price} readOnly style={{background:'#222',color:'#aaa'}}/>
+                )}
+              </div>
             </div>
-            <div className="form-group">
-              <label className="form-label">{t(locale,'form.quantity')}</label>
-              <input className="form-control" type="number" value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/>
-            </div>
-            <div className="form-group">
-              <label className="form-label">{t(locale,'form.unit_price_tzs')}</label>
-              {user.role === "manager" || user.role === "owner" ? (
-                <input className="form-control" type="number" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})}/>
-              ) : (
-                <input className="form-control" type="number" value={form.unit_price} readOnly style={{background:'#222',color:'#aaa'}}/>
-              )}
-            </div>
-          </div>
         </Sidebar>
       )}
     </div>

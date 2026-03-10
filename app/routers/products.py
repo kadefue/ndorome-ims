@@ -73,8 +73,8 @@ def edit_product(
     # Only manager/owner can update price or quantity
     if product_in.unit_price is not None and current_user.role not in ("manager", "owner"):
         raise HTTPException(status_code=403, detail="Only manager or owner can update price.")
-    if product_in.quantity is not None and current_user.role not in ("manager", "owner"):
-        raise HTTPException(status_code=403, detail="Only manager or owner can update stock quantity.")
+    if product_in.quantity is not None:
+        raise HTTPException(status_code=403, detail="Stock quantity cannot be modified directly. Stock is updated only when a delivery is approved.")
 
     # Enforce price rules: cannot decrease and must be at least 25% above latest order price
     if product_in.unit_price is not None:

@@ -40,5 +40,8 @@ class OrderResponse(BaseModel):
 
     product: Optional[ProductResponse] = None
     ordered_by_user: Optional[UserListResponse] = None
+    # Delivery info (not a full nested delivery to avoid circular refs)
+    delivery_id: Optional[int] = None
+    delivery_status: Optional[str] = None
 
     model_config = {"from_attributes": True}

@@ -56,6 +56,11 @@ def update_existing_order(
     order = get_order(db, order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    # Prevent edits if this order already has an approved delivery
+    from app.models.delivery import Delivery
+    approved = db.query(Delivery).filter(Delivery.order_id == order.id, Delivery.status == 'approved').first()
+    if approved:
+        raise HTTPException(status_code=400, detail="Cannot modify order with an approved delivery")
     if order.status == "delivered" and order_in.status and order_in.status != "delivered":
         raise HTTPException(status_code=400, detail="Cannot change status of a delivered order")
     updated = update_order(db, order, order_in)

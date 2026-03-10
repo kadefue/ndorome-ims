@@ -7,12 +7,21 @@ from app.schemas.order import OrderCreate, OrderUpdate
 
 
 def get_order(db: Session, order_id: int) -> Optional[Order]:
-    return (
+    o = (
         db.query(Order)
-        .options(joinedload(Order.product), joinedload(Order.ordered_by_user))
+        .options(joinedload(Order.product), joinedload(Order.ordered_by_user), joinedload(Order.delivery))
         .filter(Order.id == order_id)
         .first()
     )
+    if o and getattr(o, 'delivery', None):
+        # attach minimal delivery info for response schema
+        try:
+            o.delivery_id = o.delivery.id
+            o.delivery_status = o.delivery.status
+        except Exception:
+            o.delivery_id = None
+            o.delivery_status = None
+    return o
 
 
 def get_all_orders(
@@ -23,12 +32,21 @@ def get_all_orders(
 ) -> list[Order]:
     query = (
         db.query(Order)
-        .options(joinedload(Order.product), joinedload(Order.ordered_by_user))
+        .options(joinedload(Order.product), joinedload(Order.ordered_by_user), joinedload(Order.delivery))
         .order_by(Order.date.desc())
     )
     if status:
         query = query.filter(Order.status == status)
-    return query.offset(skip).limit(limit).all()
+    rows = query.offset(skip).limit(limit).all()
+    for o in rows:
+        if getattr(o, 'delivery', None):
+            try:
+                o.delivery_id = o.delivery.id
+                o.delivery_status = o.delivery.status
+            except Exception:
+                o.delivery_id = None
+                o.delivery_status = None
+    return rows
 
 
 def get_pending_orders(db: Session) -> list[Order]:

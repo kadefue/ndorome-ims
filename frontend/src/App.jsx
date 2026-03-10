@@ -1000,31 +1000,19 @@ function Inventory({ locale }) {
   function openEdit(p) { setEditing(p); setForm({...p, name_select:p.name, sku_select:p.sku, category_select:p.category}); setShowSidebar(true); }
 
   async function save() {
-    // Resolve selected vs custom fields
-    const finalName = form.name_select === "__other" ? form.name.trim() : (form.name_select || form.name).trim();
-    const finalSku = form.sku_select === "__other" ? form.sku.trim() : (form.sku_select || form.sku).trim();
-    const finalCategory = form.category_select === "__other" ? form.category.trim() : (form.category_select || form.category).trim();
-
-    if (!finalName || !finalSku) return alert(t(locale,'alert.product_required'));
-
-    // Check if product exists (prevent duplicates on create)
-    const exists = products.find(p => p.sku === finalSku || (p.name && p.name.toLowerCase() === finalName.toLowerCase()));
-    if (!editing && exists) return alert(t(locale,'alert.product_exists'));
-
-    // Find latest order price for this product
-    const order = orders && orders.find(o => o.product_id === (editing ? editing.id : null) || o.product_id === exists?.id);
-    const orderPrice = order ? order.unit_price : null;
-    let unitPrice = +form.unit_price;
-    if (orderPrice !== null) {
-      const minPrice = orderPrice * 1.25;
-      if (unitPrice < minPrice) unitPrice = minPrice;
-      if (editing && editing.unit_price && unitPrice < editing.unit_price) unitPrice = editing.unit_price;
+    // Inventory page only allows updating unit_price and quantity
+    if (!editing) return;
+    const body = {
+      unit_price: +form.unit_price,
+      quantity: +form.quantity,
+    };
+    try {
+      await apiFetch(`/products/${editing.id}`, { method: "PUT", body: JSON.stringify(body) });
+      setShowSidebar(false);
+      load();
+    } catch (err) {
+      alert(err.message || err);
     }
-
-    const body = { ...form, name: finalName, sku: finalSku, category: finalCategory, min_quantity:+form.min_quantity, unit_price: unitPrice };
-    if (editing) await apiFetch(`/products/${editing.id}`,{method:"PUT",body:JSON.stringify(body)});
-    else await apiFetch("/products",{method:"POST",body:JSON.stringify(body)});
-    setShowSidebar(false); load();
   }
   async function del(id) {
     if (!confirm(t(locale,'confirm.delete_product'))) return;
@@ -1081,52 +1069,14 @@ function Inventory({ locale }) {
         <Sidebar title={editing? (t(locale,'btn.edit_product') || "Edit Product") : t(locale,'btn.add_product')} onClose={()=>setShowSidebar(false)}
           footer={<><button className="btn btn-secondary" onClick={()=>setShowSidebar(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={save}>{t(locale,'btn.save')}</button></>}>
           <div className="form-grid">
-            {/* Product Name (select + other) */}
-            <div className="form-group">
-                <label className="form-label">{t(locale,'form.product_name')}</label>
-              <select className="form-control" value={form.name_select || form.name} onChange={e=>{
-                const v = e.target.value; setForm({...form, name_select:v, name: v === "__other" ? "" : v});
-              }}>
-                <option value="">{t(locale,'form.select_existing')}</option>
-                {[...new Set(products.map(p=>p.name))].map(n=>n && <option key={n} value={n}>{n}</option>)}
-                <option value="__other">{t(locale,'form.other')}</option>
-              </select>
-              {form.name_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder={t(locale,'form.enter_product_name')} value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>} 
+            <div style={{gridColumn: '1 / -1'}}>
+              <div style={{fontWeight:700,fontSize:14,marginBottom:8}}>{form.name || editing?.name}</div>
+              <div style={{fontSize:12,color:'#8B949E',marginBottom:12}}>SKU: {form.sku || editing?.sku}</div>
             </div>
-
-            {/* SKU (select + other) */}
             <div className="form-group">
-              <label className="form-label">{t(locale,'form.sku')}</label>
-              <select className="form-control" value={form.sku_select || form.sku} onChange={e=>{
-                const v = e.target.value; setForm({...form, sku_select:v, sku: v === "__other" ? "" : v});
-              }}>
-                <option value="">{t(locale,'form.select_existing')}</option>
-                {[...new Set(products.map(p=>p.sku))].map(s=>s && <option key={s} value={s}>{s}</option>)}
-                <option value="__other">{t(locale,'form.other')}</option>
-              </select>
-              {form.sku_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder={t(locale,'form.enter_sku')} value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})}/>} 
+              <label className="form-label">{t(locale,'form.quantity')}</label>
+              <input className="form-control" type="number" value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/>
             </div>
-
-            {/* Category (select + other) */}
-            <div className="form-group">
-              <label className="form-label">{t(locale,'form.category')}</label>
-              <select className="form-control" value={form.category_select || form.category} onChange={e=>{
-                const v = e.target.value; setForm({...form, category_select:v, category: v === "__other" ? "" : v});
-              }}>
-                <option value="">{t(locale,'form.select_existing')}</option>
-                {[...new Set(products.map(p=>p.category))].map(c=>c && <option key={c} value={c}>{c}</option>)}
-                <option value="__other">{t(locale,'form.other')}</option>
-              </select>
-              {form.category_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder={t(locale,'form.enter_category')} value={form.category} onChange={e=>setForm({...form,category:e.target.value})}/>} 
-            </div>
-
-            {[["supplier","form.supplier"],["location","form.location"]].map(([k,l])=>(
-              <div key={k} className="form-group">
-                <label className="form-label">{t(locale,l)}</label>
-                <input className="form-control" value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/>
-              </div>
-            ))}
-            {/* Only allow manager/owner to edit price. Employees see price as read-only. */}
             <div className="form-group">
               <label className="form-label">{t(locale,'form.unit_price_tzs')}</label>
               {user.role === "manager" || user.role === "owner" ? (
@@ -1134,13 +1084,6 @@ function Inventory({ locale }) {
               ) : (
                 <input className="form-control" type="number" value={form.unit_price} readOnly style={{background:'#222',color:'#aaa'}}/>
               )}
-            </div>
-            <div className="form-group">
-              <label className="form-label">{t(locale,'form.min_qty')}</label>
-              <input className="form-control" type="number" value={form.min_quantity} onChange={e=>setForm({...form,min_quantity:e.target.value})}/>
-            </div>
-            <div style={{fontSize:12,color:'#D29922',marginTop:8}}>
-              <b>Note:</b> Stock can only be increased by approving a delivery, not by editing here.
             </div>
           </div>
         </Sidebar>
@@ -1287,6 +1230,8 @@ function Orders({ locale }) {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [productEditorShow, setProductEditorShow] = useState(false);
+  const [productEditorForm, setProductEditorForm] = useState(null);
   const [form, setForm] = useState({product_id:"",product_name:"",quantity:"",unit_price:"",supplier:"",expected_delivery:""});
   const canManage = user.role !== "employee";
 
@@ -1298,6 +1243,34 @@ function Orders({ locale }) {
     const body = {...form, product_name:selProd?.name||form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, total:+form.quantity * +form.unit_price};
     await apiFetch("/orders",{method:"POST",body:JSON.stringify(body)});
     setShowModal(false); load();
+  }
+
+  function openProductEditorForSelected() {
+    const sel = products.find(p => p.id === form.product_id);
+    if (!sel) return alert('Select a product first');
+    setProductEditorForm({...sel});
+    setProductEditorShow(true);
+  }
+
+  async function saveProductEditor() {
+    if (!productEditorForm || !productEditorForm.id) return;
+    const body = {
+      name: productEditorForm.name,
+      sku: productEditorForm.sku,
+      category: productEditorForm.category,
+      min_quantity: +productEditorForm.min_quantity,
+      unit_price: +productEditorForm.unit_price,
+      supplier: productEditorForm.supplier,
+      location: productEditorForm.location,
+    };
+    try {
+      await apiFetch(`/products/${productEditorForm.id}`, { method: 'PUT', body: JSON.stringify(body) });
+      setProductEditorShow(false);
+      // reload products and orders to reflect changes
+      await Promise.all([apiFetch('/products').then(setProducts), apiFetch('/orders').then(setOrders)]);
+    } catch (err) {
+      alert(err.message || err);
+    }
   }
 
   async function updateStatus(id, status) {
@@ -1351,10 +1324,13 @@ function Orders({ locale }) {
           footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveOrder}>{t(locale,'btn.save')}</button></>}>
           <div className="form-group">
             <label className="form-label">{t(locale,'form.product_name')}</label>
-            <select className="form-control" value={form.product_id} onChange={e=>{ const p=products.find(x=>x.id===e.target.value); setForm({...form,product_id:e.target.value,supplier:p?.supplier||"",unit_price:p?.unit_price||""}); }}>
-              <option value="">{t(locale,'form.select_product')}</option>
-              {products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
+            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+              <select className="form-control" value={form.product_id} onChange={e=>{ const p=products.find(x=>x.id===e.target.value); setForm({...form,product_id:e.target.value,supplier:p?.supplier||"",unit_price:p?.unit_price||""}); }}>
+                <option value="">{t(locale,'form.select_product')}</option>
+                {products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              {form.product_id && <button className="btn btn-secondary btn-sm" onClick={openProductEditorForSelected} style={{whiteSpace:'nowrap'}}>{t(locale,'btn.edit_product') || 'Edit'}</button>}
+            </div>
           </div>
           <div className="form-grid">
             <div className="form-group"><label className="form-label">{t(locale,'form.quantity')}</label><input className="form-control" type="number" value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/></div>
@@ -1364,6 +1340,20 @@ function Orders({ locale }) {
           <div className="form-group"><label className="form-label">{t(locale,'orders.expected_delivery')}</label><input className="form-control" type="date" value={form.expected_delivery} onChange={e=>setForm({...form,expected_delivery:e.target.value})}/></div>
           {form.quantity&&form.unit_price&&<div style={{padding:"12px 16px",background:"rgba(200,134,10,0.1)",borderRadius:8,fontSize:14}}>Order Total: <strong style={{color:"#C8860A"}}>{fmt(+form.quantity * +form.unit_price)}</strong></div>}
         </Modal>
+      )}
+      {productEditorShow && (
+        <Sidebar title={t(locale,'btn.edit_product') || 'Edit Product'} onClose={()=>setProductEditorShow(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setProductEditorShow(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveProductEditor}>{t(locale,'btn.save')}</button></>}>
+          <div className="form-grid">
+            <div className="form-group"><label className="form-label">{t(locale,'form.product_name')}</label><input className="form-control" value={productEditorForm?.name||""} onChange={e=>setProductEditorForm({...productEditorForm,name:e.target.value})}/></div>
+            <div className="form-group"><label className="form-label">{t(locale,'form.sku')}</label><input className="form-control" value={productEditorForm?.sku||""} onChange={e=>setProductEditorForm({...productEditorForm,sku:e.target.value})}/></div>
+            <div className="form-group"><label className="form-label">{t(locale,'form.category')}</label><input className="form-control" value={productEditorForm?.category||""} onChange={e=>setProductEditorForm({...productEditorForm,category:e.target.value})}/></div>
+            <div className="form-group"><label className="form-label">{t(locale,'form.min_qty')}</label><input className="form-control" type="number" value={productEditorForm?.min_quantity||0} onChange={e=>setProductEditorForm({...productEditorForm,min_quantity:e.target.value})}/></div>
+            <div className="form-group"><label className="form-label">{t(locale,'form.unit_price_tzs')}</label><input className="form-control" type="number" value={productEditorForm?.unit_price||0} onChange={e=>setProductEditorForm({...productEditorForm,unit_price:e.target.value})}/></div>
+            <div className="form-group"><label className="form-label">{t(locale,'form.supplier')}</label><input className="form-control" value={productEditorForm?.supplier||""} onChange={e=>setProductEditorForm({...productEditorForm,supplier:e.target.value})}/></div>
+            <div className="form-group"><label className="form-label">{t(locale,'form.location')}</label><input className="form-control" value={productEditorForm?.location||""} onChange={e=>setProductEditorForm({...productEditorForm,location:e.target.value})}/></div>
+          </div>
+        </Sidebar>
       )}
     </div>
   );

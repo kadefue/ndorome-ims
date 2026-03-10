@@ -11,6 +11,7 @@ from app.crud.product import (
 )
 from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse
 from app.models.user import User
+from app.models.order import Order
 
 router = APIRouter(prefix="/products", tags=["Inventory / Products"])
 
@@ -69,9 +70,24 @@ def edit_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    # Only manager/owner can update price
+    # Only manager/owner can update price or quantity
     if product_in.unit_price is not None and current_user.role not in ("manager", "owner"):
         raise HTTPException(status_code=403, detail="Only manager or owner can update price.")
+    if product_in.quantity is not None and current_user.role not in ("manager", "owner"):
+        raise HTTPException(status_code=403, detail="Only manager or owner can update stock quantity.")
+
+    # Enforce price rules: cannot decrease and must be at least 25% above latest order price
+    if product_in.unit_price is not None:
+        new_price = product_in.unit_price
+        # cannot be lower than current price
+        if new_price < product.unit_price:
+            raise HTTPException(status_code=400, detail="Product price cannot be decreased")
+        # check latest order price for this product
+        last_order = db.query(Order).filter(Order.product_id == product.id).order_by(Order.date.desc()).first()
+        if last_order and last_order.unit_price is not None:
+            min_allowed = last_order.unit_price * 1.25
+            if new_price < min_allowed:
+                raise HTTPException(status_code=400, detail=f"Product price must be at least 25% above last order price ({min_allowed})")
 
     return update_product(db, product, product_in)
 

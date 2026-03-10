@@ -439,6 +439,18 @@ const TRANSLATIONS = {
     "orders.create_order": "Create Purchase Order",
     "deliveries.record_incoming": "Record Incoming Delivery",
     "deliveries.no_records": "No deliveries recorded yet",
+    "table.notes": "Notes",
+    "form.sku": "SKU",
+    "form.category": "Category",
+    "form.enter_sku": "Enter SKU",
+    "form.enter_category": "Enter category",
+    "form.enter_product_name": "Enter product name",
+    "form.full_name": "Full Name",
+    "form.email": "Email",
+    "form.password": "Password",
+    "form.role": "Role",
+    "btn.create_user": "Create User",
+    "nav.navigation": "Navigation",
     "tooltip.revenue": "Revenue",
     "loading.dashboard": "Loading dashboard…",
     "dashboard.low_stock_title": "⚠️ Low Stock Alerts",
@@ -452,6 +464,9 @@ const TRANSLATIONS = {
     "table.qty": "Qty",
     "table.unit_price": "Unit Price",
     "table.total": "Total",
+    "table.name": "Name",
+    "table.email": "Email",
+    "table.role": "Role",
     "table.payment": "Payment",
     "table.employee": "Employee",
     "table.status": "Status",
@@ -478,6 +493,10 @@ const TRANSLATIONS = {
     "sales.total_transactions": "Total Transactions",
     "sales.todays_sales": "Today's Sales",
     "search.placeholder": "Search…",
+    "form.payment_method": "Payment Method",
+    "form.customer_name": "Customer Name",
+    "form.customer_email_optional": "Customer Email (optional)",
+    "form.customer_phone_optional": "Customer Phone (optional)",
     "form.select_product": "-- Select Product --",
     "alert.fill_product_qty": "Fill product and quantity",
     "confirm.no_customer_continue": "No customer name, email or phone provided. Continue?",
@@ -515,7 +534,7 @@ const TRANSLATIONS = {
     "dashboard.low_stock_title": "⚠️ Low Stock Alerts",
     "dashboard.recent_sales": "🕐 Recent Sales",
     "label.left": "left",
-    "label.min": "Min:",
+    "label.min": "Minimum:",
     "table.product": "Product",
     "table.customer": "Customer",
     "table.amount": "Amount",
@@ -616,12 +635,24 @@ const TRANSLATIONS = {
     "orders.create_order": "Tengeneza Oda za Ununuzi",
     "deliveries.record_incoming": "Rekodi Upokeaji wa Mzigo Unaokuja",
     "deliveries.no_records": "Hakuna Upokeaji wa Mzigo ulioandikwa bado",
+    "table.notes": "Maelezo",
+    "form.sku": "SKU",
+    "form.category": "Aina",
+    "form.enter_sku": "Ingiza SKU",
+    "form.enter_category": "Ingiza aina",
+    "form.enter_product_name": "Ingiza jina la bidhaa",
+    "form.full_name": "Jina Kamili",
+    "form.email": "Barua pepe",
+    "form.password": "Nywila",
+    "form.role": "Cheo",
+    "btn.create_user": "Tengeneza Mtumiaji",
+    "nav.navigation": "Urambazaji",
     "tooltip.revenue": "Mapato",
     "loading.dashboard": "Inapakia dashibodi…",
-    "dashboard.low_stock_title": "⚠️ Onyo: Stok Kidogo",
+    "dashboard.low_stock_title": "⚠️ Onyo: Stoku Kidogo",
     "dashboard.recent_sales": "🕐 Mauzo ya Hivi Karibuni",
     "label.left": "baki",
-    "label.min": "Min:",
+    "label.min": "Kiwango cha Chini:",
     "table.date": "Tarehe",
     "table.product": "Bidhaa",
     "table.supplier": "Mzabuni",
@@ -629,8 +660,11 @@ const TRANSLATIONS = {
     "table.qty": "Kiasi",
     "table.unit_price": "Bei",
     "table.total": "Jumla",
+    "table.name": "Jina",
+    "table.email": "Barua pepe",
+    "table.role": "Cheo",
     "table.payment": "Malipo",
-    "table.employee": "Mfanya kazi",
+    "table.employee": "Mfanyakazi",
     "table.status": "Hali",
     "table.amount": "Kiasi",
     "form.product_name": "Jina la Bidhaa",
@@ -644,7 +678,7 @@ const TRANSLATIONS = {
     "form.supplier": "Mzabuni",
     "form.location": "Mahali",
     "form.quantity": "Kiasi",
-    "form.min_qty": "Kiasi Min",
+    "form.min_qty": "Kiasi cha Chini",
     "form.unit_price_tzs": "Bei kwa Kifungu (TZS)",
     "confirm.delete_product": "Futa bidhaa hii?",
     "alert.product_required": "Jina la bidhaa na SKU vinahitajika",
@@ -655,6 +689,10 @@ const TRANSLATIONS = {
     "sales.total_transactions": "Jumla ya Miamala",
     "sales.todays_sales": "Mauzo ya Leo",
     "search.placeholder": "Tafuta…",
+    "form.payment_method": "Njia ya Malipo",
+    "form.customer_name": "Jina la Mteja",
+    "form.customer_email_optional": "Barua pepe ya Mteja (hiari)",
+    "form.customer_phone_optional": "Simu ya Mteja (hiari)",
     "form.select_product": "-- Chagua Bidhaa --",
     "alert.fill_product_qty": "Jaza bidhaa na kiasi",
     "confirm.no_customer_continue": "Hakuna jina la mteja, barua au simu. Endelea?",
@@ -678,10 +716,10 @@ const TRANSLATIONS = {
     "user.status.active": "Hai",
     "user.status.inactive": "Haiko Hai",
     "nav.navigation": "Urambazaji",
-    "login.title": "Supa Kariakoo Spare Parts Centre",
+    "login.title": "Kituo cha Uuzaji wa Spea Supa Kariakoo",
     "login.subtitle": "Mfumo wa Usimamizi wa Stoku na Mauzo",
     "login.email_label": "Barua pepe",
-    "login.password_label": "Neno la siri",
+    "login.password_label": "Nywila",
     "login.signing_in": "Inakubali kuingia…",
     "login.sign_in": "Ingia",
     "login.hint_owner": "Mmiliki:",
@@ -734,7 +772,7 @@ function Sidebar({ title, onClose, children, footer, width = 480 }) {
 }
 
 // ── Login Page ────────────────────────────────────────────────────────────────
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin, locale }) {
   const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -764,31 +802,31 @@ function LoginPage({ onLogin }) {
       <div className="login-card">
         <div className="login-logo">
           <div style={{fontSize:36,marginBottom:8}}>🔧</div>
-          <h1>Supa Kariakoo Spare Parts Centre</h1>
-          <p>Inventory Management System</p>
+          <h1>{t(locale,'login.title') || 'Supa Kariakoo Spare Parts Centre'}</h1>
+          <p>{t(locale,'login.subtitle')}</p>
         </div>
         {error && <div className="error-msg">{error}</div>}
         <form onSubmit={handleLogin}>
           <div className="form-group">
-            <label className="form-label">Email Address</label>
+            <label className="form-label">{t(locale,'login.email_label')}</label>
             <input className="form-control" type="email" value={form.username}
               onChange={e => setForm({...form, username:e.target.value})}
               placeholder="your@email.com" required />
           </div>
           <div className="form-group">
-            <label className="form-label">Password</label>
+            <label className="form-label">{t(locale,'login.password_label')}</label>
             <input className="form-control" type="password" value={form.password}
               onChange={e => setForm({...form, password:e.target.value})}
               placeholder="••••••••" required />
           </div>
           <button className="login-btn" type="submit" disabled={loading}>
-            {loading ? "Signing in…" : "Sign In"}
+            {loading ? t(locale,'login.signing_in') : t(locale,'login.sign_in')}
           </button>
         </form>
         <div className="login-hint">
-          <div><strong>Owner:</strong> owner@ndorome.com / owner123</div>
-          <div><strong>Manager:</strong> manager@ndorome.com / manager123</div>
-          <div><strong>Employee:</strong> employee@ndorome.com / emp123</div>
+          <div><strong>{t(locale,'login.hint_owner')}</strong> owner@ndorome.com / owner123</div>
+          <div><strong>{t(locale,'login.hint_manager')}</strong> manager@ndorome.com / manager123</div>
+          <div><strong>{t(locale,'login.hint_employee')}</strong> employee@ndorome.com / emp123</div>
         </div>
       </div>
     </div>
@@ -1029,7 +1067,7 @@ function Inventory({ locale }) {
           <div className="form-grid">
             {/* Product Name (select + other) */}
             <div className="form-group">
-              <label className="form-label">Product Name</label>
+                <label className="form-label">{t(locale,'form.product_name')}</label>
               <select className="form-control" value={form.name_select || form.name} onChange={e=>{
                 const v = e.target.value; setForm({...form, name_select:v, name: v === "__other" ? "" : v});
               }}>
@@ -1037,12 +1075,12 @@ function Inventory({ locale }) {
                 {[...new Set(products.map(p=>p.name))].map(n=>n && <option key={n} value={n}>{n}</option>)}
                 <option value="__other">{t(locale,'form.other')}</option>
               </select>
-              {form.name_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder="Enter product name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>} 
+              {form.name_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder={t(locale,'form.enter_product_name')} value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>} 
             </div>
 
             {/* SKU (select + other) */}
             <div className="form-group">
-              <label className="form-label">SKU</label>
+              <label className="form-label">{t(locale,'form.sku')}</label>
               <select className="form-control" value={form.sku_select || form.sku} onChange={e=>{
                 const v = e.target.value; setForm({...form, sku_select:v, sku: v === "__other" ? "" : v});
               }}>
@@ -1050,12 +1088,12 @@ function Inventory({ locale }) {
                 {[...new Set(products.map(p=>p.sku))].map(s=>s && <option key={s} value={s}>{s}</option>)}
                 <option value="__other">{t(locale,'form.other')}</option>
               </select>
-              {form.sku_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder="Enter SKU" value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})}/>} 
+              {form.sku_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder={t(locale,'form.enter_sku')} value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})}/>} 
             </div>
 
             {/* Category (select + other) */}
             <div className="form-group">
-              <label className="form-label">Category</label>
+              <label className="form-label">{t(locale,'form.category')}</label>
               <select className="form-control" value={form.category_select || form.category} onChange={e=>{
                 const v = e.target.value; setForm({...form, category_select:v, category: v === "__other" ? "" : v});
               }}>
@@ -1063,7 +1101,7 @@ function Inventory({ locale }) {
                 {[...new Set(products.map(p=>p.category))].map(c=>c && <option key={c} value={c}>{c}</option>)}
                 <option value="__other">{t(locale,'form.other')}</option>
               </select>
-              {form.category_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder="Enter category" value={form.category} onChange={e=>setForm({...form,category:e.target.value})}/>} 
+              {form.category_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder={t(locale,'form.enter_category')} value={form.category} onChange={e=>setForm({...form,category:e.target.value})}/>} 
             </div>
 
             {[["supplier","form.supplier"],["location","form.location"]].map(([k,l])=>(
@@ -1190,23 +1228,23 @@ function Sales({ locale }) {
               <input className="form-control" type="number" min="1" max={selProd?.quantity} value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/>
             </div>
             <div className="form-group">
-              <label className="form-label">Payment Method</label>
+              <label className="form-label">{t(locale,'form.payment_method')}</label>
               <select className="form-control" value={form.payment} onChange={e=>setForm({...form,payment:e.target.value})}>
                 {["Cash","M-Pesa","Bank Transfer","Credit"].map(p=><option key={p}>{p}</option>)}
               </select>
             </div>
           </div>
           <div className="form-group">
-            <label className="form-label">Customer Name</label>
+            <label className="form-label">{t(locale,'form.customer_name')}</label>
             <input className="form-control" placeholder="Full name" value={form.customer} onChange={e=>setForm({...form,customer:e.target.value})}/>
           </div>
           <div className="form-grid">
             <div className="form-group">
-              <label className="form-label">Customer Email (optional)</label>
+              <label className="form-label">{t(locale,'form.customer_email_optional')}</label>
               <input className="form-control" type="email" placeholder="email@example.com" value={form.customer_email} onChange={e=>setForm({...form,customer_email:e.target.value})}/>
             </div>
             <div className="form-group">
-              <label className="form-label">Customer Phone (optional)</label>
+              <label className="form-label">{t(locale,'form.customer_phone_optional')}</label>
               <input className="form-control" type="tel" placeholder="+2557XXXXXXX" value={form.customer_phone} onChange={e=>setForm({...form,customer_phone:e.target.value})}/>
             </div>
           </div>
@@ -1364,12 +1402,12 @@ function Deliveries({ locale }) {
         <Modal title={t(locale,'deliveries.record_incoming')} onClose={()=>setShowModal(false)}
           footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveDelivery}>{t(locale,'btn.save')}</button></>}>
           <div className="form-group">
-            <label className="form-label">Linked Purchase Order</label>
+            <label className="form-label">{t(locale,'deliveries.linked_order_label')}</label>
             <select className="form-control" value={form.order_id} onChange={e=>{
               const o=orders.find(x=>x.id===e.target.value);
               setForm({...form,order_id:e.target.value,product_name:o?.product_name||"",supplier:o?.supplier||"",quantity:o?.quantity||""});
             }}>
-              <option value="">-- Select Order --</option>
+              <option value="">{t(locale,'form.select_order')}</option>
               {pendingOrders.map(o=><option key={o.id} value={o.id}>{o.product_name} ({o.supplier})</option>)}
             </select>
           </div>
@@ -1378,7 +1416,7 @@ function Deliveries({ locale }) {
             <div className="form-group"><label className="form-label">Quantity Received</label><input className="form-control" type="number" value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/></div>
           </div>
           <div className="form-group"><label className="form-label">Supplier</label><input className="form-control" value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})}/></div>
-          <div className="form-group"><label className="form-label">Notes / Condition</label><textarea className="form-control" rows={3} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="e.g. All items in good condition"/></div>
+          <div className="form-group"><label className="form-label">{t(locale,'table.notes') || 'Notes'} / Condition</label><textarea className="form-control" rows={3} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder={t(locale,'deliveries.notes_placeholder')}/></div>
         </Modal>
       )}
     </div>
@@ -1402,7 +1440,7 @@ function Reports({ locale }) {
   return (
     <div className="page">
       <div className="page-header">
-        <div><div className="page-title">Reports & Analytics</div><div className="page-subtitle">Visual insights into business performance</div></div>
+        <div><div className="page-title">{t(locale,'reports.title')}</div><div className="page-subtitle">{t(locale,'reports.subtitle')}</div></div>
       </div>
 
       <div className="stats-grid">
@@ -1414,7 +1452,7 @@ function Reports({ locale }) {
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
         <div className="card">
-          <div className="card-header"><span className="card-title">Monthly Revenue</span></div>
+          <div className="card-header"><span className="card-title">{t(locale,'reports.monthly_revenue')}</span></div>
           <div className="card-body">
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={monthlyData}>
@@ -1429,7 +1467,7 @@ function Reports({ locale }) {
         </div>
 
         <div className="card">
-          <div className="card-header"><span className="card-title">Payment Methods</span></div>
+          <div className="card-header"><span className="card-title">{t(locale,'reports.payment_methods')}</span></div>
           <div className="card-body">
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
@@ -1444,7 +1482,7 @@ function Reports({ locale }) {
       </div>
 
       <div className="card">
-        <div className="card-header"><span className="card-title">Inventory by Category</span></div>
+        <div className="card-header"><span className="card-title">{t(locale,'reports.inventory_by_category')}</span></div>
         <div className="card-body">
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={catData} layout="vertical">
@@ -1479,15 +1517,15 @@ function Users({ locale }) {
   return (
     <div className="page">
       <div className="page-header">
-        <div><div className="page-title">User Management</div><div className="page-subtitle">{users.length} system users</div></div>
-        {user.role==="owner" && <button className="btn btn-primary" onClick={()=>setShowModal(true)}>＋ Add User</button>}
+        <div><div className="page-title">{t(locale,'page.users')}</div><div className="page-subtitle">{t(locale,'users.subtitle').replace('{count}', users.length)}</div></div>
+        {user.role==="owner" && <button className="btn btn-primary" onClick={()=>setShowModal(true)}>{t(locale,'btn.add_user')}</button>}
       </div>
 
       <div className="card">
-        <div className="card-header"><span className="card-title">System Users</span></div>
+        <div className="card-header"><span className="card-title">{t(locale,'users.system_users_title')}</span></div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
+            <thead><tr><th>{t(locale,'table.name')}</th><th>{t(locale,'table.email')}</th><th>{t(locale,'table.role')}</th><th>{t(locale,'table.status')}</th></tr></thead>
             <tbody>
               {users.map(u=>(
                 <tr key={u.id}>
@@ -1499,7 +1537,7 @@ function Users({ locale }) {
                   </td>
                   <td className="td-muted">{u.email}</td>
                   <td><span className={`badge role-${u.role}`}>{u.role}</span></td>
-                  <td><span className={`badge ${u.active?"badge-success":"badge-danger"}`}>{u.active?"Active":"Inactive"}</span></td>
+                  <td><span className={`badge ${u.active?"badge-success":"badge-danger"}`}>{u.active? t(locale,'user.status.active') : t(locale,'user.status.inactive')}</span></td>
                 </tr>
               ))}
             </tbody>
@@ -1508,13 +1546,13 @@ function Users({ locale }) {
       </div>
 
       {showModal && (
-        <Modal title="Add System User" onClose={()=>setShowModal(false)}
-          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancel</button><button className="btn btn-primary" onClick={saveUser}>Create User</button></>}>
-          <div className="form-group"><label className="form-label">Full Name</label><input className="form-control" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></div>
-          <div className="form-group"><label className="form-label">Email</label><input className="form-control" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></div>
-          <div className="form-group"><label className="form-label">Password</label><input className="form-control" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})}/></div>
+        <Modal title={t(locale,'users.add_user')} onClose={()=>setShowModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveUser}>{t(locale,'btn.create_user')}</button></>}>
+          <div className="form-group"><label className="form-label">{t(locale,'form.full_name')}</label><input className="form-control" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></div>
+          <div className="form-group"><label className="form-label">{t(locale,'form.email')}</label><input className="form-control" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></div>
+          <div className="form-group"><label className="form-label">{t(locale,'form.password')}</label><input className="form-control" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})}/></div>
           <div className="form-group">
-            <label className="form-label">Role</label>
+            <label className="form-label">{t(locale,'form.role')}</label>
             <select className="form-control" value={form.role} onChange={e=>setForm({...form,role:e.target.value})}>
               <option value="employee">Employee</option>
               <option value="manager">Manager</option>
@@ -1574,7 +1612,7 @@ function AppShell({ user, onLogout, locale, setLocale }) {
           </div>
         </div>
         <div className="nav-section">
-          <div className="nav-label">Navigation</div>
+          <div className="nav-label">{t(locale,'nav.navigation')}</div>
           {navItems.map(n => (
             <div key={n.id} className={`nav-item ${page===n.id?"active":""}`} onClick={()=>setPage(n.id)}>
               <span className="icon">{n.icon}</span>
@@ -1636,7 +1674,7 @@ export default function App() {
   return (
     <>
       <style>{css + themeCss}</style>
-      {user ? <AppShell user={user} onLogout={handleLogout} locale={locale} setLocale={setLocale}/> : <LoginPage onLogin={handleLogin}/>} 
+      {user ? <AppShell user={user} onLogout={handleLogout} locale={locale} setLocale={setLocale}/> : <LoginPage onLogin={handleLogin} locale={locale}/>} 
     </>
   );
 }

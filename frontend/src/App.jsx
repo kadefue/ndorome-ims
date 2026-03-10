@@ -1319,6 +1319,27 @@ function Orders({ locale }) {
     load();
   }
 
+  // Open product editor for a product id (from table row)
+  function editProductById(productId) {
+    if (!productId) return;
+    const p = products.find(x => x.id === productId);
+    if (!p) return window._app_show_toast && window._app_show_toast('Product not found', 'danger');
+    setProductEditorForm({ ...p });
+    setProductEditorShow(true);
+  }
+
+  async function deleteProductById(productId) {
+    if (!productId) return;
+    if (!confirm('Delete product? This cannot be undone.')) return;
+    try {
+      await apiFetch(`/products/${productId}`, { method: 'DELETE' });
+      await load();
+      window._app_show_toast && window._app_show_toast('Product deleted', 'success');
+    } catch (err) {
+      // apiFetch already shows a toast on error
+    }
+  }
+
   return (
     <div className="page">
       <div className="page-header">
@@ -1346,11 +1367,13 @@ function Orders({ locale }) {
                   <td className="td-muted" style={{fontSize:12}}>{o.expected_delivery ? new Date(o.expected_delivery).toLocaleDateString() : "—"}</td>
                   <td className="td-muted" style={{fontSize:12}}>{o.ordered_by_user?.name || o.ordered_by_name || o.ordered_by_id || "—"}</td>
                   <td>{statusBadge(o.status)}</td>
-                  {canManage && <td>
+                  {canManage && <td style={{display:'flex',gap:8,alignItems:'center'}}>
                     <select className="form-control" style={{padding:"4px 8px",fontSize:12,width:"auto"}}
                       value={o.status} onChange={e=>updateStatus(o.id,e.target.value)}>
                       {["pending","in_transit","delivered","cancelled"].map(s=><option key={s} value={s}>{s.replace("_"," ")}</option>)}
                     </select>
+                    <button className="btn btn-secondary btn-sm" onClick={()=>editProductById(o.product_id)} disabled={!o.product_id}>{t(locale,'btn.edit_product')||'Edit'}</button>
+                    <button className="btn btn-danger btn-sm" onClick={()=>deleteProductById(o.product_id)} disabled={!o.product_id}>{t(locale,'btn.delete')||'Delete'}</button>
                   </td>}
                 </tr>
               ))}
@@ -1381,8 +1404,7 @@ function Orders({ locale }) {
                 {products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
               <option value="__new">{t(locale,'orders.add_new_product') || '＋ Add new product'}</option>
               </select>
-              {form.product_id && <button className="btn btn-secondary btn-sm" onClick={openProductEditorForSelected} style={{whiteSpace:'nowrap'}}>{t(locale,'btn.edit_product') || 'Edit'}</button>}
-              {form.product_id && <button className="btn btn-danger btn-sm" onClick={()=>{ setForm({...form,product_id:"",product_name:"",unit_price:"",quantity:"",supplier:"",expected_delivery:"",status:""}); }}>{t(locale,'btn.delete') || 'Delete'}</button>}
+              {/* Edit/Delete moved to table actions */}
             </div>
           </div>
           {/* Show SKU / Category / Location from selected product (read-only) */}

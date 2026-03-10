@@ -914,7 +914,7 @@ function Dashboard({ locale }) {
           </div>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Product</th><th>Customer</th><th>Amount</th></tr></thead>
+              <thead><tr><th>{t(locale,'table.product')}</th><th>{t(locale,'table.customer')}</th><th>{t(locale,'table.amount')}</th></tr></thead>
               <tbody>
                 {stats.recent_sales.map(s => (
                   <tr key={s.id}>
@@ -960,11 +960,11 @@ function Inventory({ locale }) {
     const finalSku = form.sku_select === "__other" ? form.sku.trim() : (form.sku_select || form.sku).trim();
     const finalCategory = form.category_select === "__other" ? form.category.trim() : (form.category_select || form.category).trim();
 
-    if (!finalName || !finalSku) return alert('Product name and SKU are required');
+    if (!finalName || !finalSku) return alert(t(locale,'alert.product_required'));
 
     // Check if product exists (prevent duplicates on create)
     const exists = products.find(p => p.sku === finalSku || (p.name && p.name.toLowerCase() === finalName.toLowerCase()));
-    if (!editing && exists) return alert('A product with that name or SKU already exists.');
+    if (!editing && exists) return alert(t(locale,'alert.product_exists'));
 
     const body = { ...form, name: finalName, sku: finalSku, category: finalCategory, quantity:+form.quantity, min_quantity:+form.min_quantity, unit_price:+form.unit_price };
     if (editing) await apiFetch(`/products/${editing.id}`,{method:"PUT",body:JSON.stringify(body)});
@@ -972,7 +972,7 @@ function Inventory({ locale }) {
     setShowSidebar(false); load();
   }
   async function del(id) {
-    if (!confirm("Delete this product?")) return;
+    if (!confirm(t(locale,'confirm.delete_product'))) return;
     await apiFetch(`/products/${id}`,{method:"DELETE"}); load();
   }
 
@@ -1012,8 +1012,8 @@ function Inventory({ locale }) {
                   <td>{p.quantity<=p.min_quantity ? <span className="badge badge-danger">{t(locale,'inventory.status.low')}</span> : <span className="badge badge-success">{t(locale,'inventory.status.in_stock')}</span>}</td>
                   {canEdit && <td>
                     <div style={{display:"flex",gap:6}}>
-                      <button className="btn btn-secondary btn-sm" onClick={()=>openEdit(p)}>Edit</button>
-                      <button className="btn btn-danger btn-sm" onClick={()=>del(p.id)}>Del</button>
+                      <button className="btn btn-secondary btn-sm" onClick={()=>openEdit(p)}>{t(locale,'btn.edit')}</button>
+                      <button className="btn btn-danger btn-sm" onClick={()=>del(p.id)}>{t(locale,'btn.delete')}</button>
                     </div>
                   </td>}
                 </tr>
@@ -1033,9 +1033,9 @@ function Inventory({ locale }) {
               <select className="form-control" value={form.name_select || form.name} onChange={e=>{
                 const v = e.target.value; setForm({...form, name_select:v, name: v === "__other" ? "" : v});
               }}>
-                <option value="">-- Select existing --</option>
+                <option value="">{t(locale,'form.select_existing')}</option>
                 {[...new Set(products.map(p=>p.name))].map(n=>n && <option key={n} value={n}>{n}</option>)}
-                <option value="__other">Other...</option>
+                <option value="__other">{t(locale,'form.other')}</option>
               </select>
               {form.name_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder="Enter product name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>} 
             </div>
@@ -1046,9 +1046,9 @@ function Inventory({ locale }) {
               <select className="form-control" value={form.sku_select || form.sku} onChange={e=>{
                 const v = e.target.value; setForm({...form, sku_select:v, sku: v === "__other" ? "" : v});
               }}>
-                <option value="">-- Select existing --</option>
+                <option value="">{t(locale,'form.select_existing')}</option>
                 {[...new Set(products.map(p=>p.sku))].map(s=>s && <option key={s} value={s}>{s}</option>)}
-                <option value="__other">Other...</option>
+                <option value="__other">{t(locale,'form.other')}</option>
               </select>
               {form.sku_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder="Enter SKU" value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})}/>} 
             </div>
@@ -1059,22 +1059,22 @@ function Inventory({ locale }) {
               <select className="form-control" value={form.category_select || form.category} onChange={e=>{
                 const v = e.target.value; setForm({...form, category_select:v, category: v === "__other" ? "" : v});
               }}>
-                <option value="">-- Select existing --</option>
+                <option value="">{t(locale,'form.select_existing')}</option>
                 {[...new Set(products.map(p=>p.category))].map(c=>c && <option key={c} value={c}>{c}</option>)}
-                <option value="__other">Other...</option>
+                <option value="__other">{t(locale,'form.other')}</option>
               </select>
               {form.category_select === "__other" && <input className="form-control" style={{marginTop:8}} placeholder="Enter category" value={form.category} onChange={e=>setForm({...form,category:e.target.value})}/>} 
             </div>
 
-            {[["supplier","Supplier"],["location","Location"]].map(([k,l])=>(
+            {[["supplier","form.supplier"],["location","form.location"]].map(([k,l])=>(
               <div key={k} className="form-group">
-                <label className="form-label">{l}</label>
+                <label className="form-label">{t(locale,l)}</label>
                 <input className="form-control" value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/>
               </div>
             ))}
-            {[["quantity","Quantity"],["min_quantity","Min Qty"],["unit_price","Unit Price (TZS)"]].map(([k,l])=>(
+            {[["quantity","form.quantity"],["min_quantity","form.min_qty"],["unit_price","form.unit_price_tzs"]].map(([k,l])=>(
               <div key={k} className="form-group">
-                <label className="form-label">{l}</label>
+                <label className="form-label">{t(locale,l)}</label>
                 <input className="form-control" type="number" value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/>
               </div>
             ))}
@@ -1112,10 +1112,10 @@ function Sales({ locale }) {
   const calcTotal = selProd ? selProd.unit_price * (+form.quantity||0) : 0;
 
   async function saveSale() {
-    if (!form.product_id || !form.quantity) return alert("Fill product and quantity");
+    if (!form.product_id || !form.quantity) return alert(t(locale,'alert.fill_product_qty'));
     if (!form.customer && !form.customer_email && !form.customer_phone) {
       // Allow anonymous sale but warn user; change this if you prefer to require at least one
-      if (!confirm("No customer name, email or phone provided. Continue?")) return;
+      if (!confirm(t(locale,'confirm.no_customer_continue'))) return;
     }
     const body = {
       product_id: form.product_id, product_name: selProd?.name,
@@ -1138,9 +1138,9 @@ function Sales({ locale }) {
       </div>
 
       <div className="stats-grid" style={{gridTemplateColumns:"repeat(3,1fr)",marginBottom:20}}>
-        <div className="stat-card gold"><div className="stat-icon gold">💰</div><div className="stat-label">Total Revenue</div><div className="stat-value">{fmt(totalRevenue)}</div></div>
-        <div className="stat-card blue"><div className="stat-icon blue">📋</div><div className="stat-label">Total Transactions</div><div className="stat-value">{sales.length}</div></div>
-        <div className="stat-card green"><div className="stat-icon green">📅</div><div className="stat-label">Today's Sales</div><div className="stat-value">{todaySales.length}</div></div>
+        <div className="stat-card gold"><div className="stat-icon gold">💰</div><div className="stat-label">{t(locale,'sales.total_revenue_label')}</div><div className="stat-value">{fmt(totalRevenue)}</div></div>
+        <div className="stat-card blue"><div className="stat-icon blue">📋</div><div className="stat-label">{t(locale,'sales.total_transactions')}</div><div className="stat-value">{sales.length}</div></div>
+        <div className="stat-card green"><div className="stat-icon green">📅</div><div className="stat-label">{t(locale,'sales.todays_sales')}</div><div className="stat-value">{todaySales.length}</div></div>
       </div>
 
       <div className="card">
@@ -1148,12 +1148,12 @@ function Sales({ locale }) {
             <span className="card-title">{t(locale,'sales.transaction_history')}</span>
           <div className="search-wrap">
             <span className="search-icon">🔍</span>
-            <input className="form-control" style={{width:220}} placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
+            <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={search} onChange={e=>setSearch(e.target.value)}/>
           </div>
         </div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Date</th><th>Product</th><th>Customer</th><th>Qty</th><th>Unit Price</th><th>Total</th><th>Payment</th><th>Employee</th><th>Status</th></tr></thead>
+            <thead><tr><th>{t(locale,'table.date')}</th><th>{t(locale,'table.product')}</th><th>{t(locale,'table.customer')}</th><th>{t(locale,'table.qty')}</th><th>{t(locale,'table.unit_price')}</th><th>{t(locale,'table.total')}</th><th>{t(locale,'table.payment')}</th><th>{t(locale,'table.employee')}</th><th>{t(locale,'table.status')}</th></tr></thead>
             <tbody>
               {filtered.map(s=>(
                 <tr key={s.id}>
@@ -1177,16 +1177,16 @@ function Sales({ locale }) {
         <Modal title={t(locale,'sales.record_sale')} onClose={()=>setShowModal(false)}
           footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveSale}>{t(locale,'btn.save')}</button></>}>
           <div className="form-group">
-            <label className="form-label">Product</label>
+            <label className="form-label">{t(locale,'form.product_name')}</label>
             <select className="form-control" value={form.product_id} onChange={e=>setForm({...form,product_id:e.target.value})}>
-              <option value="">-- Select Product --</option>
+              <option value="">{t(locale,'form.select_product')}</option>
               {products.map(p=><option key={p.id} value={p.id}>{p.name} (Stock: {p.quantity})</option>)}
             </select>
           </div>
           {selProd && <div style={{padding:"10px 12px",background:"rgba(200,134,10,0.1)",borderRadius:8,marginBottom:16,fontSize:13}}>Unit Price: <strong style={{color:"#C8860A"}}>{fmt(selProd.unit_price)}</strong></div>}
           <div className="form-grid">
             <div className="form-group">
-              <label className="form-label">Quantity</label>
+              <label className="form-label">{t(locale,'form.quantity')}</label>
               <input className="form-control" type="number" min="1" max={selProd?.quantity} value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/>
             </div>
             <div className="form-group">
@@ -1252,10 +1252,10 @@ function Orders({ locale }) {
       </div>
 
       <div className="card">
-        <div className="card-header"><span className="card-title">Order Records</span></div>
+        <div className="card-header"><span className="card-title">{t(locale,'orders.records_title')}</span></div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Date</th><th>Product</th><th>Supplier</th><th>Qty</th><th>Total</th><th>Expected Delivery</th><th>Ordered By</th><th>Status</th>{canManage&&<th>Actions</th>}</tr></thead>
+            <thead><tr><th>{t(locale,'table.date')}</th><th>{t(locale,'table.product')}</th><th>{t(locale,'table.supplier')}</th><th>{t(locale,'table.qty')}</th><th>{t(locale,'table.total')}</th><th>{t(locale,'orders.expected_delivery')}</th><th>{t(locale,'orders.ordered_by')}</th><th>{t(locale,'table.status')}</th>{canManage&&<th>{t(locale,'orders.actions')}</th>}</tr></thead>
             <tbody>
               {orders.map(o=>(
                 <tr key={o.id}>
@@ -1284,18 +1284,18 @@ function Orders({ locale }) {
         <Modal title={t(locale,'orders.create_order')} onClose={()=>setShowModal(false)}
           footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveOrder}>{t(locale,'btn.save')}</button></>}>
           <div className="form-group">
-            <label className="form-label">Product</label>
+            <label className="form-label">{t(locale,'form.product_name')}</label>
             <select className="form-control" value={form.product_id} onChange={e=>{ const p=products.find(x=>x.id===e.target.value); setForm({...form,product_id:e.target.value,supplier:p?.supplier||"",unit_price:p?.unit_price||""}); }}>
-              <option value="">-- Select Product --</option>
+              <option value="">{t(locale,'form.select_product')}</option>
               {products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </div>
           <div className="form-grid">
-            <div className="form-group"><label className="form-label">Quantity</label><input className="form-control" type="number" value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/></div>
-            <div className="form-group"><label className="form-label">Unit Price (TZS)</label><input className="form-control" type="number" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})}/></div>
+            <div className="form-group"><label className="form-label">{t(locale,'form.quantity')}</label><input className="form-control" type="number" value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})}/></div>
+            <div className="form-group"><label className="form-label">{t(locale,'form.unit_price_tzs')}</label><input className="form-control" type="number" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})}/></div>
           </div>
-          <div className="form-group"><label className="form-label">Supplier</label><input className="form-control" value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})}/></div>
-          <div className="form-group"><label className="form-label">Expected Delivery Date</label><input className="form-control" type="date" value={form.expected_delivery} onChange={e=>setForm({...form,expected_delivery:e.target.value})}/></div>
+          <div className="form-group"><label className="form-label">{t(locale,'form.supplier')}</label><input className="form-control" value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})}/></div>
+          <div className="form-group"><label className="form-label">{t(locale,'orders.expected_delivery')}</label><input className="form-control" type="date" value={form.expected_delivery} onChange={e=>setForm({...form,expected_delivery:e.target.value})}/></div>
           {form.quantity&&form.unit_price&&<div style={{padding:"12px 16px",background:"rgba(200,134,10,0.1)",borderRadius:8,fontSize:14}}>Order Total: <strong style={{color:"#C8860A"}}>{fmt(+form.quantity * +form.unit_price)}</strong></div>}
         </Modal>
       )}
@@ -1337,10 +1337,10 @@ function Deliveries({ locale }) {
       </div>
 
       <div className="card">
-        <div className="card-header"><span className="card-title">Delivery Records</span></div>
+        <div className="card-header"><span className="card-title">{t(locale,'deliveries.records_title')}</span></div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Date</th><th>Product</th><th>Supplier</th><th>Qty Received</th><th>Order Ref</th><th>Received By</th><th>Notes</th><th>Status</th></tr></thead>
+            <thead><tr><th>{t(locale,'table.date')}</th><th>{t(locale,'table.product')}</th><th>{t(locale,'table.supplier')}</th><th>{t(locale,'table.qty')}</th><th>Order Ref</th><th>{t(locale,'table.employee')}</th><th>{t(locale,'table.notes') || 'Notes'}</th><th>{t(locale,'table.status')}</th></tr></thead>
             <tbody>
               {deliveries.map(d=>(
                 <tr key={d.id}>

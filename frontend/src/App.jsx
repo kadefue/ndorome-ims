@@ -981,8 +981,8 @@ function Sales({ locale }) {
       </div>
 
       {showModal && (
-        <Modal title="Record New Sale" onClose={()=>setShowModal(false)}
-          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancel</button><button className="btn btn-primary" onClick={saveSale}>Record Sale</button></>}>
+        <Modal title={t(locale,'sales.record_sale')} onClose={()=>setShowModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveSale}>{t(locale,'btn.save')}</button></>}>
           <div className="form-group">
             <label className="form-label">Product</label>
             <select className="form-control" value={form.product_id} onChange={e=>setForm({...form,product_id:e.target.value})}>
@@ -1052,7 +1052,7 @@ function Orders({ locale }) {
     <div className="page">
       <div className="page-header">
         <div>
-          <div className="page-title">Purchase Orders</div>
+          <div className="page-title">{t(locale,'page.orders') || 'Purchase Orders'}</div>
           <div className="page-subtitle">{orders.length} orders · {orders.filter(o=>o.status==="pending").length} pending</div>
         </div>
         {canManage && <button className="btn btn-primary" onClick={()=>setShowModal(true)}>{t(locale,'btn.new_order') || '＋ New Order'}</button>}
@@ -1088,8 +1088,8 @@ function Orders({ locale }) {
       </div>
 
       {showModal && (
-        <Modal title="Create Purchase Order" onClose={()=>setShowModal(false)}
-          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancel</button><button className="btn btn-primary" onClick={saveOrder}>Place Order</button></>}>
+        <Modal title={t(locale,'orders.create_order')} onClose={()=>setShowModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveOrder}>{t(locale,'btn.save')}</button></>}>
           <div className="form-group">
             <label className="form-label">Product</label>
             <select className="form-control" value={form.product_id} onChange={e=>{ const p=products.find(x=>x.id===e.target.value); setForm({...form,product_id:e.target.value,supplier:p?.supplier||"",unit_price:p?.unit_price||""}); }}>
@@ -1137,7 +1137,7 @@ function Deliveries({ locale }) {
     <div className="page">
       <div className="page-header">
         <div>
-          <div className="page-title">Deliveries</div>
+          <div className="page-title">{t(locale,'page.deliveries') || 'Deliveries'}</div>
           <div className="page-subtitle">{deliveries.length} deliveries recorded · {pendingOrders.length} orders in transit</div>
         </div>
         {canManage && <button className="btn btn-primary" onClick={()=>setShowModal(true)}>{t(locale,'btn.record_delivery') || '＋ Record Delivery'}</button>}
@@ -1161,15 +1161,15 @@ function Deliveries({ locale }) {
                   <td>{statusBadge(d.status)}</td>
                 </tr>
               ))}
-              {deliveries.length===0 && <tr><td colSpan={8} style={{textAlign:"center",color:"#8B949E",padding:40}}>No deliveries recorded yet</td></tr>}
+              {deliveries.length===0 && <tr><td colSpan={8} style={{textAlign:"center",color:"#8B949E",padding:40}}>{t(locale,'deliveries.no_records')}</td></tr>}
             </tbody>
           </table>
         </div>
       </div>
 
       {showModal && (
-        <Modal title="Record Incoming Delivery" onClose={()=>setShowModal(false)}
-          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancel</button><button className="btn btn-primary" onClick={saveDelivery}>Record</button></>}>
+        <Modal title={t(locale,'deliveries.record_incoming')} onClose={()=>setShowModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveDelivery}>{t(locale,'btn.save')}</button></>}>
           <div className="form-group">
             <label className="form-label">Linked Purchase Order</label>
             <select className="form-control" value={form.order_id} onChange={e=>{

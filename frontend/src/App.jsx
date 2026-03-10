@@ -1011,7 +1011,17 @@ function Inventory({ locale }) {
     const exists = products.find(p => p.sku === finalSku || (p.name && p.name.toLowerCase() === finalName.toLowerCase()));
     if (!editing && exists) return alert(t(locale,'alert.product_exists'));
 
-    const body = { ...form, name: finalName, sku: finalSku, category: finalCategory, quantity:+form.quantity, min_quantity:+form.min_quantity, unit_price:+form.unit_price };
+    // Find latest order price for this product
+    const order = orders && orders.find(o => o.product_id === (editing ? editing.id : null) || o.product_id === exists?.id);
+    const orderPrice = order ? order.unit_price : null;
+    let unitPrice = +form.unit_price;
+    if (orderPrice !== null) {
+      const minPrice = orderPrice * 1.25;
+      if (unitPrice < minPrice) unitPrice = minPrice;
+      if (editing && editing.unit_price && unitPrice < editing.unit_price) unitPrice = editing.unit_price;
+    }
+
+    const body = { ...form, name: finalName, sku: finalSku, category: finalCategory, min_quantity:+form.min_quantity, unit_price: unitPrice };
     if (editing) await apiFetch(`/products/${editing.id}`,{method:"PUT",body:JSON.stringify(body)});
     else await apiFetch("/products",{method:"POST",body:JSON.stringify(body)});
     setShowSidebar(false); load();

@@ -1038,7 +1038,6 @@ function Inventory({ locale }) {
           <div className="page-title">{t(locale,'page.inventory') || 'Inventory'}</div>
           <div className="page-subtitle">{products.length} products · {products.filter(p=>p.quantity<=p.min_quantity).length} low stock</div>
         </div>
-        {canEdit && <button className="btn btn-primary" onClick={openAdd}>{t(locale,'btn.add_product')}</button>}
       </div>
 
       <div className="card">

@@ -558,6 +558,10 @@ const TRANSLATIONS = {
     "sales.total_transactions": "Total Transactions",
     "sales.todays_sales": "Today's Sales",
     "search.placeholder": "Search…",
+    "form.payment_method": "Payment Method",
+    "form.customer_name": "Customer Name",
+    "form.customer_email_optional": "Customer Email (optional)",
+    "form.customer_phone_optional": "Customer Phone (optional)",
     "form.select_product": "-- Select Product --",
     "alert.fill_product_qty": "Fill product and quantity",
     "confirm.no_customer_continue": "No customer name, email or phone provided. Continue?",
@@ -566,6 +570,7 @@ const TRANSLATIONS = {
     "orders.ordered_by": "Ordered By",
     "orders.actions": "Actions",
     "deliveries.records_title": "Delivery Records",
+    "deliveries.approve_as_is": "Approve as is",
     "deliveries.linked_order_label": "Linked Purchase Order",
     "form.select_order": "-- Select Order --",
     "deliveries.notes_placeholder": "e.g. All items in good condition",
@@ -1112,12 +1117,22 @@ function Inventory({ locale }) {
                 <input className="form-control" value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/>
               </div>
             ))}
-            {[["quantity","form.quantity"],["min_quantity","form.min_qty"],["unit_price","form.unit_price_tzs"]].map(([k,l])=>(
-              <div key={k} className="form-group">
-                <label className="form-label">{t(locale,l)}</label>
-                <input className="form-control" type="number" value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/>
-              </div>
-            ))}
+            {/* Only allow manager/owner to edit price. Employees see price as read-only. */}
+            <div className="form-group">
+              <label className="form-label">{t(locale,'form.unit_price_tzs')}</label>
+              {user.role === "manager" || user.role === "owner" ? (
+                <input className="form-control" type="number" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})}/>
+              ) : (
+                <input className="form-control" type="number" value={form.unit_price} readOnly style={{background:'#222',color:'#aaa'}}/>
+              )}
+            </div>
+            <div className="form-group">
+              <label className="form-label">{t(locale,'form.min_qty')}</label>
+              <input className="form-control" type="number" value={form.min_quantity} onChange={e=>setForm({...form,min_quantity:e.target.value})}/>
+            </div>
+            <div style={{fontSize:12,color:'#D29922',marginTop:8}}>
+              <b>Note:</b> Stock can only be increased by approving a delivery, not by editing here.
+            </div>
           </div>
         </Sidebar>
       )}
@@ -1302,7 +1317,7 @@ function Orders({ locale }) {
                   <td className="td-muted" style={{fontSize:12}}>{humanDate(o.date)}</td>
                   <td style={{fontWeight:500}}>{o.product?.name || o.product_name || (products.find(p=>p.id===o.product_id)?.name) || "—"}</td>
                   <td className="td-muted">{o.supplier}</td>
-                  <td style={{textAlign:"center"}}>{o.quantity}</td>
+                  <td style={{textAlign:"center",color:"#3FB950",fontWeight:700}}>{o.quantity}</td>
                   <td style={{color:"#C8860A",fontWeight:600}}>{fmt(o.total)}</td>
                   <td className="td-muted" style={{fontSize:12}}>{o.expected_delivery ? new Date(o.expected_delivery).toLocaleDateString() : "—"}</td>
                   <td className="td-muted" style={{fontSize:12}}>{o.ordered_by_user?.name || o.ordered_by_name || o.ordered_by_id || "—"}</td>

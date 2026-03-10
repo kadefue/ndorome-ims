@@ -790,11 +790,14 @@ function Sales() {
 
   const filtered = sales.filter(s =>
     s.customer?.toLowerCase().includes(search.toLowerCase()) ||
-    s.product_name?.toLowerCase().includes(search.toLowerCase())
+    (s.product?.name || s.product_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
   const totalRevenue = sales.reduce((a,s)=>a+s.total,0);
-  const todaySales = sales.filter(s=>s.date===new Date().toISOString().slice(0,10));
+  const todayISO = new Date().toISOString().slice(0,10);
+  const todaySales = sales.filter(s=>{
+    try { return (new Date(s.date)).toISOString().slice(0,10) === todayISO; } catch(e) { return false; }
+  });
 
   const selProd = products.find(p=>p.id===form.product_id);
   const calcTotal = selProd ? selProd.unit_price * (+form.quantity||0) : 0;
@@ -845,14 +848,14 @@ function Sales() {
             <tbody>
               {filtered.map(s=>(
                 <tr key={s.id}>
-                  <td className="td-muted" style={{fontSize:12}}>{s.date}</td>
-                  <td style={{fontWeight:500}}>{s.product_name}</td>
+                  <td className="td-muted" style={{fontSize:12}}>{humanDate(s.date)}</td>
+                  <td style={{fontWeight:500}}>{s.product?.name || s.product_name || (products.find(p=>p.id===s.product_id)?.name) || "—"}</td>
                   <td className="td-muted">{s.customer}</td>
                   <td style={{textAlign:"center"}}>{s.quantity}</td>
                   <td>{fmt(s.unit_price)}</td>
                   <td style={{color:"#3FB950",fontWeight:700}}>{fmt(s.total)}</td>
                   <td><span className="badge badge-purple">{s.payment}</span></td>
-                  <td className="td-muted" style={{fontSize:12}}>{s.employee_name}</td>
+                  <td className="td-muted" style={{fontSize:12}}>{s.employee?.name || s.employee_name || s.employee_id || "—"}</td>
                   <td>{statusBadge(s.status)}</td>
                 </tr>
               ))}

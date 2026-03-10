@@ -1294,8 +1294,8 @@ function Orders({ locale }) {
       if (productEditorForm.id) {
         res = await apiFetch(`/products/${productEditorForm.id}`, { method: 'PUT', body: JSON.stringify(body) });
       } else {
-        // when creating new product, only allow minimum quantity as initial stock
-        body.quantity = +productEditorForm.min_quantity;
+        // when creating new product, set initial stock to 0; min_quantity remains 5
+        body.quantity = 0;
         // log payload for debugging when server-side validation fails
         try { console.debug('Creating product payload', body); } catch {}
         res = await apiFetch(`/products`, { method: 'POST', body: JSON.stringify(body) });

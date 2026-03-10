@@ -63,11 +63,16 @@ def edit_product(
     product_id: int,
     product_in: ProductUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_manager_above),
+    current_user: User = Depends(get_current_user),
 ):
     product = get_product(db, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+
+    # Only manager/owner can update price
+    if product_in.unit_price is not None and current_user.role not in ("manager", "owner"):
+        raise HTTPException(status_code=403, detail="Only manager or owner can update price.")
+
     return update_product(db, product, product_in)
 
 

@@ -58,8 +58,7 @@ def create_delivery(db: Session, delivery_in: DeliveryCreate, received_by_id: in
         notes=delivery_in.notes,
     )
 
-    # Restock inventory
-    product.quantity += delivery_in.quantity
+    # Do not restock inventory here; only restock when delivery is approved
 
     # Mark linked order as delivered
     if delivery_in.order_id:
@@ -88,6 +87,11 @@ def approve_delivery(db: Session, delivery_id: int, approver_id: int) -> Deliver
         order = db.query(Order).filter(Order.id == delivery.order_id).first()
         if order and order.status != "delivered":
             order.status = "delivered"
+
+    # Restock inventory when delivery is approved
+    product = db.query(Product).filter(Product.id == delivery.product_id).first()
+    if product:
+        product.quantity += delivery.quantity
 
     db.commit()
     db.refresh(delivery)

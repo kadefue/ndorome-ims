@@ -48,6 +48,9 @@ def create_product(db: Session, product_in: ProductCreate) -> Product:
 
 def update_product(db: Session, product: Product, product_in: ProductUpdate) -> Product:
     update_data = product_in.model_dump(exclude_unset=True)
+    # Prevent direct stock (quantity) update
+    if "quantity" in update_data:
+        update_data.pop("quantity")
     for field, value in update_data.items():
         setattr(product, field, value)
     db.commit()

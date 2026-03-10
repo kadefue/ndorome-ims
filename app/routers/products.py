@@ -101,4 +101,7 @@ def remove_product(
     product = get_product(db, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    delete_product(db, product)
+    try:
+        delete_product(db, product)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

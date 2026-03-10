@@ -1401,8 +1401,8 @@ function Orders({ locale }) {
                 setForm({ ...form, product_id: val, supplier: p?.supplier || "", unit_price: p?.unit_price || "" });
               }}>
                 <option value="">{t(locale,'form.select_product')}</option>
-                {products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
               <option value="__new">{t(locale,'orders.add_new_product') || '＋ Add new product'}</option>
+                {products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
               {/* Edit/Delete moved to table actions */}
             </div>

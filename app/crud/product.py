@@ -56,6 +56,17 @@ def update_product(db: Session, product: Product, product_in: ProductUpdate) -> 
 
 
 def delete_product(db: Session, product: Product) -> None:
+    # Prevent deleting a product that is referenced by orders or deliveries
+    from app.models.order import Order
+    from app.models.delivery import Delivery
+
+    ord_exists = db.query(Order).filter(Order.product_id == product.id).first()
+    if ord_exists:
+        raise ValueError("Cannot delete product: referenced by existing orders")
+    del_exists = db.query(Delivery).filter(Delivery.product_id == product.id).first()
+    if del_exists:
+        raise ValueError("Cannot delete product: referenced by existing deliveries")
+
     db.delete(product)
     db.commit()
 

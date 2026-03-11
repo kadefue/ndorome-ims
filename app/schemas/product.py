@@ -31,6 +31,7 @@ class ProductUpdate(BaseModel):
 class ProductResponse(BaseModel):
     id: int
     name: str
+    display_name: str
     sku: str
     category: str
     quantity: int

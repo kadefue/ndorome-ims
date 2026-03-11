@@ -37,3 +37,13 @@ class Product(Base):
 
     def __repr__(self):
         return f"<Product id={self.id} sku={self.sku} qty={self.quantity}>"
+
+    @property
+    def display_name(self) -> str:
+        """Return product name combined with model if available: 'Name - Model'."""
+        try:
+            if getattr(self, 'motorcycle_model', None) and getattr(self.motorcycle_model, 'name', None):
+                return f"{self.name} - {self.motorcycle_model.name}"
+        except Exception:
+            pass
+        return self.name

@@ -2112,6 +2112,7 @@ function ProductsPage({ locale }) {
     if (!form.name || !form.category) return alert('Provide name and select category');
     try {
       const payload = { name: form.name, sku: form.sku, category: form.category, min_quantity: +form.min_quantity, unit_price: 1.0, quantity: 0 };
+      if (form.model) payload.motorcycle_model_id = +form.model;
       // backend expects unit_price > 0; default to 1.0 when user doesn't provide price in UI
       const res = await apiFetch('/products',{method:'POST', body: JSON.stringify(payload)});
       setProducts(ps=>[res,...ps]);
@@ -2140,12 +2141,11 @@ function ProductsPage({ locale }) {
             </select>
             <select className="form-control" value={form.model} onChange={e=>setForm({...form,model:e.target.value})}>
               <option value="">Select model (optional)</option>
-              {(models||[]).map(m=> <option key={m.id} value={m.name}>{m.name}</option>)}
+              {(models||[]).map(m=> <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'200px 200px',gap:8,marginTop:8}}>
+          <div style={{display:'grid',gridTemplateColumns:'200px',gap:8,marginTop:8}}>
             <input className="form-control" placeholder="Min qty" type="number" value={form.min_quantity} onChange={e=>setForm({...form,min_quantity:e.target.value})} />
-            <input className="form-control" placeholder="Location" value={form.location} onChange={e=>setForm({...form,location:e.target.value})} />
           </div>
           <div style={{marginTop:12}}>
             <button className="btn btn-primary" onClick={addProduct}>Add Product</button>

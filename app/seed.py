@@ -1,9 +1,15 @@
 # app/seed.py
 """
 Database seeder — runs on first startup to populate the SQLite database
-with realistic Ndorome Spare Parts sample data.
+with realistic Supa Kariakoo Spare Parts Centre sample data.
+
+Important: products are created with `quantity=0` and any initial stock
+is added by creating purchase `Order` records and `Delivery` entries that
+are immediately approved. This ensures inventory always originates from
+approved deliveries.
 """
 from datetime import datetime, date, timedelta
+import random
 from sqlalchemy.orm import Session
 
 from app.crud.user import hash_password, get_user_by_email
@@ -13,27 +19,57 @@ from app.models.sale import Sale
 from app.models.order import Order
 from app.models.delivery import Delivery
 
+# Use CRUD helpers so deliveries are approved via the canonical path
+from app.crud.order import create_order
+from app.crud.delivery import create_delivery, approve_delivery
+from app.schemas.order import OrderCreate
+from app.schemas.delivery import DeliveryCreate
+from app.crud.sale import create_sale
+from app.schemas.sale import SaleCreate
+
 
 USERS = [
-    {"name": "James Ndorome",  "email": "owner@ndorome.com",   "password": "owner123",   "role": "owner"},
-    {"name": "Alice Mwangi",   "email": "manager@ndorome.com", "password": "manager123", "role": "manager"},
-    {"name": "Brian Ochieng",  "email": "employee@ndorome.com","password": "emp123",     "role": "employee"},
+    {"name": "James Kariakoo",  "email": "owner@supakariakoo.com",   "password": "owner123",   "role": "owner"},
+    {"name": "Alice Mangi",    "email": "manager@supakariakoo.com", "password": "manager123", "role": "manager"},
+    {"name": "Brian Mwalukasa",   "email": "employee@supakariakoo.com","password": "emp123",     "role": "employee"},
 ]
 
-PRODUCTS = [
-    {"name": "Brake Pads - Toyota",       "sku": "BRK-TOY-001", "category": "Brakes",       "quantity": 45, "min_quantity": 10, "unit_price": 1200,  "supplier": "Toyota Parts Ltd",  "location": "A-01"},
-    {"name": "Engine Oil Filter",         "sku": "OIL-FLT-002", "category": "Engine",        "quantity": 8,  "min_quantity": 15, "unit_price": 350,   "supplier": "AutoFilter Kenya",  "location": "B-02"},
-    {"name": "Spark Plugs Set",           "sku": "SPK-PLG-003", "category": "Engine",        "quantity": 60, "min_quantity": 20, "unit_price": 800,   "supplier": "NGK Kenya",         "location": "C-03"},
-    {"name": "Windshield Wiper Blades",   "sku": "WPR-BLD-004", "category": "Exterior",      "quantity": 30, "min_quantity": 10, "unit_price": 450,   "supplier": "Bosch Kenya",       "location": "D-04"},
-    {"name": "Alternator - Nissan",       "sku": "ALT-NIS-005", "category": "Electrical",    "quantity": 5,  "min_quantity": 3,  "unit_price": 8500,  "supplier": "Nissan Parts Ltd",  "location": "E-05"},
-    {"name": "Clutch Kit - Isuzu",        "sku": "CLT-ISZ-006", "category": "Transmission",  "quantity": 12, "min_quantity": 5,  "unit_price": 12000, "supplier": "Isuzu Kenya",       "location": "F-06"},
-    {"name": "Air Filter - Universal",    "sku": "AIR-FLT-007", "category": "Engine",        "quantity": 25, "min_quantity": 10, "unit_price": 500,   "supplier": "AutoFilter Kenya",  "location": "B-03"},
-    {"name": "Battery 12V 60Ah",          "sku": "BAT-12V-008", "category": "Electrical",    "quantity": 15, "min_quantity": 5,  "unit_price": 9500,  "supplier": "Chloride Exide",    "location": "G-07"},
-    {"name": "Radiator - Toyota Hilux",   "sku": "RAD-HIL-009", "category": "Cooling",       "quantity": 6,  "min_quantity": 3,  "unit_price": 18000, "supplier": "Toyota Parts Ltd",  "location": "H-08"},
-    {"name": "Shock Absorber Front Pair", "sku": "SHK-FRT-010", "category": "Suspension",    "quantity": 10, "min_quantity": 4,  "unit_price": 7500,  "supplier": "Monroe Kenya",      "location": "I-09"},
-    {"name": "Timing Belt Kit",           "sku": "TMG-BLT-011", "category": "Engine",        "quantity": 3,  "min_quantity": 5,  "unit_price": 5500,  "supplier": "Gates Kenya",       "location": "C-04"},
-    {"name": "Power Steering Fluid 1L",   "sku": "PSF-001-012", "category": "Fluids",        "quantity": 40, "min_quantity": 15, "unit_price": 250,   "supplier": "Castrol Kenya",     "location": "J-10"},
+## Generate 50 motorcycle-related parts commonly found in Tanzania
+PART_BASE = [
+    ("Brake Pads", "Brakes"), ("Clutch Kit", "Transmission"), ("Spark Plugs", "Engine"),
+    ("Air Filter", "Engine"), ("Oil Filter", "Engine"), ("Battery 12V", "Electrical"),
+    ("Headlight", "Electrical"), ("Taillight", "Electrical"), ("Mirror", "Exterior"),
+    ("Chain", "Drive"), ("Sprocket", "Drive"), ("Tire", "Wheels"), ("Tube", "Wheels"),
+    ("Shock Absorber", "Suspension"), ("Fork Seal", "Suspension"), ("Brake Shoe", "Brakes"),
+    ("Brake Disc", "Brakes"), ("Carburetor", "Fuel"), ("Fuel Tap", "Fuel"), ("Seat", "Body"),
+    ("Handlebar", "Controls"), ("Brake Lever", "Controls"), ("Clutch Cable", "Controls"),
+    ("Speedometer Cable", "Controls"), ("Ignition Coil", "Electrical"), ("Regulator Rectifier", "Electrical"),
+    ("CDI Unit", "Electrical"), ("Piston Ring", "Engine"), ("Gasket Set", "Engine"), ("Valve", "Engine"),
+    ("Wheel Bearing", "Wheels"), ("Rim", "Wheels"), ("Starter Motor", "Electrical"), ("Oil Seal", "Engine"),
 ]
+
+SUPPLIERS = ["MotoParts TZ", "DarBike Supplies", "Kilimanjaro Motors", "Zanzibar Motors", "Nairobi Moto" ]
+
+PRODUCTS = []
+for i in range(50):
+    base, category = random.choice(PART_BASE)
+    model = f"{base} - Model {random.randint(100,999)}"
+    sku = f"MOTO-{i+1:03d}-{random.randint(100,999)}"
+    qty = random.randint(0, 100)
+    min_q = random.choice([3,5,10,15])
+    price = round(random.uniform(1500, 35000), 2)  # TZS or KES assumed
+    supplier = random.choice(SUPPLIERS)
+    location = f"R-{random.randint(1,20):02d}"
+    PRODUCTS.append({
+        "name": model,
+        "sku": sku,
+        "category": category,
+        "quantity": qty,
+        "min_quantity": min_q,
+        "unit_price": price,
+        "supplier": supplier,
+        "location": location,
+    })
 
 
 def _days_ago(n: int) -> datetime:
@@ -42,7 +78,7 @@ def _days_ago(n: int) -> datetime:
 
 def seed_database(db: Session) -> None:
     # Check if already seeded
-    if get_user_by_email(db, "owner@ndorome.com"):
+    if get_user_by_email(db, "owner@supakariakoo.com"):
         return
 
     print("🌱 Seeding database with sample data...")
@@ -60,11 +96,19 @@ def seed_database(db: Session) -> None:
     db.flush()
 
     # ── Products ──────────────────────────────────────────────────────────────
+    # Create products with quantity=0. Any intended initial stock from the
+    # PRODUCTS table is applied via approved deliveries below so that all
+    # inventory originates from an order + approved delivery.
     product_objs = []
+    intended_stocks: list[tuple[Product,int]] = []
     for p in PRODUCTS:
-        obj = Product(**p)
+        intended_qty = p.get("quantity", 0)
+        p_copy = p.copy()
+        p_copy["quantity"] = 0
+        obj = Product(**p_copy)
         db.add(obj)
         product_objs.append(obj)
+        intended_stocks.append((obj, intended_qty))
     db.flush()
 
     owner    = user_objs["owner"]
@@ -72,71 +116,84 @@ def seed_database(db: Session) -> None:
     employee = user_objs["employee"]
     p        = product_objs   # shorthand
 
-    # ── Sales ─────────────────────────────────────────────────────────────────
-    sales_data = [
-        (p[0], employee, 2, "John Kamau",    "Cash",          8),
-        (p[2], employee, 1, "Mary Njeri",    "M-Pesa",        7),
-        (p[6], employee, 3, "Peter Mutua",   "M-Pesa",        6),
-        (p[5], manager,  1, "Grace Wanjiku", "Bank Transfer", 5),
-        (p[7], employee, 2, "David Omondi",  "Cash",          4),
-        (p[3], employee, 4, "Sarah Achieng", "M-Pesa",        3),
-        (p[1], manager,  2, "Michael Otieno","Cash",          2),
-        (p[9], employee, 1, "Lucy Wambui",   "M-Pesa",        1),
-        (p[4], manager,  1, "Tom Kariuki",   "Bank Transfer", 0),
-    ]
-    for prod, emp, qty, customer, payment, days in sales_data:
-        total = prod.unit_price * qty
-        sale = Sale(
-            product_id=prod.id, employee_id=emp.id,
-            quantity=qty, unit_price=prod.unit_price, total=total,
-            customer=customer, payment=payment, status="completed",
-            date=_days_ago(days),
-        )
-        # Adjust stock retroactively (seed data already has post-sale qty in PRODUCTS)
-        db.add(sale)
+    # ── Sales (seed will create 50 sales after initial stock is applied)
+    # We'll create these later once products have been restocked via approved deliveries.
 
-    # ── Purchase Orders ───────────────────────────────────────────────────────
-    order1 = Order(
-        product_id=p[1].id, ordered_by_id=manager.id,
-        quantity=50, unit_price=280, total=14000,
-        supplier="AutoFilter Kenya", status="delivered",
-        expected_delivery=date.today() - timedelta(days=10),
-        date=_days_ago(15),
-    )
-    order2 = Order(
-        product_id=p[4].id, ordered_by_id=manager.id,
-        quantity=10, unit_price=7000, total=70000,
-        supplier="Nissan Parts Ltd", status="in_transit",
-        expected_delivery=date.today() + timedelta(days=5),
-        date=_days_ago(3),
-    )
-    order3 = Order(
-        product_id=p[0].id, ordered_by_id=owner.id,
-        quantity=30, unit_price=960, total=28800,
-        supplier="Toyota Parts Ltd", status="pending",
-        expected_delivery=date.today() + timedelta(days=7),
-        date=_days_ago(1),
-    )
-    order4 = Order(
-        product_id=p[10].id, ordered_by_id=manager.id,
-        quantity=20, unit_price=4800, total=96000,
-        supplier="Gates Kenya", status="pending",
-        expected_delivery=date.today() + timedelta(days=10),
-        date=_days_ago(0),
-    )
-    db.add_all([order1, order2, order3, order4])
-    db.flush()
+    # Apply intended initial stock via orders + approved deliveries
+    for prod_obj, qty in intended_stocks:
+        if not qty or qty <= 0:
+            continue
+        # Create a lightweight order and delivery, then approve it
+        try:
+            order_in = OrderCreate(
+                product_id=prod_obj.id,
+                quantity=qty,
+                unit_price=prod_obj.unit_price,
+                supplier=prod_obj.supplier,
+            )
+            order = create_order(db, order_in, ordered_by_id=manager.id)
 
-    # ── Deliveries ────────────────────────────────────────────────────────────
-    delivery1 = Delivery(
-        order_id=order1.id, product_id=p[1].id,
-        received_by_id=employee.id, quantity=50,
-        supplier="AutoFilter Kenya", status="received",
-        notes="All 50 units received in good condition. No damages.",
-        date=_days_ago(10),
-    )
-    db.add(delivery1)
+            delivery_in = DeliveryCreate(
+                order_id=order.id,
+                product_id=prod_obj.id,
+                quantity=qty,
+                supplier=prod_obj.supplier,
+                notes="Seed: initial stock via approved delivery",
+            )
+            delivery = create_delivery(db, delivery_in, received_by_id=employee.id)
+            approve_delivery(db, delivery.id, approver_id=manager.id)
+        except Exception:
+            # If anything fails here, continue seeding other products
+            continue
+    # ── Generate additional purchase orders (45+) to populate history
+    additional_orders = 45
+    created_orders = 0
+    for _ in range(additional_orders):
+        prod = random.choice(product_objs)
+        qty = random.randint(1, 80)
+        unit_price = round(max(100, prod.unit_price * random.uniform(0.8, 1.4)), 2)
+        try:
+            o_in = OrderCreate(product_id=prod.id, quantity=qty, unit_price=unit_price, supplier=prod.supplier)
+            order = create_order(db, o_in, ordered_by_id=random.choice([manager.id, owner.id]))
+            created_orders += 1
+            # Decide delivery status: 60% delivered (create + approve), 20% in_transit, rest pending
+            r = random.random()
+            if r < 0.6:
+                d_in = DeliveryCreate(order_id=order.id, product_id=prod.id, quantity=qty, supplier=prod.supplier, notes="Seed delivery")
+                d = create_delivery(db, d_in, received_by_id=employee.id)
+                approve_delivery(db, d.id, approver_id=manager.id)
+            elif r < 0.8:
+                # mark in_transit
+                try:
+                    order_obj = db.query(Order).filter(Order.id == order.id).first()
+                    if order_obj:
+                        order_obj.status = "in_transit"
+                        db.commit()
+                except Exception:
+                    pass
+        except Exception:
+            continue
 
-    db.commit()
-    print("✅ Database seeded successfully!")
-    print("   Logins → owner@ndorome.com/owner123 | manager@ndorome.com/manager123 | employee@ndorome.com/emp123")
+    # ── Create 50 sales (consume stock). Try until we have 50 successful sales or reach attempts limit.
+    sales_to_create = 50
+    created_sales = 0
+    attempts = 0
+    max_attempts = 500
+    payments = ["Cash", "M-Pesa", "Bank Transfer"]
+    while created_sales < sales_to_create and attempts < max_attempts:
+        attempts += 1
+        prod = random.choice(product_objs)
+        # Refresh product from DB to get current quantity
+        prod_db = db.query(Product).filter(Product.id == prod.id).first()
+        if not prod_db or prod_db.quantity <= 0:
+            continue
+        qty = random.randint(1, min(5, prod_db.quantity))
+        sale_in = SaleCreate(product_id=prod_db.id, quantity=qty, customer=f"Customer {random.randint(1000,9999)}", payment=random.choice(payments))
+        try:
+            create_sale(db, sale_in, employee_id=random.choice([employee.id, manager.id]))
+            created_sales += 1
+        except Exception:
+            continue
+
+    print(f"✅ Database seeded successfully! Created {len(product_objs)} products, {created_orders} extra orders, and {created_sales} sales.")
+    print("   Logins → owner@supakariakoo.com/owner123 | manager@supakariakoo.com/manager123 | employee@supakariakoo.com/emp123")

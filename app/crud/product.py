@@ -43,7 +43,11 @@ def get_low_stock_products(db: Session) -> list[Product]:
 
 
 def create_product(db: Session, product_in: ProductCreate) -> Product:
-    db_product = Product(**product_in.model_dump())
+    data = product_in.model_dump()
+    # ensure only known fields are passed
+    allowed = { 'name','sku','category','quantity','min_quantity','unit_price','supplier','location','motorcycle_model_id' }
+    filtered = {k:v for k,v in data.items() if k in allowed}
+    db_product = Product(**filtered)
     db.add(db_product)
     db.commit()
     db.refresh(db_product)

@@ -15,6 +15,10 @@ def get_product_by_sku(db: Session, sku: str) -> Optional[Product]:
     return db.query(Product).filter(Product.sku == sku).first()
 
 
+def get_product_by_name(db: Session, name: str) -> Optional[Product]:
+    return db.query(Product).filter(Product.name == name).first()
+
+
 def get_all_products(
     db: Session,
     skip: int = 0,

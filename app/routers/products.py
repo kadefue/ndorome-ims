@@ -9,6 +9,7 @@ from app.crud.product import (
     get_product, get_product_by_sku, get_all_products,
     create_product, update_product, delete_product, get_low_stock_products,
 )
+from app.crud.product import get_product_by_name
 from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse
 from app.models.user import User
 from app.models.order import Order
@@ -56,6 +57,8 @@ def add_product(
 ):
     if get_product_by_sku(db, product_in.sku):
         raise HTTPException(status_code=400, detail=f"SKU '{product_in.sku}' already exists")
+    if get_product_by_name(db, product_in.name):
+        raise HTTPException(status_code=400, detail=f"Product name '{product_in.name}' already exists")
     return create_product(db, product_in)
 
 
@@ -88,6 +91,17 @@ def edit_product(
             min_allowed = last_order.unit_price * 1.25
             if new_price < min_allowed:
                 raise HTTPException(status_code=400, detail=f"Product price must be at least 25% above last order price ({min_allowed})")
+
+    # Check uniqueness if sku or name present in update
+    # If updating SKU, ensure no other product uses it
+    if getattr(product_in, 'sku', None) is not None:
+        existing = get_product_by_sku(db, product_in.sku)
+        if existing and existing.id != product.id:
+            raise HTTPException(status_code=400, detail=f"SKU '{product_in.sku}' already exists")
+    if getattr(product_in, 'name', None) is not None:
+        existing_name = get_product_by_name(db, product_in.name)
+        if existing_name and existing_name.id != product.id:
+            raise HTTPException(status_code=400, detail=f"Product name '{product_in.name}' already exists")
 
     return update_product(db, product, product_in)
 

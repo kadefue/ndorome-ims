@@ -1749,9 +1749,37 @@ function Orders({ locale }) {
         <Sidebar title={t(locale,'btn.edit_product') || 'Edit Product'} onClose={()=>setProductEditorShow(false)}
           footer={<><button className="btn btn-secondary" onClick={()=>setProductEditorShow(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveProductEditor} disabled={productEditorLoading}>{productEditorLoading ? (t(locale,'btn.saving')||'Saving...') : (t(locale,'btn.save')||'Save')}</button></>}>
           <div className="form-grid">
-            <div className="form-group"><label className="form-label">{t(locale,'form.product_name')}</label><input className="form-control" value={productEditorForm?.name||""} onChange={e=>setProductEditorForm({...productEditorForm,name:e.target.value})}/></div>
+            <div className="form-group">
+              <label className="form-label">{t(locale,'form.product_name')}</label>
+              <select className="form-control" value={productEditorForm?.name||""} onChange={e=>setProductEditorForm({...productEditorForm,name:e.target.value})}>
+                <option value="">(select product)</option>
+                {/* templates from settings */}
+                {(() => {
+                  try {
+                    const tmpl = JSON.parse(localStorage.getItem('nd_product_templates') || '[]');
+                    return tmpl.map(t => <option key={`tmpl-${t.name}`} value={t.name}>{t.name}</option>);
+                  } catch(e) { return null; }
+                })()}
+                {/* existing product names */}
+                {products && products.map(p=> <option key={p.id} value={p.name}>{p.name}</option>)}
+              </select>
+            </div>
             <div className="form-group"><label className="form-label">{t(locale,'form.sku')}</label><input className="form-control" value={productEditorForm?.sku||""} onChange={e=>setProductEditorForm({...productEditorForm,sku:e.target.value})}/></div>
-            <div className="form-group"><label className="form-label">{t(locale,'form.category')}</label><input className="form-control" value={productEditorForm?.category||""} onChange={e=>setProductEditorForm({...productEditorForm,category:e.target.value})}/></div>
+            <div className="form-group">
+              <label className="form-label">{t(locale,'form.category')}</label>
+              <select className="form-control" value={productEditorForm?.category||""} onChange={e=>setProductEditorForm({...productEditorForm,category:e.target.value})}>
+                <option value="">(select category)</option>
+                {(() => {
+                  try {
+                    const cats = JSON.parse(localStorage.getItem('nd_categories') || '[]');
+                    if (cats.length) return cats.map(c=> <option key={c} value={c}>{c}</option>);
+                  } catch(e) {}
+                  // fallback default categories
+                  const defs = ['Brakes','Tires','Engine','Transmission','Fluids','Body','Electrical','Accessories','Drive','Controls','Gaskets','Fuel System'];
+                  return defs.map(c=> <option key={c} value={c}>{c}</option>);
+                })()}
+              </select>
+            </div>
             <div className="form-group"><label className="form-label">{t(locale,'form.min_qty')}</label><input className="form-control" type="number" value={productEditorForm?.min_quantity||0} onChange={e=>setProductEditorForm({...productEditorForm,min_quantity:e.target.value})}/></div>
             <div className="form-group"><label className="form-label">{t(locale,'form.unit_price_tzs')}</label><input className="form-control" type="number" value={productEditorForm?.unit_price||0} onChange={e=>setProductEditorForm({...productEditorForm,unit_price:e.target.value})}/></div>
             <div className="form-group"><label className="form-label">{t(locale,'form.supplier')}</label><input className="form-control" value={productEditorForm?.supplier||""} onChange={e=>setProductEditorForm({...productEditorForm,supplier:e.target.value})}/></div>
@@ -1900,6 +1928,73 @@ function Deliveries({ locale }) {
           <div className="form-group"><label className="form-label">{t(locale,'table.notes') || 'Notes'} / Condition</label><textarea className="form-control" rows={3} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder={t(locale,'deliveries.notes_placeholder')}/></div>
         </Modal>
       )}
+    </div>
+  );
+}
+
+// ── Settings ───────────────────────────────────────────────────────────────
+function Settings({ locale }) {
+  const { user } = useAuth();
+  const [categories, setCategories] = useState(() => { try { return JSON.parse(localStorage.getItem('nd_categories')||'[]'); } catch { return []; } });
+  const [templates, setTemplates] = useState(() => { try { return JSON.parse(localStorage.getItem('nd_product_templates')||'[]'); } catch { return []; } });
+  const [models, setModels] = useState(() => { try { return JSON.parse(localStorage.getItem('nd_models')||'[]'); } catch { return []; } });
+  const [catInput, setCatInput] = useState('');
+  const [tmpl, setTmpl] = useState({name:'',category:'',sku:'',unit_price:''});
+  const [modelInput, setModelInput] = useState({name:'',categories:''});
+
+  function saveCategories(next) { localStorage.setItem('nd_categories', JSON.stringify(next)); setCategories(next); }
+  function saveTemplates(next) { localStorage.setItem('nd_product_templates', JSON.stringify(next)); setTemplates(next); }
+  function saveModels(next) { localStorage.setItem('nd_models', JSON.stringify(next)); setModels(next); }
+
+  function addCategory() { const v = catInput.trim(); if (!v) return; if (categories.includes(v)) return setCatInput(''); const next = [...categories,v]; saveCategories(next); setCatInput(''); }
+  function addTemplate() { if (!tmpl.name || !tmpl.category) return alert('Provide name and category'); const next = [...templates, tmpl]; saveTemplates(next); setTmpl({name:'',category:'',sku:'',unit_price:''}); }
+  function addModel() { if (!modelInput.name) return alert('Provide model name'); const cats = modelInput.categories.split(',').map(s=>s.trim()).filter(Boolean); const next = [...models,{name:modelInput.name,categories:cats}]; saveModels(next); setModelInput({name:'',categories:''}); }
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <div className="page-title">{t(locale,'page.settings') || 'Settings'}</div>
+          <div className="page-subtitle">Manage categories, product templates and motorcycle models</div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header"><span className="card-title">Categories</span></div>
+        <div style={{padding:16}}>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <input className="form-control" placeholder="Add category" value={catInput} onChange={e=>setCatInput(e.target.value)} style={{width:220}} />
+            <button className="btn btn-primary" onClick={addCategory}>Add</button>
+          </div>
+          <div style={{marginTop:12}}>{categories.length?categories.map(c=> <span key={c} className="badge badge-info" style={{marginRight:6}}>{c}</span>) : <span className="td-muted">No categories yet</span>}</div>
+        </div>
+      </div>
+
+      <div className="card" style={{marginTop:12}}>
+        <div className="card-header"><span className="card-title">Product Templates</span></div>
+        <div style={{padding:16}}>
+          <div style={{display:'grid',gridTemplateColumns:'200px 200px 120px 120px 80px',gap:8}}>
+            <input className="form-control" placeholder="Template name" value={tmpl.name} onChange={e=>setTmpl({...tmpl,name:e.target.value})} />
+            <input className="form-control" placeholder="Category" value={tmpl.category} onChange={e=>setTmpl({...tmpl,category:e.target.value})} />
+            <input className="form-control" placeholder="SKU" value={tmpl.sku} onChange={e=>setTmpl({...tmpl,sku:e.target.value})} />
+            <input className="form-control" placeholder="Price" value={tmpl.unit_price} onChange={e=>setTmpl({...tmpl,unit_price:e.target.value})} />
+            <button className="btn btn-primary" onClick={addTemplate}>Add</button>
+          </div>
+          <div style={{marginTop:12}}>{templates.length?templates.map(t=> <div key={t.name} style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}><strong>{t.name}</strong><span className="td-muted">{t.category}</span><span className="td-muted">{t.sku}</span></div>) : <span className="td-muted">No templates yet</span>}</div>
+        </div>
+      </div>
+
+      <div className="card" style={{marginTop:12}}>
+        <div className="card-header"><span className="card-title">Motorcycle Models</span></div>
+        <div style={{padding:16}}>
+          <div style={{display:'grid',gridTemplateColumns:'200px 300px 120px',gap:8}}>
+            <input className="form-control" placeholder="Model name (e.g. CG125)" value={modelInput.name} onChange={e=>setModelInput({...modelInput,name:e.target.value})} />
+            <input className="form-control" placeholder="Categories (comma separated)" value={modelInput.categories} onChange={e=>setModelInput({...modelInput,categories:e.target.value})} />
+            <button className="btn btn-primary" onClick={addModel}>Add</button>
+          </div>
+          <div style={{marginTop:12}}>{models.length?models.map(m=> <div key={m.name} style={{marginBottom:8}}><strong>{m.name}</strong> <span className="td-muted">{m.categories.join(', ')}</span></div>) : <span className="td-muted">No models yet</span>}</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2166,10 +2261,11 @@ const NAV = [
   { id:"orders",    labelKey:"nav.orders",    icon:"📋" },
   { id:"deliveries",labelKey:"nav.deliveries",icon:"🚚" },
   { id:"reports",   labelKey:"nav.reports",   icon:"📈" },
+  { id:"settings",  labelKey:"nav.settings",  icon:"⚙️", roles:["owner","manager"] },
   { id:"users",     labelKey:"nav.users",     icon:"👥", roles:["owner","manager"] },
 ];
 
-const PAGE_TITLES = {dashboard:"page.dashboard",inventory:"page.inventory",sales:"page.sales",orders:"page.orders",deliveries:"page.deliveries",reports:"page.reports",users:"page.users"};
+const PAGE_TITLES = {dashboard:"page.dashboard",inventory:"page.inventory",sales:"page.sales",orders:"page.orders",deliveries:"page.deliveries",reports:"page.reports",users:"page.users",settings:"page.settings"};
 
 function AppShell({ user, onLogout, locale, setLocale }) {
   const [page, setPage] = useState("dashboard");
@@ -2184,6 +2280,7 @@ function AppShell({ user, onLogout, locale, setLocale }) {
       case "sales":     return <Sales locale={locale}/>;
       case "orders":    return <Orders locale={locale}/>;
       case "deliveries":return <Deliveries locale={locale}/>;
+      case "settings":  return <Settings locale={locale}/>;
       case "reports":   return <Reports locale={locale}/>;
       case "users":     return <Users locale={locale}/>;
       default:          return <Dashboard/>;

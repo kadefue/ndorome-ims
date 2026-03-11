@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Application
-    APP_NAME: str = "Ndorome Spare Parts IMS"
+    APP_NAME: str = "Supa Kariakoo Spare Parts Centre"
     APP_VERSION: str = "2.0.0"
     DEBUG: bool = True
 
@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./ndorome_ims.db"
 
     # JWT
-    SECRET_KEY: str = "ndorome-spare-parts-super-secret-key-change-in-production"
+    SECRET_KEY: str = "supa-kariakoo-spare-parts-super-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 hours
 

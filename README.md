@@ -1,6 +1,6 @@
-# 🔧 Ndorome Spare Parts — Inventory Management System
+# 🔧 Supa Kariakoo Spare Parts Centre — Inventory Management System
 
-A full-stack **Inventory Management System** for Ndorome Spare Parts. Covers stock tracking, sales recording, purchase orders, and delivery management — with role-based access for owners, managers, and employees.
+A full-stack **Inventory Management System** for Supa Kariakoo Spare Parts Centre. Covers stock tracking, sales recording, purchase orders, and delivery management — with role-based access for owners, managers, and employees.
 
 **Backend:** FastAPI · SQLAlchemy 2.0 · SQLite · Alembic · JWT Auth  
 **Frontend:** React 18 · Recharts · Vite
@@ -31,9 +31,9 @@ ndorome-ims/
 ├── .env.example
 │
 ├── app/
-# 🔧 Ndorome Spare Parts — Inventory Management System
+# 🔧 Supa Kariakoo Spare Parts Centre — Inventory Management System
 
-A full-stack Inventory Management System for Ndorome Spare Parts. It supports stock tracking, sales recording, purchase orders, delivery approval, and role-based access for owners, managers, and employees.
+A full-stack Inventory Management System for Supa Kariakoo Spare Parts Centre. It supports stock tracking, sales recording, purchase orders, delivery approval, and role-based access for owners, managers, and employees.
 
 Stack overview:
 - Backend: FastAPI · SQLAlchemy 2.0 · SQLite · Alembic · JWT Auth
@@ -170,9 +170,9 @@ If you are using the default SQLite dev DB the app will also create `ndorome_ims
 
 | Role     | Email                   | Password  |
 |----------|-------------------------|-----------|
-| Owner    | owner@ndorome.com       | owner123  |
-| Manager  | manager@ndorome.com     | manager123|
-| Employee | employee@ndorome.com    | emp123    |
+| Owner    | owner@supakariakoo.com       | owner123  |
+| Manager  | manager@supakariakoo.com     | manager123|
+| Employee | employee@supakariakoo.com    | emp123    |
 
 Change these before production.
 

@@ -54,7 +54,7 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description=(
-        "Inventory Management System for Ndorome Spare Parts. "
+        "Inventory Management System for Supa Kariakoo Spare Parts Centre. "
         "Manage stock, sales, purchase orders and deliveries with role-based access control."
     ),
     lifespan=lifespan,

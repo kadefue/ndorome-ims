@@ -1249,7 +1249,15 @@ function Inventory({ locale }) {
             <tbody>
               {paged.map(p => (
                 <tr key={p.id}>
-                  <td><div style={{fontWeight:500}}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))} {p.soldBelow && <span style={{marginLeft:8}} className="badge badge-danger">{t(locale,'inventory.sold_below')||'Sold below price'}</span>}</div></td>
+                  <td>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <div style={{flex:1,fontWeight:500}}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))} {p.soldBelow && <span style={{marginLeft:8}} className="badge badge-danger">{t(locale,'inventory.sold_below')||'Sold below price'}</span>}</div>
+                      <div style={{display:'flex',gap:6}}>
+                        <button className="btn btn-secondary btn-sm" onClick={()=>openEdit(p)} disabled={!canEdit} title={!canEdit ? 'Insufficient permissions' : 'Edit product'}>✎</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => del(p.id)} disabled={!canEdit || p.hasReferences} title={!canEdit ? 'Insufficient permissions' : (p.hasReferences ? 'Cannot delete: existing sales or orders reference this item' : 'Delete product')}>🗑</button>
+                      </div>
+                    </div>
+                  </td>
                   <td className="td-muted" style={{fontFamily:"monospace",fontSize:12}}>{p.sku}</td>
                   <td><span className="badge badge-info">{p.category}</span></td>
                   <td style={{fontWeight:700,color: p.quantity<=p.min_quantity?"#F85149":p.quantity<=p.min_quantity*2?"#D29922":"#3FB950"}}>{p.quantity}</td>

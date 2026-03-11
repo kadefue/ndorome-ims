@@ -698,7 +698,9 @@ function statusBadge(s) {
     pending: "badge-warning", in_transit: "badge-info",
     delivered: "badge-success", cancelled: "badge-danger",
   };
-  return <span className={`badge ${map[s] || "badge-gold"}`}>{s?.replace("_"," ")}</span>;
+  return (
+    <span className={`badge ${map[s] || 'badge-gold'}`}>{s ? s.replace('_',' ') : ''}</span>
+  );
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────

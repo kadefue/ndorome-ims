@@ -2041,12 +2041,12 @@ function CategoriesPage({ locale }) {
 // ── Models Page ───────────────────────────────────────────────────────────
 function ModelsPage({ locale }) {
   const [models, setModels] = useState([]);
-  const [modelInput, setModelInput] = useState({name:'',categories:''});
+  const [modelInput, setModelInput] = useState({name:''});
   useEffect(()=>{ apiFetch('/settings/models').then(m=>setModels(m||[])).catch(()=>{}); },[]);
 
   async function addModel(){
-    if (!modelInput.name) return alert('Provide model name'); const cats = modelInput.categories.split(',').map(s=>s.trim()).filter(Boolean);
-    try { const res = await apiFetch('/settings/models',{method:'POST', body: JSON.stringify({name: modelInput.name, categories: cats})}); setModels(ms=>[...ms, res]); setModelInput({name:'',categories:''}); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+    if (!modelInput.name) return alert('Provide model name');
+    try { const res = await apiFetch('/settings/models',{method:'POST', body: JSON.stringify({name: modelInput.name})}); setModels(ms=>[...ms, res]); setModelInput({name:''}); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
 
   async function deleteModel(id){ if (!confirm('Delete model?')) return; try { await apiFetch('/settings/models/' + id, { method: 'DELETE' }); setModels(ms=>ms.filter(m=>m.id!==id)); window._app_show_toast && window._app_show_toast('Deleted', 'success'); } catch(e){} }
@@ -2056,18 +2056,17 @@ function ModelsPage({ locale }) {
       <div className="page-header">
         <div>
           <div className="page-title">{t(locale,'page.models') || 'Motorcycle Models'}</div>
-          <div className="page-subtitle">Manage motorcycle models and their categories</div>
+          <div className="page-subtitle">Manage motorcycle models</div>
         </div>
       </div>
       <div className="card">
         <div className="card-header"><span className="card-title">Add Model</span></div>
         <div style={{padding:16}}>
-          <div style={{display:'grid',gridTemplateColumns:'200px 300px 120px',gap:8}}>
+          <div style={{display:'grid',gridTemplateColumns:'200px 120px',gap:8}}>
             <input className="form-control" placeholder="Model name (e.g. CG125)" value={modelInput.name} onChange={e=>setModelInput({...modelInput,name:e.target.value})} />
-            <input className="form-control" placeholder="Categories (comma separated)" value={modelInput.categories} onChange={e=>setModelInput({...modelInput,categories:e.target.value})} />
             <button className="btn btn-primary" onClick={addModel}>Add</button>
           </div>
-          <div style={{marginTop:12}}>{models.length?models.map(m=> <div key={m.id} style={{marginBottom:8}}><strong>{m.name}</strong> <span className="td-muted">{(m.categories||[]).join(', ')}</span> <button className="btn btn-danger btn-sm" style={{marginLeft:8}} onClick={()=>deleteModel(m.id)}>Delete</button></div>) : <span className="td-muted">No models yet</span>}</div>
+          <div style={{marginTop:12}}>{models.length?models.map(m=> <div key={m.id} style={{marginBottom:8}}><strong>{m.name}</strong> <button className="btn btn-danger btn-sm" style={{marginLeft:8}} onClick={()=>deleteModel(m.id)}>Delete</button></div>) : <span className="td-muted">No models yet</span>}</div>
         </div>
       </div>
     </div>
@@ -2080,17 +2079,30 @@ function ProductsPage({ locale }) {
   const [templates, setTemplates] = useState([]);
   const [models, setModels] = useState([]);
   const [products, setProducts] = useState([]);
-  const [form, setForm] = useState({name:'',sku:'',category:'',model:'',min_quantity:5,location:''});
+  const [form, setForm] = useState({name:'',sku:'',category:'',model:'',min_quantity:5});
   useEffect(()=>{ Promise.all([apiFetch('/settings/categories'), apiFetch('/settings/templates'), apiFetch('/settings/models'), apiFetch('/products')]).then(([c,t,m,p])=>{ setCategories(c||[]); setTemplates(t||[]); setModels(m||[]); setProducts(p||[]); }).catch(()=>{}); },[]);
+
+  function inferModelName(prod) {
+    if (!prod) return '';
+    if (prod.model) return prod.model;
+    const name = (prod.name || '').toLowerCase();
+    for (const m of (models || [])) {
+      if (!m) continue;
+      const mname = (m.name || '').toLowerCase();
+      if (mname && name.includes(mname)) return m.name;
+      if (m.categories && m.categories.length && prod.category && m.categories.includes(prod.category)) return m.name;
+    }
+    return '';
+  }
 
   async function addProduct(){
     if (!form.name || !form.category) return alert('Provide name and select category');
     try {
-      const payload = { ...form, min_quantity: +form.min_quantity, unit_price: 1.0, quantity: 0 };
+      const payload = { name: form.name, sku: form.sku, category: form.category, min_quantity: +form.min_quantity, unit_price: 1.0, quantity: 0 };
       // backend expects unit_price > 0; default to 1.0 when user doesn't provide price in UI
       const res = await apiFetch('/products',{method:'POST', body: JSON.stringify(payload)});
       setProducts(ps=>[res,...ps]);
-      setForm({name:'',sku:'',category:'',model:'',min_quantity:5,location:''});
+      setForm({name:'',sku:'',category:'',model:'',min_quantity:5});
       window._app_show_toast && window._app_show_toast('Product added', 'success');
     } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
@@ -2132,8 +2144,8 @@ function ProductsPage({ locale }) {
         <div className="card-header"><span className="card-title">Existing Products</span></div>
         <div className="table-wrap" style={{padding:16}}>
           <table>
-            <thead><tr><th>Name</th><th>SKU</th><th>Category</th><th>Qty</th></tr></thead>
-            <tbody>{products.length?products.map(p=> <tr key={p.id}><td>{p.name}</td><td className="td-muted">{p.sku}</td><td className="td-muted">{p.category}</td><td style={{fontWeight:700,color:'#3FB950'}}>{p.quantity||0}</td></tr>) : <tr><td colSpan={4} style={{padding:20}} className="td-muted">No products yet</td></tr>}</tbody>
+            <thead><tr><th>Name</th><th>SKU</th><th>Category</th><th>Model</th></tr></thead>
+            <tbody>{products.length?products.map(p=> <tr key={p.id}><td>{p.name}</td><td className="td-muted">{p.sku}</td><td className="td-muted">{p.category}</td><td className="td-muted">{inferModelName(p) || ''}</td></tr>) : <tr><td colSpan={4} style={{padding:20}} className="td-muted">No products yet</td></tr>}</tbody>
           </table>
         </div>
       </div>

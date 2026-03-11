@@ -47,10 +47,42 @@ for i in range(NUM_PRODUCTS):
     # delivered_qty for first 50, zero for the rest; actual Product.quantity will be set by deliveries
     delivered = random.randint(50, 200) if i < 50 else 0
     DELIVERED_QTY.append(delivered)
+    # assign a meaningful category based on part type to aid grouping/comparison
+    CATEGORY_MAP = {
+        "Brake": "Brakes",
+        "Brake Pads": "Brakes",
+        "Tire": "Tires",
+        "Wheel": "Tires",
+        "Clutch": "Transmission",
+        "Gearbox": "Transmission",
+        "Chain": "Drive",
+        "Spark": "Engine",
+        "Piston": "Engine",
+        "Cylinder": "Engine",
+        "Carburetor": "Engine",
+        "Fuel": "Fuel System",
+        "Oil": "Fluids",
+        "Fluid": "Fluids",
+        "Headlight": "Electrical",
+        "Battery": "Electrical",
+        "Handlebar": "Controls",
+        "Seat": "Body",
+        "Wiper": "Body",
+        "Gasket": "Gaskets",
+        "Pump": "Fuel System",
+        "Starter": "Engine",
+        "Accessory": "Accessories",
+    }
+    category = "Accessories"
+    for key, cat in CATEGORY_MAP.items():
+        if key.lower() in part.lower():
+            category = cat
+            break
+
     PRODUCTS.append({
         "name": name,
         "sku": sku,
-        "category": "Motorcycle",
+        "category": category,
         "quantity": 0,
         "min_quantity": min_q,
         "unit_price": unit_price,

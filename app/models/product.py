@@ -1,5 +1,5 @@
 # app/models/product.py
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -17,6 +17,8 @@ class Product(Base):
     unit_price   = Column(Float, nullable=False)
     supplier     = Column(String(200), nullable=True)
     location     = Column(String(50), nullable=True)           # Shelf/bin location
+    motorcycle_model_id = Column(Integer, ForeignKey('motorcycle_models.id'), nullable=True)
+    motorcycle_model = relationship("MotorcycleModel")
     created_at   = Column(DateTime, default=datetime.utcnow)
     updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

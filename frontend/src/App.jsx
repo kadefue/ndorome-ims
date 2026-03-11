@@ -2084,13 +2084,26 @@ function ProductsPage({ locale }) {
 
   function inferModelName(prod) {
     if (!prod) return '';
+    // Prefer explicit fields if backend provides them
+    if (prod.motorcycle_model_id) {
+      const byId = (models || []).find(x => x.id === prod.motorcycle_model_id);
+      if (byId) return byId.name;
+    }
+    if (prod.motorcycle_model && prod.motorcycle_model.name) return prod.motorcycle_model.name;
     if (prod.model) return prod.model;
+
     const name = (prod.name || '').toLowerCase();
+    // Match model by name appearing in product name
     for (const m of (models || [])) {
       if (!m) continue;
       const mname = (m.name || '').toLowerCase();
       if (mname && name.includes(mname)) return m.name;
-      if (m.categories && m.categories.length && prod.category && m.categories.includes(prod.category)) return m.name;
+    }
+    // Match model by overlapping categories (if model defines categories)
+    for (const m of (models || [])) {
+      if (!m || !m.categories) continue;
+      if (!prod.category) continue;
+      if (m.categories.includes(prod.category)) return m.name;
     }
     return '';
   }

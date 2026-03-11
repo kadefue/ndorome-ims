@@ -2,6 +2,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+from app.schemas.settings import MotorcycleModelRead
 
 
 class ProductCreate(BaseModel):
@@ -13,6 +14,7 @@ class ProductCreate(BaseModel):
     unit_price: float = Field(..., gt=0)
     supplier: Optional[str] = Field(None, max_length=200)
     location: Optional[str] = Field(None, max_length=50)
+    motorcycle_model_id: Optional[int] = None
 
 
 class ProductUpdate(BaseModel):
@@ -23,6 +25,7 @@ class ProductUpdate(BaseModel):
     unit_price: Optional[float] = Field(None, gt=0)
     supplier: Optional[str] = None
     location: Optional[str] = None
+    motorcycle_model_id: Optional[int] = None
 
 
 class ProductResponse(BaseModel):
@@ -35,6 +38,8 @@ class ProductResponse(BaseModel):
     unit_price: float
     supplier: Optional[str]
     location: Optional[str]
+    motorcycle_model_id: Optional[int]
+    motorcycle_model: Optional[MotorcycleModelRead]
     is_low_stock: bool
     inventory_value: float
     created_at: datetime

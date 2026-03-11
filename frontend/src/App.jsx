@@ -23,7 +23,7 @@ async function apiFetch(path, options = {}) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    const msg = err.detail || err.message || `Request failed (${res.status})`;
+    const msg = err.detail || err.message || ('Request failed (' + res.status + ')');
     try { window._app_show_toast && window._app_show_toast(msg, 'danger'); } catch {}
     throw new Error(msg);
   }
@@ -138,6 +138,8 @@ const css = `
     transition: background 0.15s; width: 100%;
     background: none; border: none;
   }
+`;
+
   // ── Translations ───────────────────────────────────────────────────────────
   const TRANSLATIONS = {
     en: {
@@ -425,122 +427,7 @@ const css = `
       "login.hint_owner": "Mmiliki:",
       "login.hint_manager": "Meneja:",
       "login.hint_employee": "Mfanyakazi:",
-    }
-  };
-    "form.category": "Category",
-    "form.select_existing": "-- Select existing --",
-    "form.other": "Other...",
-    "form.enter_product_name": "Enter product name",
-    "form.enter_sku": "Enter SKU",
-    "form.enter_category": "Enter category",
-    "form.supplier": "Supplier",
-    "form.location": "Location",
-    "form.quantity": "Quantity",
-    "form.min_qty": "Min Qty",
-    "form.unit_price_tzs": "Unit Price (TZS)",
-    "confirm.delete_product": "Delete this product?",
-    "alert.product_required": "Product name and SKU are required",
-    "alert.product_exists": "A product with that name or SKU already exists.",
-    "btn.edit": "Edit",
-    "btn.delete": "Del",
-    "sales.total_revenue_label": "Total Revenue",
-    "sales.total_transactions": "Total Transactions",
-    "sales.todays_sales": "Today's Sales",
-    "search.placeholder": "Search…",
-    "form.payment_method": "Payment Method",
-    "form.customer_name": "Customer Name",
-    "form.customer_email_optional": "Customer Email (optional)",
-    "form.customer_phone_optional": "Customer Phone (optional)",
-    "form.select_product": "-- Select Product --",
-    "alert.fill_product_qty": "Fill product and quantity",
-    "confirm.no_customer_continue": "No customer name, email or phone provided. Continue?",
-    "orders.records_title": "Order Records",
-    "orders.expected_delivery": "Expected Delivery",
-    "orders.ordered_by": "Ordered By",
-    "orders.actions": "Actions",
-    "deliveries.records_title": "Delivery Records",
-    "deliveries.approve_as_is": "Approve as is",
-    "deliveries.linked_order_label": "Linked Purchase Order",
-    "form.select_order": "-- Select Order --",
-    "deliveries.notes_placeholder": "e.g. All items in good condition",
-    "reports.title": "Reports & Analytics",
-    "reports.subtitle": "Visual insights into business performance",
-    "reports.monthly_revenue": "Monthly Revenue",
-    "reports.payment_methods": "Payment Methods",
-    "reports.inventory_by_category": "Inventory by Category",
-    "users.subtitle": "{count} system users",
-    "users.system_users_title": "System Users",
-    "users.add_user": "Add System User",
-    "btn.create_user": "Create User",
-    "user.status.active": "Active",
-    "user.status.inactive": "Inactive",
-    "nav.navigation": "Navigation",
-    "login.title": "Supa Kariakoo Spare Parts Centre",
-    "login.subtitle": "Inventory Management System",
-    "login.email_label": "Email Address",
-    "login.password_label": "Password",
-    "login.signing_in": "Signing in…",
-    "login.sign_in": "Sign In",
-    "login.hint_owner": "Owner:",
-    "login.hint_manager": "Manager:",
-    "login.hint_employee": "Employee:",
-    "tooltip.revenue": "Revenue",
-    "loading.dashboard": "Loading dashboard…",
-    "dashboard.low_stock_title": "⚠️ Low Stock Alerts",
-    "dashboard.recent_sales": "🕐 Recent Sales",
-    "label.left": "left",
-    "label.min": "Minimum:",
-    "table.product": "Product",
-    "table.customer": "Customer",
-    "table.amount": "Amount",
-    "form.product_name": "Product Name",
-    "form.sku": "SKU",
-    "form.category": "Category",
-    "form.select_existing": "-- Select existing --",
-    "form.other": "Other...",
-    "form.supplier": "Supplier",
-    "form.location": "Location",
-    "form.quantity": "Quantity",
-    "form.min_qty": "Min Qty",
-    "form.unit_price_tzs": "Unit Price (TZS)",
-    "confirm.delete_product": "Delete this product?",
-    "alert.product_required": "Product name and SKU are required",
-    "alert.product_exists": "A product with that name or SKU already exists.",
-    "btn.edit": "Edit",
-    "btn.delete": "Del",
-    "sales.total_revenue_label": "Total Revenue",
-    "sales.total_transactions": "Total Transactions",
-    "sales.todays_sales": "Today's Sales",
-    "search.placeholder": "Search…",
-    "form.payment_method": "Payment Method",
-    "form.customer_name": "Customer Name",
-    "form.customer_email_optional": "Customer Email (optional)",
-    "form.customer_phone_optional": "Customer Phone (optional)",
-    "form.select_product": "-- Select Product --",
-    "alert.fill_product_qty": "Fill product and quantity",
-    "confirm.no_customer_continue": "No customer name, email or phone provided. Continue?",
-    "orders.records_title": "Order Records",
-    "orders.expected_delivery": "Expected Delivery",
-    "orders.ordered_by": "Ordered By",
-    "orders.actions": "Actions",
-    "deliveries.records_title": "Delivery Records",
-    "deliveries.approve_as_is": "Approve as is",
-    "deliveries.linked_order_label": "Linked Purchase Order",
-    "form.select_order": "-- Select Order --",
-    "deliveries.notes_placeholder": "e.g. All items in good condition",
-    "reports.title": "Reports & Analytics",
-    "reports.subtitle": "Visual insights into business performance",
-    "reports.monthly_revenue": "Monthly Revenue",
-    "reports.payment_methods": "Payment Methods",
-    "reports.inventory_by_category": "Inventory by Category",
-    "users.subtitle": "{count} system users",
-    "users.system_users_title": "System Users",
-    "users.add_user": "Add System User",
-    "btn.create_user": "Create User",
-    "user.status.active": "Active",
-    "user.status.inactive": "Inactive",
-    "nav.navigation": "Navigation",
-  },
+    },
   sw: {
     "nav.dashboard": "Dashibodi",
     "nav.inventory": "Orodha ya Stoku",
@@ -1024,7 +911,7 @@ function Inventory({ locale }) {
       // Do not allow direct quantity updates from Inventory UI; stock updates only via delivery approval
     };
     try {
-      await apiFetch(`/products/${editing.id}`, { method: "PUT", body: JSON.stringify(body) });
+      await apiFetch('/products/' + editing.id, { method: "PUT", body: JSON.stringify(body) });
       setShowSidebar(false);
       load();
     } catch (err) {
@@ -1033,7 +920,7 @@ function Inventory({ locale }) {
   }
   async function del(id) {
     if (!confirm(t(locale,'confirm.delete_product'))) return;
-    await apiFetch(`/products/${id}`,{method:"DELETE"}); load();
+    await apiFetch('/products/' + id,{method:"DELETE"}); load();
   }
 
   return (
@@ -1350,12 +1237,12 @@ function Orders({ locale }) {
     const payload = { product_id: +form.product_id, product_name: selProd?.name||form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, supplier: form.supplier, expected_delivery: form.expected_delivery, notes: form.notes };
     try {
       if (editingOrder) {
-        await apiFetch(`/orders/${editingOrder.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        await apiFetch('/orders/' + editingOrder.id, { method: 'PUT', body: JSON.stringify(payload) });
       } else {
         const created = await apiFetch("/orders",{method:"POST",body:JSON.stringify(payload)});
         // set status if user picked one
         if (form.status) {
-          try { await apiFetch(`/orders/${created.id}`, { method: 'PUT', body: JSON.stringify({ status: form.status }) }); } catch {}
+          try { await apiFetch('/orders/' + created.id, { method: 'PUT', body: JSON.stringify({ status: form.status }) }); } catch {}
         }
       }
       setShowModal(false);
@@ -1394,13 +1281,13 @@ function Orders({ locale }) {
     try {
       let res;
       if (productEditorForm.id) {
-        res = await apiFetch(`/products/${productEditorForm.id}`, { method: 'PUT', body: JSON.stringify(body) });
+        res = await apiFetch('/products/' + productEditorForm.id, { method: 'PUT', body: JSON.stringify(body) });
       } else {
         // when creating new product, set initial stock to 0; min_quantity remains 5
         body.quantity = 0;
         // log payload for debugging when server-side validation fails
         try { console.debug('Creating product payload', body); } catch {}
-        res = await apiFetch(`/products`, { method: 'POST', body: JSON.stringify(body) });
+        res = await apiFetch('/products', { method: 'POST', body: JSON.stringify(body) });
       }
       setProductEditorShow(false);
       const [pList, oList] = await Promise.all([apiFetch('/products'), apiFetch('/orders')]);
@@ -1417,7 +1304,7 @@ function Orders({ locale }) {
   }
 
   async function updateStatus(id, status) {
-    await apiFetch(`/orders/${id}`,{method:"PUT",body:JSON.stringify({status})});
+    await apiFetch('/orders/' + id,{method:"PUT",body:JSON.stringify({status})});
     load();
   }
 
@@ -1434,7 +1321,7 @@ function Orders({ locale }) {
     if (!productId) return;
     if (!confirm('Delete product? This cannot be undone.')) return;
     try {
-      await apiFetch(`/products/${productId}`, { method: 'DELETE' });
+      await apiFetch('/products/' + productId, { method: 'DELETE' });
       await load();
       window._app_show_toast && window._app_show_toast('Product deleted', 'success');
     } catch (err) {
@@ -1720,7 +1607,7 @@ function Deliveries({ locale }) {
                       {canManage && d.status !== 'approved' && (
                         <button className="btn btn-primary btn-sm" onClick={async()=>{
                           if (!confirm(t(locale,'deliveries.approve_as_is'))) return;
-                          try { await apiFetch(`/deliveries/${d.id}/approve`,{method:'PUT'}); load(); } catch(err) { alert(err.message); }
+                          try { await apiFetch('/deliveries/' + d.id + '/approve',{method:'PUT'}); load(); } catch(err) { alert(err.message); }
                         }}>{t(locale,'deliveries.approve_as_is')}</button>
                       )}
                     </td>
@@ -1792,7 +1679,7 @@ function Reports({ locale }) {
               <BarChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#21262D"/>
                 <XAxis dataKey="month" tick={{fill:"#8B949E",fontSize:10}} axisLine={false} tickLine={false}/>
-                <YAxis tick={{fill:"#8B949E",fontSize:10}} axisLine={false} tickLine={false} tickFormatter={v=>`${v/1000}k`}/>
+                <YAxis tick={{fill:"#8B949E",fontSize:10}} axisLine={false} tickLine={false} tickFormatter={v=>(v/1000) + 'k'}/>
                 <Tooltip formatter={v=>[fmt(v)]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:12}}/>
                 <Bar dataKey="revenue" fill="#C8860A" radius={[4,4,0,0]}/>
               </BarChart>
@@ -1805,7 +1692,7 @@ function Reports({ locale }) {
           <div className="card-body">
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
-                <Pie data={payData} cx="50%" cy="50%" outerRadius={75} dataKey="value" label={({name,percent})=>`${name} ${(percent*100).toFixed(0)}%`} labelLine={{stroke:"#8B949E"}}>
+                <Pie data={payData} cx="50%" cy="50%" outerRadius={75} dataKey="value" label={({name,percent})=>name + ' ' + (percent*100).toFixed(0) + '%'} labelLine={{stroke:"#8B949E"}}>
                   {payData.map((e,i)=><Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>)}
                 </Pie>
                 <Tooltip formatter={v=>[fmt(v)]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:12}}/>
@@ -1870,8 +1757,8 @@ function Users({ locale }) {
                     </div>
                   </td>
                   <td className="td-muted">{u.email}</td>
-                  <td><span className={`badge role-${u.role}`}>{u.role}</span></td>
-                  <td><span className={`badge ${u.active?"badge-success":"badge-danger"}`}>{u.active? t(locale,'user.status.active') : t(locale,'user.status.inactive')}</span></td>
+                  <td><span className={"badge role-" + u.role}>{u.role}</span></td>
+                  <td><span className={"badge " + (u.active?"badge-success":"badge-danger")}>{u.active? t(locale,'user.status.active') : t(locale,'user.status.inactive')}</span></td>
                 </tr>
               ))}
             </tbody>
@@ -1948,7 +1835,7 @@ function AppShell({ user, onLogout, locale, setLocale }) {
         <div className="nav-section">
           <div className="nav-label">{t(locale,'nav.navigation')}</div>
           {navItems.map(n => (
-            <div key={n.id} className={`nav-item ${page===n.id?"active":""}`} onClick={()=>setPage(n.id)}>
+            <div key={n.id} className={"nav-item " + (page===n.id?"active":"")} onClick={()=>setPage(n.id)}>
               <span className="icon">{n.icon}</span>
               {t(locale, n.labelKey)}
             </div>
@@ -1963,7 +1850,7 @@ function AppShell({ user, onLogout, locale, setLocale }) {
 
       <main className="main">
         <div className="topbar">
-          <h2>{t(locale, `page.${page}`)}</h2>
+          <h2>{t(locale, 'page.' + page)}</h2>
           <div className="topbar-actions">
             <button className="btn btn-secondary btn-sm" onClick={() => {
               const next = theme === "dark" ? "light" : "dark";
@@ -1975,7 +1862,7 @@ function AppShell({ user, onLogout, locale, setLocale }) {
               <option value="en">EN</option>
               <option value="sw">SW</option>
             </select>
-            <span className={`badge role-${user.role}`} style={{padding:"4px 12px",fontSize:12}}>{user.role}</span>
+            <span className={"badge role-" + user.role} style={{padding:"4px 12px",fontSize:12}}>{user.role}</span>
             <div className="user-avatar" style={{width:32,height:32,fontSize:12}}>{initials(user.name)}</div>
           </div>
         </div>
@@ -2027,7 +1914,7 @@ export default function App() {
       <style>{css + themeCss}</style>
       <div className="toasts-container" aria-live="polite">
         {toasts.map(t => (
-          <div key={t.id} className={`toast ${t.type}`}>
+          <div key={t.id} className={"toast " + t.type}>
             <div className="msg">{t.message}</div>
             <button className="close" onClick={() => removeToast(t.id)}>✕</button>
           </div>

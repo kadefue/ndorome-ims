@@ -266,6 +266,8 @@ const css = `
     padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
     cursor: pointer; border: none; transition: all 0.15s;
     font-family: 'DM Sans', sans-serif;
+    position: relative;
+    overflow: hidden;
   }
   .btn-primary {
     background: #C8860A; color: #0D1117;
@@ -290,6 +292,7 @@ const css = `
     background: #161B22; border: 1px solid #30363D;
     border-radius: 16px; width: 100%; max-width: 520px;
     max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 12px 40px rgba(2,6,23,0.6);
   }
   .modal-header {
     padding: 20px 24px; border-bottom: 1px solid #21262D;
@@ -401,6 +404,14 @@ const css = `
   .toast.success .toast-icon { background: rgba(63,185,80,0.08); }
   .toast.warning .toast-icon { background: rgba(210,153,34,0.08); }
   .toast.danger .toast-icon { background: rgba(248,81,73,0.08); }
+
+  /* Ripple effect */
+  .ripple {
+    position: absolute; border-radius: 50%; transform: scale(0);
+    pointer-events: none; background: rgba(255,255,255,0.12);
+    animation: ripple 650ms ease-out;
+  }
+  @keyframes ripple { to { transform: scale(4); opacity: 0; } }
 
   /* ── Section Tabs ── */
   .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
@@ -2757,6 +2768,23 @@ export default function App() {
         setConfirmState({ message, resolve, opts });
       });
     };
+    // ripple effect: delegated handler for buttons with .btn
+    const onPointerDown = (e) => {
+      try {
+        const el = e.target.closest && e.target.closest('.btn');
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const span = document.createElement('span');
+        span.className = 'ripple';
+        const size = Math.max(rect.width, rect.height);
+        span.style.width = span.style.height = size + 'px';
+        span.style.left = (e.clientX - rect.left - size / 2) + 'px';
+        span.style.top = (e.clientY - rect.top - size / 2) + 'px';
+        el.appendChild(span);
+        setTimeout(() => { try { span.remove(); } catch {} }, 700);
+      } catch (err) { /* ignore */ }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
     return () => { try { delete window._app_show_toast; delete window._app_confirm; } catch {} };
   }, []);
 

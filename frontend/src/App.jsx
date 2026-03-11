@@ -653,6 +653,7 @@ const themeCss = `
       "login.hint_owner": "Owner:",
       "login.hint_manager": "Manager:",
       "login.hint_employee": "Employee:",
+      "inventory.sold_below": "⚠️ This product has been sold below cost price. Please review the unit price.",
     },
     sw: {
       "nav.dashboard": "Dashibodi",

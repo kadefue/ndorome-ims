@@ -2575,6 +2575,8 @@ const PAGE_TITLES = {
 
 function AppShell({ user, onLogout, locale, setLocale }) {
   const [page, setPage] = useState("dashboard");
+  const [showChangePwd, setShowChangePwd] = useState(false);
+  const [pwdForm, setPwdForm] = useState({ old_password: "", new_password: "", confirm: "" });
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
 
   const navItems = NAV.filter(n => !n.roles || n.roles.includes(user.role));
@@ -2620,6 +2622,7 @@ function AppShell({ user, onLogout, locale, setLocale }) {
           ))}
         </div>
         <div className="sidebar-footer">
+          <button className="btn btn-secondary" style={{width:'100%',marginBottom:8}} onClick={()=>setShowChangePwd(true)}>🔑 Change Password</button>
           <button className="logout-btn" onClick={onLogout}>
             <span>🚪</span> {t(locale,'sign_out')}
           </button>
@@ -2647,6 +2650,36 @@ function AppShell({ user, onLogout, locale, setLocale }) {
         <AuthContext.Provider value={{ user }}>
           {renderPage()}
         </AuthContext.Provider>
+        {showChangePwd && (
+          <Modal title={t(locale,'btn.change_password')||'Change Password'} onClose={()=>setShowChangePwd(false)}
+            footer={<>
+              <button className="btn btn-secondary" onClick={()=>setShowChangePwd(false)}>{t(locale,'btn.cancel')}</button>
+              <button className="btn btn-primary" onClick={async ()=>{
+                if (!pwdForm.old_password || !pwdForm.new_password) return window._app_show_toast && window._app_show_toast('Provide both passwords','warning');
+                if (pwdForm.new_password !== pwdForm.confirm) return window._app_show_toast && window._app_show_toast('New passwords do not match','warning');
+                try {
+                  await apiFetch('/auth/change-password', { method: 'POST', body: JSON.stringify({ old_password: pwdForm.old_password, new_password: pwdForm.new_password }) });
+                  window._app_show_toast && window._app_show_toast('Password changed','success');
+                  setShowChangePwd(false);
+                  setPwdForm({ old_password:'', new_password:'', confirm:'' });
+                } catch (err) {
+                }
+              }}>{t(locale,'btn.save')||'Save'}</button>
+            </>}>
+            <div className="form-group">
+              <label className="form-label">{t(locale,'form.current_password')||'Current password'}</label>
+              <input className="form-control" type="password" value={pwdForm.old_password} onChange={e=>setPwdForm({...pwdForm,old_password:e.target.value})} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">{t(locale,'form.new_password')||'New password'}</label>
+              <input className="form-control" type="password" value={pwdForm.new_password} onChange={e=>setPwdForm({...pwdForm,new_password:e.target.value})} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">{t(locale,'form.confirm_password')||'Confirm new password'}</label>
+              <input className="form-control" type="password" value={pwdForm.confirm} onChange={e=>setPwdForm({...pwdForm,confirm:e.target.value})} />
+            </div>
+          </Modal>
+        )}
       </main>
     </div>
   );

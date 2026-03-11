@@ -17,7 +17,7 @@ from app.models.delivery import Delivery
 
 
 USERS = [
-    {"name": "James Ndorome",  "email": "owner@ndorome.com",   "password": "owner123",   "role": "owner"},
+    {"name": "Kadeghe Ndorome",  "email": "owner@ndorome.com",   "password": "owner123",   "role": "owner"},
     {"name": "Alice Mangi",   "email": "manager@ndorome.com", "password": "manager123", "role": "manager"},
     {"name": "Brian Mwalukasa",  "email": "employee@ndorome.com","password": "emp123",     "role": "employee"},
 ]

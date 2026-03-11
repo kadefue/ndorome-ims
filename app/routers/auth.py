@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.auth import create_access_token, get_current_user, require_manager_above, require_owner
-from app.crud.user import authenticate_user, create_user, get_all_users, get_user_by_email, update_user
-from app.schemas.user import Token, UserCreate, UserResponse, UserListResponse, UserUpdate
+from app.crud.user import authenticate_user, create_user, get_all_users, get_user_by_email, update_user, verify_password, hash_password
+from app.schemas.user import Token, UserCreate, UserResponse, UserListResponse, UserUpdate, ChangePassword
 from app.models.user import User
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -90,3 +90,21 @@ def update_existing_user(
             raise HTTPException(status_code=400, detail="Email already registered")
 
     return update_user(db, user, user_in)
+
+
+@router.post('/change-password', summary='Change current user password')
+def change_password(
+    payload: ChangePassword,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # verify current password
+    if not verify_password(payload.old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail='Current password is incorrect')
+
+    # update password
+    current_user.hashed_password = hash_password(payload.new_password)
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return {"detail": "Password changed"}

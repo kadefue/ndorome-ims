@@ -45,3 +45,8 @@ class Token(BaseModel):
     token_type: str
     user: Optional[UserResponse] = None
 
+
+class ChangePassword(BaseModel):
+    old_password: str = Field(..., min_length=6)
+    new_password: str = Field(..., min_length=6)
+

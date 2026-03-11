@@ -1084,11 +1084,13 @@ function Inventory({ locale }) {
 
   const load = async () => {
     try {
-      const [pList, sList] = await Promise.all([apiFetch('/products'), apiFetch('/sales')]);
-      // mark products that have been sold below current unit_price
+      const [pList, sList, oList] = await Promise.all([apiFetch('/products'), apiFetch('/sales').catch(()=>[]), apiFetch('/orders').catch(()=>[])]);
+      // mark products that have been sold below current unit_price and whether referenced by sales/orders
       const withFlag = pList.map(p => {
-        const soldBelow = sList.some(s => ((s.product_id || s.product?.id) === p.id) && (s.unit_price < p.unit_price));
-        return { ...p, soldBelow };
+        const soldBelow = (sList || []).some(s => ((s.product_id || s.product?.id) === p.id) && (s.unit_price < p.unit_price));
+        const hasSales = (sList || []).some(s => (s.product_id === p.id) || (s.product && s.product.id === p.id));
+        const hasOrders = (oList || []).some(o => (o.product_id === p.id) || (o.product && o.product.id === p.id));
+        return { ...p, soldBelow, hasReferences: !!(hasSales || hasOrders) };
       });
       setProducts(withFlag);
     } catch (err) {
@@ -1131,12 +1133,13 @@ function Inventory({ locale }) {
 
   function toggleSort(field) { if (sortField===field) setSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setSortField(field); setSortDir('asc'); } }
 
-  function openAdd() { setEditing(null); setForm({name:"",sku:"",category:"",quantity:"",min_quantity:"",unit_price:"",supplier:"",location:"",name_select:"",sku_select:"",category_select:""}); setShowSidebar(true); }
-  function openEdit(p) { setEditing(p); setForm({...p, name_select:p.name, sku_select:p.sku, category_select:p.category}); setShowSidebar(true); }
+  function openAdd() { try { window._app_show_toast && window._app_show_toast('Opening product editor', 'info'); } catch {} setEditing(null); setForm({name:"",sku:"",category:"",quantity:"",min_quantity:"",unit_price:"",supplier:"",location:"",name_select:"",sku_select:"",category_select:""}); setShowSidebar(true); }
+  function openEdit(p) { try { window._app_show_toast && window._app_show_toast('Opening product editor', 'info'); } catch {} setEditing(p); setForm({...p, name_select:p.name, sku_select:p.sku, category_select:p.category}); setShowSidebar(true); }
 
   async function save() {
     // Inventory page only allows updating unit_price and quantity
     if (!editing) return;
+    try { window._app_show_toast && window._app_show_toast('Saving product...', 'info'); } catch {}
     const body = {
       unit_price: +form.unit_price,
       // Do not allow direct quantity updates from Inventory UI; stock updates only via delivery approval
@@ -1192,8 +1195,22 @@ function Inventory({ locale }) {
     }
   }
   async function del(id) {
-    if (!(await window._app_confirm(t(locale,'confirm.delete_product')))) return;
-    await apiFetch('/products/' + id,{method:"DELETE"}); load();
+    try {
+      // check for existing sales or orders referencing this product
+      const [salesList, ordersList] = await Promise.all([apiFetch('/sales').catch(()=>[]), apiFetch('/orders').catch(()=>[])]);
+      const hasSales = (salesList || []).some(s => (s.product_id === id) || (s.product && s.product.id === id));
+      const hasOrders = (ordersList || []).some(o => (o.product_id === id) || (o.product && o.product.id === id));
+      if (hasSales || hasOrders) {
+        try { window._app_show_toast && window._app_show_toast('Cannot delete product: existing sales or orders reference this item', 'warning'); } catch {}
+        return;
+      }
+      if (!(await window._app_confirm(t(locale,'confirm.delete_product')))) return;
+      await apiFetch('/products/' + id,{method:"DELETE"});
+      await load();
+      try { window._app_show_toast && window._app_show_toast('Product deleted', 'success'); } catch {}
+    } catch (err) {
+      // apiFetch shows toast on error
+    }
   }
 
   return (
@@ -1203,6 +1220,7 @@ function Inventory({ locale }) {
           <div className="page-title">{t(locale,'page.inventory') || 'Inventory'}</div>
           <div className="page-subtitle">{products.length} products · {products.filter(p=>p.quantity<=p.min_quantity).length} low stock</div>
         </div>
+      
       </div>
 
       <div className="card">
@@ -1225,7 +1243,7 @@ function Inventory({ locale }) {
                 <th onClick={()=>toggleSort('supplier')}>{t(locale,'inventory.table.supplier')}</th>
                 <th onClick={()=>toggleSort('location')}>{t(locale,'inventory.table.location')}</th>
                 <th>{t(locale,'inventory.table.status')}</th>
-                {canEdit&&<th>{t(locale,'inventory.table.actions')}</th>}
+                <th>{t(locale,'inventory.table.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -1239,12 +1257,12 @@ function Inventory({ locale }) {
                   <td className="td-muted">{p.supplier}</td>
                   <td className="td-muted">{p.location}</td>
                   <td>{p.quantity<=p.min_quantity ? <span className="badge badge-danger">{t(locale,'inventory.status.low')}</span> : <span className="badge badge-success">{t(locale,'inventory.status.in_stock')}</span>}</td>
-                  {canEdit && <td>
+                  <td>
                     <div style={{display:"flex",gap:6}}>
-                      <button className="btn btn-secondary btn-sm" onClick={()=>openEdit(p)}>{t(locale,'btn.edit')}</button>
-                    
+                      <button className="btn btn-secondary btn-sm" onClick={()=>openEdit(p)} disabled={!canEdit} title={!canEdit ? 'Insufficient permissions' : ''}>{t(locale,'btn.edit')}</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => del(p.id)} style={{marginLeft:6}} disabled={!canEdit || p.hasReferences} title={!canEdit ? 'Insufficient permissions' : (p.hasReferences ? 'Cannot delete: existing sales or orders reference this item' : '')}>{t(locale,'btn.delete') || 'Del'}</button>
                     </div>
-                  </td>}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -1361,6 +1379,7 @@ function Sales({ locale }) {
       // Allow anonymous sale but warn user; change this if you prefer to require at least one
       if (!(await window._app_confirm(t(locale,'confirm.no_customer_continue'), { title: t(locale,'confirm.warning') || 'Warning', confirmLabel: t(locale,'btn.continue') || 'Continue', cancelLabel: t(locale,'btn.cancel') || 'Cancel' }))) return;
     }
+    try { window._app_show_toast && window._app_show_toast('Saving sale...', 'info'); } catch {}
     const body = {
       product_id: form.product_id, product_name: selProd?.name,
       quantity: +form.quantity, unit_price: selProd?.unit_price,
@@ -1512,6 +1531,7 @@ function Orders({ locale }) {
   useEffect(()=>{ load(); },[]);
 
   async function saveOrder() {
+    try { window._app_show_toast && window._app_show_toast('Saving order...', 'info'); } catch {}
     const selProd = products.find(p=>p.id===form.product_id);
     const payload = { product_id: +form.product_id, product_name: selProd?.display_name || selProd?.name || form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, supplier: form.supplier, expected_delivery: form.expected_delivery, notes: form.notes };
     try {
@@ -1525,14 +1545,17 @@ function Orders({ locale }) {
         }
       }
       setShowModal(false);
+      const wasEdit = !!editingOrder;
       setEditingOrder(null);
-      load();
+      await load();
+      try { window._app_show_toast && window._app_show_toast(wasEdit ? 'Order updated' : 'Order created', 'success'); } catch {}
     } catch (err) {
       // apiFetch shows toast
     }
   }
 
   function openEditOrder(order) {
+    try { window._app_show_toast && window._app_show_toast('Opening order editor', 'info'); } catch {}
     setEditingOrder(order);
     setForm({ product_id: order.product_id?.toString() || '', product_name: order.product_name || '', quantity: order.quantity, unit_price: order.unit_price, supplier: order.supplier || '', expected_delivery: order.expected_delivery || '', status: order.status || 'pending', notes: order.notes || '' });
     setShowModal(true);
@@ -1541,12 +1564,14 @@ function Orders({ locale }) {
   function openProductEditorForSelected() {
     const sel = products.find(p => p.id === form.product_id);
     if (!sel) { window._app_show_toast && window._app_show_toast('Select a product first', 'warning'); return; }
+    try { window._app_show_toast && window._app_show_toast('Opening product editor', 'info'); } catch {}
     setProductEditorForm({...sel});
     setProductEditorShow(true);
   }
 
   async function saveProductEditor() {
     if (!productEditorForm) return;
+    try { window._app_show_toast && window._app_show_toast('Saving product...', 'info'); } catch {}
     const body = {
       name: productEditorForm.name,
       sku: productEditorForm.sku,
@@ -1559,7 +1584,8 @@ function Orders({ locale }) {
     setProductEditorLoading(true);
     try {
       let res;
-      if (!productEditorForm.id) {
+      const isNew = !productEditorForm.id;
+      if (isNew) {
         res = await apiFetch('/products', { method: 'POST', body: JSON.stringify(body) });
       } else {
         // when creating new product, set initial stock to 0; min_quantity remains 5
@@ -1575,6 +1601,7 @@ function Orders({ locale }) {
       if (!productEditorForm.id && res && res.id) {
         setForm(f => ({ ...f, product_id: res.id, unit_price: res.unit_price, supplier: res.supplier, product_name: res.name }));
       }
+      try { window._app_show_toast && window._app_show_toast(isNew ? 'Product created' : 'Product saved', 'success'); } catch {}
     } catch (err) {
       try { window._app_show_toast && window._app_show_toast(err.message || JSON.stringify(err) || err, 'danger'); } catch {}
     } finally {
@@ -1583,8 +1610,13 @@ function Orders({ locale }) {
   }
 
   async function updateStatus(id, status) {
-    await apiFetch('/orders/' + id,{method:"PUT",body:JSON.stringify({status})});
-    load();
+    try {
+      await apiFetch('/orders/' + id,{method:"PUT",body:JSON.stringify({status})});
+      await load();
+      try { window._app_show_toast && window._app_show_toast('Order status updated', 'success'); } catch {}
+    } catch (err) {
+      // apiFetch already shows error toast
+    }
   }
 
   // Open product editor for a product id (from table row)
@@ -1847,10 +1879,13 @@ function Deliveries({ locale }) {
   function toggleSort(field) { if (sortField===field) setSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setSortField(field); setSortDir('asc'); } }
 
   async function saveDelivery() {
+    try { window._app_show_toast && window._app_show_toast('Saving delivery...', 'info'); } catch {}
     const selOrder = orders.find(o=>o.id===form.order_id);
     const body = {...form, product_id:selOrder?.product_id, product_name:selOrder?.product_name||form.product_name, quantity:+form.quantity, supplier:selOrder?.supplier||form.supplier};
     await apiFetch("/deliveries",{method:"POST",body:JSON.stringify(body)});
-    setShowModal(false); load();
+    setShowModal(false);
+    await load();
+    try { window._app_show_toast && window._app_show_toast('Delivery recorded', 'success'); } catch {}
   }
 
   return (
@@ -1957,7 +1992,13 @@ function Settings({ locale }) {
   },[]);
 
   async function addCategory() {
-    const v = catInput.trim(); if (!v) return; try { const res = await apiFetch('/settings/categories',{method:'POST', body: JSON.stringify({name:v})}); setCategories(cs=>[...cs, res]); setCatInput(''); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+    const v = catInput.trim(); if (!v) return;
+    try {
+      const res = await apiFetch('/settings/categories',{method:'POST', body: JSON.stringify({name:v})});
+      setCategories(cs=>[...cs, res]);
+      setCatInput('');
+      try { window._app_show_toast && window._app_show_toast('Category added', 'success'); } catch {}
+    } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
 
   async function addTemplate() {
@@ -2035,16 +2076,22 @@ function CategoriesPage({ locale }) {
 
   async function addCategory(){
     const v = catInput.trim(); if (!v) return;
-    try { const res = await apiFetch('/settings/categories',{method:'POST', body: JSON.stringify({name:v})}); setCategories(cs=>[...cs, res]); setCatInput(''); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+    try {
+      const res = await apiFetch('/settings/categories',{method:'POST', body: JSON.stringify({name:v})});
+      setCategories(cs=>[...cs, res]); setCatInput('');
+      try { window._app_show_toast && window._app_show_toast('Category added', 'success'); } catch {}
+    } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
 
-  function startEdit(cat){ setEditingId(cat.id); setEditingName(cat.name); }
+  function startEdit(cat){ try { window._app_show_toast && window._app_show_toast('Editing category', 'info'); } catch {} setEditingId(cat.id); setEditingName(cat.name); }
 
   async function saveEdit(){
     if (!editingName.trim()) return;
-    try { const res = await apiFetch('/settings/categories/' + editingId, { method: 'PUT', body: JSON.stringify({ name: editingName.trim() }) });
+    try {
+      const res = await apiFetch('/settings/categories/' + editingId, { method: 'PUT', body: JSON.stringify({ name: editingName.trim() }) });
       setCategories(cs => cs.map(c => c.id === res.id ? res : c));
       setEditingId(null); setEditingName('');
+      try { window._app_show_toast && window._app_show_toast('Category saved', 'success'); } catch {}
     } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
 
@@ -2117,7 +2164,7 @@ function ModelsPage({ locale }) {
     try { const res = await apiFetch('/settings/models',{method:'POST', body: JSON.stringify({name: modelInput.name})}); setModels(ms=>[...ms, res]); setModelInput({name:''}); window._app_show_toast && window._app_show_toast('Model added', 'success'); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
 
-  function startEdit(m){ setEditingId(m.id); setEditingName(m.name); }
+  function startEdit(m){ try { window._app_show_toast && window._app_show_toast('Editing model', 'info'); } catch {} setEditingId(m.id); setEditingName(m.name); }
   async function saveEdit(){ if (!editingName.trim()) return; try { const res = await apiFetch('/settings/models/' + editingId, { method: 'PUT', body: JSON.stringify({ name: editingName.trim(), categories: [] }) }); setModels(ms=>ms.map(x=> x.id === res.id ? res : x)); setEditingId(null); setEditingName(''); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); } }
 
   async function deleteModel(id){ if (!(await window._app_confirm('Delete model?', { title: 'Delete model', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return; try { await apiFetch('/settings/models/' + id, { method: 'DELETE' }); setModels(ms=>ms.filter(m=>m.id!==id)); window._app_show_toast && window._app_show_toast('Deleted', 'success'); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); } }
@@ -2678,6 +2725,22 @@ export default function App() {
         setConfirmState({ message, resolve, opts });
       });
     };
+    // show toast for global JS errors and unhandled promise rejections
+    const onWindowError = (e) => {
+      try {
+        const msg = e?.message || (e && e.error && e.error.message) || 'An unexpected error occurred';
+        window._app_show_toast && window._app_show_toast(msg, 'danger');
+      } catch {}
+    };
+    const onUnhandledRejection = (ev) => {
+      try {
+        const reason = ev?.reason || ev;
+        const msg = (reason && reason.message) ? reason.message : String(reason || 'Unhandled promise rejection');
+        window._app_show_toast && window._app_show_toast(msg, 'danger');
+      } catch {}
+    };
+    window.addEventListener('error', onWindowError);
+    window.addEventListener('unhandledrejection', onUnhandledRejection);
     // ripple effect: delegated handler for buttons with .btn
     const onPointerDown = (e) => {
       try {
@@ -2695,7 +2758,7 @@ export default function App() {
       } catch (err) { /* ignore */ }
     };
     document.addEventListener('pointerdown', onPointerDown);
-    return () => { try { delete window._app_show_toast; delete window._app_confirm; } catch {} };
+    return () => { try { delete window._app_show_toast; delete window._app_confirm; document.removeEventListener('pointerdown', onPointerDown); window.removeEventListener('error', onWindowError); window.removeEventListener('unhandledrejection', onUnhandledRejection); } catch {} };
   }, []);
 
   // Theme state persisted across sessions

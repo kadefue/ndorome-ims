@@ -4,5 +4,6 @@ from app.models.product import Product
 from app.models.sale import Sale
 from app.models.order import Order
 from app.models.delivery import Delivery
+from app.models.setting import Category, ProductTemplate, MotorcycleModel
 
-__all__ = ["User", "Product", "Sale", "Order", "Delivery"]
+__all__ = ["User", "Product", "Sale", "Order", "Delivery", "Category", "ProductTemplate", "MotorcycleModel"]

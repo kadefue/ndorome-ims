@@ -76,6 +76,7 @@ app.include_router(products.router)
 app.include_router(sales.router)
 app.include_router(orders.router)
 app.include_router(deliveries.router)
+app.include_router(settings.router)
 
 
 # ── Root health-check ─────────────────────────────────────────────────────────

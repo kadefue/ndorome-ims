@@ -1482,6 +1482,8 @@ function Orders({ locale }) {
   const [sortDir, setSortDir] = useState('asc');
   const [editingOrder, setEditingOrder] = useState(null);
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [productEditorShow, setProductEditorShow] = useState(false);
   const [productEditorForm, setProductEditorForm] = useState(null);
@@ -1489,7 +1491,7 @@ function Orders({ locale }) {
   const [form, setForm] = useState({product_id:"",product_name:"",quantity:"",unit_price:"",supplier:"",expected_delivery:""});
   const canManage = user.role !== "employee";
 
-  const load = () => Promise.all([apiFetch("/orders"),apiFetch("/products")]).then(([o,p])=>{setOrders(o);setProducts(p);});
+  const load = () => Promise.all([apiFetch("/orders"),apiFetch("/products"), apiFetch('/settings/categories'), apiFetch('/settings/templates')]).then(([o,p,c,t])=>{setOrders(o);setProducts(p); setCategories(c||[]); setTemplates(t||[]);});
   useEffect(()=>{ load(); },[]);
 
   async function saveOrder() {
@@ -1754,12 +1756,7 @@ function Orders({ locale }) {
               <select className="form-control" value={productEditorForm?.name||""} onChange={e=>setProductEditorForm({...productEditorForm,name:e.target.value})}>
                 <option value="">(select product)</option>
                 {/* templates from settings */}
-                {(() => {
-                  try {
-                    const tmpl = JSON.parse(localStorage.getItem('nd_product_templates') || '[]');
-                    return tmpl.map(t => <option key={`tmpl-${t.name}`} value={t.name}>{t.name}</option>);
-                  } catch(e) { return null; }
-                })()}
+                {templates && templates.map(t => <option key={`tmpl-${t.id}`} value={t.name}>{t.name}</option>)}
                 {/* existing product names */}
                 {products && products.map(p=> <option key={p.id} value={p.name}>{p.name}</option>)}
               </select>
@@ -1769,15 +1766,7 @@ function Orders({ locale }) {
               <label className="form-label">{t(locale,'form.category')}</label>
               <select className="form-control" value={productEditorForm?.category||""} onChange={e=>setProductEditorForm({...productEditorForm,category:e.target.value})}>
                 <option value="">(select category)</option>
-                {(() => {
-                  try {
-                    const cats = JSON.parse(localStorage.getItem('nd_categories') || '[]');
-                    if (cats.length) return cats.map(c=> <option key={c} value={c}>{c}</option>);
-                  } catch(e) {}
-                  // fallback default categories
-                  const defs = ['Brakes','Tires','Engine','Transmission','Fluids','Body','Electrical','Accessories','Drive','Controls','Gaskets','Fuel System'];
-                  return defs.map(c=> <option key={c} value={c}>{c}</option>);
-                })()}
+                {categories && categories.length ? categories.map(c=> <option key={c.id} value={c.name}>{c.name}</option>) : ['Brakes','Tires','Engine','Transmission','Fluids','Body','Electrical','Accessories','Drive','Controls','Gaskets','Fuel System'].map(c=> <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div className="form-group"><label className="form-label">{t(locale,'form.min_qty')}</label><input className="form-control" type="number" value={productEditorForm?.min_quantity||0} onChange={e=>setProductEditorForm({...productEditorForm,min_quantity:e.target.value})}/></div>
@@ -1935,20 +1924,31 @@ function Deliveries({ locale }) {
 // ── Settings ───────────────────────────────────────────────────────────────
 function Settings({ locale }) {
   const { user } = useAuth();
-  const [categories, setCategories] = useState(() => { try { return JSON.parse(localStorage.getItem('nd_categories')||'[]'); } catch { return []; } });
-  const [templates, setTemplates] = useState(() => { try { return JSON.parse(localStorage.getItem('nd_product_templates')||'[]'); } catch { return []; } });
-  const [models, setModels] = useState(() => { try { return JSON.parse(localStorage.getItem('nd_models')||'[]'); } catch { return []; } });
+  const [categories, setCategories] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [models, setModels] = useState([]);
   const [catInput, setCatInput] = useState('');
   const [tmpl, setTmpl] = useState({name:'',category:'',sku:'',unit_price:''});
   const [modelInput, setModelInput] = useState({name:'',categories:''});
+  useEffect(()=>{
+    apiFetch('/settings/categories').then(c=>setCategories(c||[])).catch(()=>{});
+    apiFetch('/settings/templates').then(t=>setTemplates(t||[])).catch(()=>{});
+    apiFetch('/settings/models').then(m=>setModels(m||[])).catch(()=>{});
+  },[]);
 
-  function saveCategories(next) { localStorage.setItem('nd_categories', JSON.stringify(next)); setCategories(next); }
-  function saveTemplates(next) { localStorage.setItem('nd_product_templates', JSON.stringify(next)); setTemplates(next); }
-  function saveModels(next) { localStorage.setItem('nd_models', JSON.stringify(next)); setModels(next); }
+  async function addCategory() {
+    const v = catInput.trim(); if (!v) return; try { const res = await apiFetch('/settings/categories',{method:'POST', body: JSON.stringify({name:v})}); setCategories(cs=>[...cs, res]); setCatInput(''); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+  }
 
-  function addCategory() { const v = catInput.trim(); if (!v) return; if (categories.includes(v)) return setCatInput(''); const next = [...categories,v]; saveCategories(next); setCatInput(''); }
-  function addTemplate() { if (!tmpl.name || !tmpl.category) return alert('Provide name and category'); const next = [...templates, tmpl]; saveTemplates(next); setTmpl({name:'',category:'',sku:'',unit_price:''}); }
-  function addModel() { if (!modelInput.name) return alert('Provide model name'); const cats = modelInput.categories.split(',').map(s=>s.trim()).filter(Boolean); const next = [...models,{name:modelInput.name,categories:cats}]; saveModels(next); setModelInput({name:'',categories:''}); }
+  async function addTemplate() {
+    if (!tmpl.name || !tmpl.category) return alert('Provide name and category');
+    try { const res = await apiFetch('/settings/templates',{method:'POST', body: JSON.stringify(tmpl)}); setTemplates(ts=>[...ts, res]); setTmpl({name:'',category:'',sku:'',unit_price:''}); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+  }
+
+  async function addModel() {
+    if (!modelInput.name) return alert('Provide model name'); const cats = modelInput.categories.split(',').map(s=>s.trim()).filter(Boolean);
+    try { const res = await apiFetch('/settings/models',{method:'POST', body: JSON.stringify({name: modelInput.name, categories: cats})}); setModels(ms=>[...ms, res]); setModelInput({name:'',categories:''}); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+  }
 
   return (
     <div className="page">

@@ -138,358 +138,295 @@ const css = `
     transition: background 0.15s; width: 100%;
     background: none; border: none;
   }
-  .logout-btn:hover { background: rgba(248,81,73,0.1); }
-
-  /* ── Main Content ── */
-  .main { margin-left: 240px; flex: 1; min-width: 0; }
-  .topbar {
-    background: #161B22; border-bottom: 1px solid #21262D;
-    padding: 0 28px; height: 60px;
-    display: flex; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; z-index: 50;
-  }
-  .topbar h2 {
-    font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700;
-    color: #f9fafa;
-  }
-  .topbar-actions { display: flex; align-items: center; gap: 12px; }
-  .badge-pill {
-    background: rgba(200,134,10,0.2);
-    color: #C8860A; border: 1px solid rgba(200,134,10,0.3);
-    border-radius: 20px; font-size: 11px; font-weight: 600;
-    padding: 3px 10px; letter-spacing: 0.3px;
-  }
-  .page { padding: 28px; }
-
-  /* ── Cards ── */
-  .card {
-    background: #161B22; border: 1px solid #21262D;
-    border-radius: 12px; overflow: hidden;
-  }
-  .card-header {
-    padding: 16px 20px; border-bottom: 1px solid #21262D;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .card-title {
-    font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: #E6EDF3;
-  }
-  .card-body { padding: 20px; }
-
-  /* ── Stat Cards ── */
-  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
-  .stat-card {
-    background: #161B22; border: 1px solid #21262D;
-    border-radius: 12px; padding: 20px;
-    position: relative; overflow: hidden;
-  }
-  .stat-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  }
-  .stat-card.gold::before { background: linear-gradient(90deg, #C8860A, #F5B942); }
-  .stat-card.blue::before { background: linear-gradient(90deg, #58A6FF, #1F6FEB); }
-  .stat-card.green::before { background: linear-gradient(90deg, #3FB950, #2EA043); }
-  .stat-card.red::before { background: linear-gradient(90deg, #F85149, #DA3633); }
-  .stat-icon {
-    width: 40px; height: 40px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; margin-bottom: 12px;
-  }
-  .stat-icon.gold { background: rgba(200,134,10,0.15); }
-  .stat-icon.blue { background: rgba(88,166,255,0.15); }
-  .stat-icon.green { background: rgba(63,185,80,0.15); }
-  .stat-icon.red { background: rgba(248,81,73,0.15); }
-  .stat-label { font-size: 12px; color: #8B949E; margin-bottom: 6px; font-weight: 400; }
-  .stat-value {
-    font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800;
-    color: #E6EDF3; line-height: 1;
-  }
-  .stat-sub { font-size: 11px; color: #8B949E; margin-top: 6px; }
-
-  /* ── Charts Grid ── */
-  .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
-  
-  /* ── Tables ── */
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead th {
-    text-align: left; padding: 10px 14px;
-    color: #8B949E; font-weight: 500; font-size: 11px;
-    text-transform: uppercase; letter-spacing: 0.5px;
-    border-bottom: 1px solid #21262D;
-    background: rgba(28,35,51,0.5);
-  }
-  tbody tr { border-bottom: 1px solid #1C2333; transition: background 0.1s; }
-  tbody tr:hover { background: rgba(255,255,255,0.02); }
-  tbody tr:last-child { border-bottom: none; }
-  td { padding: 12px 14px; color: #E6EDF3; }
-  .td-muted { color: #8B949E; }
-
-  /* ── Badges ── */
-  .badge {
-    display: inline-block; border-radius: 6px;
-    font-size: 11px; font-weight: 600; padding: 3px 8px;
-  }
-  .badge-success { background: rgba(63,185,80,0.15); color: #3FB950; }
-  .badge-warning { background: rgba(210,153,34,0.15); color: #D29922; }
-  .badge-danger  { background: rgba(248,81,73,0.15); color: #F85149; }
-  .badge-info    { background: rgba(88,166,255,0.15); color: #58A6FF; }
-  .badge-purple  { background: rgba(188,140,255,0.15); color: #BC8CFF; }
-  .badge-gold    { background: rgba(200,134,10,0.15); color: #C8860A; }
-
-  /* ── Buttons ── */
-  .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
-    cursor: pointer; border: none; transition: all 0.15s;
-    font-family: 'DM Sans', sans-serif;
-  }
-  .btn-primary {
-    background: #C8860A; color: #0D1117;
-  }
-  .btn-primary:hover { background: #F5B942; }
-  .btn-secondary {
-    background: #21262D; color: #E6EDF3; border: 1px solid #30363D;
-  }
-  .btn-secondary:hover { background: #1C2333; border-color: #C8860A; color: #C8860A; }
-  .btn-danger { background: rgba(248,81,73,0.15); color: #F85149; border: 1px solid rgba(248,81,73,0.3); }
-  .btn-danger:hover { background: rgba(248,81,73,0.25); }
-  .btn-sm { padding: 5px 10px; font-size: 12px; }
-
-  /* ── Forms & Modals ── */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 200; padding: 20px;
-    backdrop-filter: blur(4px);
-  }
-  .modal {
-    background: #161B22; border: 1px solid #30363D;
-    border-radius: 16px; width: 100%; max-width: 520px;
-    max-height: 90vh; overflow-y: auto;
-  }
-  .modal-header {
-    padding: 20px 24px; border-bottom: 1px solid #21262D;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .modal-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
-  .modal-body { padding: 24px; }
-  .modal-footer { padding: 16px 24px; border-top: 1px solid #21262D; display: flex; justify-content: flex-end; gap: 10px; }
-  .close-btn {
-    width: 28px; height: 28px; border-radius: 6px;
-    background: #21262D; border: none; color: #8B949E;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    font-size: 16px; transition: all 0.1s;
-  }
-  .close-btn:hover { background: rgba(248,81,73,0.2); color: #F85149; }
-  .form-group { margin-bottom: 16px; }
-  .form-label { display: block; font-size: 12px; font-weight: 500; color: #8B949E; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .form-control {
-    width: 100%; background: #0D1117; border: 1px solid #30363D;
-    border-radius: 8px; padding: 10px 12px; color: #E6EDF3;
-    font-family: 'DM Sans', sans-serif; font-size: 14px;
-    outline: none; transition: border-color 0.15s;
-  }
-  .form-control:focus { border-color: #C8860A; box-shadow: 0 0 0 3px rgba(200,134,10,0.1); }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-
-  /* ── Search ── */
-  .search-wrap { position: relative; }
-  .search-wrap input { padding-left: 34px; }
-  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #8B949E; font-size: 14px; }
-
-  /* ── Login ── */
-  .login-page {
-    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px;
-    background: #0D1117;
-    background-image: radial-gradient(ellipse at 20% 50%, rgba(200,134,10,0.07) 0%, transparent 60%),
-                      radial-gradient(ellipse at 80% 20%, rgba(88,166,255,0.05) 0%, transparent 50%);
-  }
-  .login-card {
-    background: #161B22; border: 1px solid #21262D;
-    border-radius: 20px; padding: 40px; width: 100%; max-width: 400px;
-    margin: 0 auto;
-  }
-  .login-logo { text-align: center; margin-bottom: 32px; }
-  .login-logo h1 { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: #C8860A; }
-  .login-logo p { font-size: 13px; color: #8B949E; margin-top: 4px; }
-  .login-btn {
-    width: 100%; padding: 12px; background: #C8860A; color: #0D1117;
-    border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
-    cursor: pointer; font-family: 'Syne', sans-serif; transition: all 0.15s;
-    margin-top: 8px;
-  }
-  .login-btn:hover { background: #F5B942; }
-  .login-hint {
-    text-align: center; margin-top: 20px; padding: 12px;
-    background: #0D1117; border-radius: 8px; font-size: 12px; color: #8B949E;
-  }
-  .login-hint strong { color: #C8860A; }
-  .error-msg { background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3); color: #F85149; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
-
-  /* ── Low Stock Alert ── */
-  .alert-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.2); margin-bottom: 8px; }
-  .alert-dot { width: 8px; height: 8px; border-radius: 50%; background: #F85149; flex-shrink: 0; }
-
-  /* ── Section Tabs ── */
-  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-  .page-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
-  .page-subtitle { font-size: 13px; color: #8B949E; margin-top: 2px; }
-
-  /* ── Loading ── */
-  .loading { display: flex; align-items: center; justify-content: center; padding: 60px; color: #8B949E; gap: 12px; }
-  .spinner { width: 24px; height: 24px; border: 2px solid #21262D; border-top-color: #C8860A; border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── Tooltip override ── */
-  .recharts-tooltip-wrapper .recharts-default-tooltip {
-    background: #1C2333 !important; border-color: #30363D !important;
-    border-radius: 8px !important;
-  }
-
-  /* ── Role badge colors ── */
-  .role-owner { background: rgba(200,134,10,0.15); color: #C8860A; }
-  .role-manager { background: rgba(88,166,255,0.15); color: #58A6FF; }
-  .role-employee { background: rgba(63,185,80,0.15); color: #3FB950; }
-
-  /* ── Toasts ── */
-  .toasts-container { position: fixed; top: 16px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-  .toast {
-    background: #0F1720; border: 1px solid #21262D; color: #E6EDF3;
-    padding: 10px 14px; border-radius: 10px; min-width: 260px; box-shadow: 0 6px 20px rgba(2,6,23,0.6);
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  }
-  .toast .msg { flex: 1; font-size: 13px; color: #E6EDF3; }
-  .toast .close { background: transparent; border: none; color: #8B949E; cursor: pointer; padding: 6px; border-radius: 6px; }
-  .toast.success { border-left: 4px solid #3FB950; }
-  .toast.danger  { border-left: 4px solid #F85149; }
-  .toast.info    { border-left: 4px solid #58A6FF; }
-  .toast.warning { border-left: 4px solid #D29922; }
-`;
-
-const themeCss = `
-  /* Light theme overrides applied when body has class 'theme-light' */
-  .theme-light body {
-    background: #F6F8FA;
-    color: #0D1117;
-  }
-  .theme-light .sidebar { background: #FFFFFF; border-right-color: #E6EDF3; }
-  .theme-light .sidebar-logo h1 { color: #C8860A; }
-  .theme-light .sidebar-logo span, .theme-light .user-info span, .theme-light .td-muted, .theme-light .page-subtitle { color: #6B7280; }
-  .theme-light .user-avatar { color: #FFFFFF; }
-  .theme-light .main { background: #F6F8FA; }
-  .theme-light .topbar, .theme-light .card, .theme-light .login-card, .theme-light .stat-card, .theme-light .modal { background: #FFFFFF; border-color: #E6EDF3; }
-  .theme-light .card-title, .theme-light .page-title, .theme-light .stat-value, .theme-light td { color: #0D1117; }
-  .theme-light .nav-item { color: #374151; }
-  .theme-light .nav-item:hover { background: #F3F4F6; }
-  .theme-light .form-control { background: #FFFFFF; color: #0D1117; border: 1px solid #E6EDF3; }
-  .theme-light thead th { background: rgba(15,23,42,0.02); color: #6B7280; border-bottom-color: #EEF2F7; }
-  .theme-light .badge { background: rgba(0,0,0,0.03); color: #0D1117; }
-`;
-
-// ── Utilities ─────────────────────────────────────────────────────────────────
-const fmt = (n) => `TZS ${Number(n).toLocaleString()}`;
-const initials = (name) => name?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2);
-
-const humanDate = (d) => {
-  if (!d) return "";
-  try {
-    const dt = new Date(d);
-    if (isNaN(dt)) return d;
-    return dt.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-  } catch (e) { return d; }
-};
-
-// ── Translations ───────────────────────────────────────────────────────────
-const TRANSLATIONS = {
-  en: {
-    "nav.dashboard": "Dashboard",
-    "nav.inventory": "Inventory",
-    "nav.sales": "Sales",
-    "nav.orders": "Orders",
-    "nav.deliveries": "Deliveries",
-    "nav.reports": "Reports",
-    "nav.users": "Users",
-    "page.dashboard": "Dashboard",
-    "page.inventory": "Inventory Management",
-    "page.sales": "Sales Management",
-    "page.orders": "Purchase Orders",
-    "page.deliveries": "Deliveries",
-    "page.reports": "Reports & Analytics",
-    "page.users": "User Management",
-    "btn.add_product": "＋ Add Product",
-    "btn.new_sale": "＋ New Sale",
-    "btn.new_order": "＋ New Order",
-    "btn.record_delivery": "＋ Record Delivery",
-    "btn.edit_product": "Edit Product",
-     "btn.edit_order": "Edit Order",
-    "btn.add_user": "＋ Add User",
-    "sign_out": "Sign Out",
-    "theme.light": "☀️ Light",
-    "theme.dark": "🌙 Dark",
-    "dashboard.welcome": "Welcome back! Here's what's happening at the store.",
-    "stat.total_revenue": "Total Revenue",
-    "stat.total_sales": "Total Sales",
-    "stat.inventory_value": "Inventory Value",
-    "stat.low_stock_alerts": "Low Stock Alerts",
-    "stat.all_time_sales": "All-time sales",
-    "stat.transactions_recorded": "Transactions recorded",
-    "stat.inventory_products": "{count} product types",
-    "charts.monthly_revenue": "Monthly Revenue Trend",
-    "charts.stock_by_category": "Stock by Category",
-    "inventory.product_stock": "Product Stock",
-    "inventory.search_placeholder": "Search products…",
-    "inventory.table.product": "Product",
-    "inventory.table.sku": "SKU",
-    "inventory.table.category": "Category",
-    "inventory.table.qty": "Qty",
-    "inventory.table.unit_price": "Unit Price",
-    "inventory.table.supplier": "Supplier",
-    "inventory.table.location": "Location",
-    "inventory.table.status": "Status",
-    "inventory.table.actions": "Actions",
-    "inventory.status.low": "Low Stock",
-    "inventory.status.in_stock": "In Stock",
-    "btn.cancel": "Cancel",
-    "btn.save": "Save",
-    "sales.record_sale": "Record New Sale",
-    "sales.transaction_history": "Transaction History",
-    "orders.create_order": "Create Purchase Order",
-    "deliveries.record_incoming": "Record Incoming Delivery",
-    "deliveries.no_records": "No deliveries recorded yet",
-    "table.notes": "Notes",
-    "form.sku": "SKU",
-    "form.category": "Category",
-    "form.enter_sku": "Enter SKU",
-    "form.enter_category": "Enter category",
-    "form.enter_product_name": "Enter product name",
-    "form.full_name": "Full Name",
-    "form.email": "Email",
-    "form.password": "Password",
-    "form.role": "Role",
-    "btn.create_user": "Create User",
-    "nav.navigation": "Navigation",
-    "tooltip.revenue": "Revenue",
-    "loading.dashboard": "Loading dashboard…",
-    "dashboard.low_stock_title": "⚠️ Low Stock Alerts",
-    "dashboard.recent_sales": "🕐 Recent Sales",
-    "label.left": "left",
-    "label.min": "Min:",
-    "table.date": "Date",
-    "table.product": "Product",
-    "table.supplier": "Supplier",
-    "table.customer": "Customer",
-    "table.qty": "Qty",
-    "table.unit_price": "Unit Price",
-    "table.total": "Total",
-    "table.name": "Name",
-    "table.email": "Email",
-    "table.role": "Role",
-    "table.payment": "Payment",
-    "table.employee": "Employee",
-    "table.status": "Status",
-    "table.amount": "Amount",
-    "form.product_name": "Product Name",
-    "form.sku": "SKU",
+  // ── Translations ───────────────────────────────────────────────────────────
+  const TRANSLATIONS = {
+    en: {
+      "nav.dashboard": "Dashboard",
+      "nav.inventory": "Inventory",
+      "nav.sales": "Sales",
+      "nav.orders": "Orders",
+      "nav.deliveries": "Deliveries",
+      "nav.reports": "Reports",
+      "nav.users": "Users",
+      "nav.navigation": "Navigation",
+      "page.dashboard": "Dashboard",
+      "page.inventory": "Inventory Management",
+      "page.sales": "Sales Management",
+      "page.orders": "Purchase Orders",
+      "page.deliveries": "Deliveries",
+      "page.reports": "Reports & Analytics",
+      "page.users": "User Management",
+      "btn.add_product": "＋ Add Product",
+      "btn.new_sale": "＋ New Sale",
+      "btn.new_order": "＋ New Order",
+      "btn.record_delivery": "＋ Record Delivery",
+      "btn.edit_product": "Edit Product",
+      "btn.edit_order": "Edit Order",
+      "btn.add_user": "＋ Add User",
+      "sign_out": "Sign Out",
+      "theme.light": "☀️ Light",
+      "theme.dark": "🌙 Dark",
+      "dashboard.welcome": "Welcome back! Here's what's happening at the store.",
+      "stat.total_revenue": "Total Revenue",
+      "stat.total_sales": "Total Sales",
+      "stat.inventory_value": "Inventory Value",
+      "stat.low_stock_alerts": "Low Stock Alerts",
+      "stat.all_time_sales": "All-time sales",
+      "stat.transactions_recorded": "Transactions recorded",
+      "stat.inventory_products": "{count} product types",
+      "charts.monthly_revenue": "Monthly Revenue Trend",
+      "charts.stock_by_category": "Stock by Category",
+      "inventory.product_stock": "Product Stock",
+      "inventory.search_placeholder": "Search products…",
+      "inventory.table.product": "Product",
+      "inventory.table.sku": "SKU",
+      "inventory.table.category": "Category",
+      "inventory.table.qty": "Qty",
+      "inventory.table.unit_price": "Unit Price",
+      "inventory.table.supplier": "Supplier",
+      "inventory.table.location": "Location",
+      "inventory.table.status": "Status",
+      "inventory.table.actions": "Actions",
+      "inventory.status.low": "Low Stock",
+      "inventory.status.in_stock": "In Stock",
+      "btn.cancel": "Cancel",
+      "btn.save": "Save",
+      "sales.record_sale": "Record New Sale",
+      "sales.transaction_history": "Transaction History",
+      "orders.create_order": "Create Purchase Order",
+      "deliveries.record_incoming": "Record Incoming Delivery",
+      "deliveries.no_records": "No deliveries recorded yet",
+      "table.notes": "Notes",
+      "form.sku": "SKU",
+      "form.category": "Category",
+      "form.enter_sku": "Enter SKU",
+      "form.enter_category": "Enter category",
+      "form.enter_product_name": "Enter product name",
+      "form.full_name": "Full Name",
+      "form.email": "Email",
+      "form.password": "Password",
+      "form.role": "Role",
+      "btn.create_user": "Create User",
+      "tooltip.revenue": "Revenue",
+      "loading.dashboard": "Loading dashboard…",
+      "dashboard.low_stock_title": "⚠️ Low Stock Alerts",
+      "dashboard.recent_sales": "🕐 Recent Sales",
+      "label.left": "left",
+      "label.min": "Min:",
+      "table.date": "Date",
+      "table.product": "Product",
+      "table.supplier": "Supplier",
+      "table.customer": "Customer",
+      "table.qty": "Qty",
+      "table.unit_price": "Unit Price",
+      "table.total": "Total",
+      "table.name": "Name",
+      "table.email": "Email",
+      "table.role": "Role",
+      "table.payment": "Payment",
+      "table.employee": "Employee",
+      "table.status": "Status",
+      "table.amount": "Amount",
+      "form.product_name": "Product Name",
+      "form.select_existing": "-- Select existing --",
+      "form.other": "Other...",
+      "form.enter_product_name": "Enter product name",
+      "form.enter_sku": "Enter SKU",
+      "form.enter_category": "Enter category",
+      "form.supplier": "Supplier",
+      "form.location": "Location",
+      "form.quantity": "Quantity",
+      "form.min_qty": "Min Qty",
+      "form.unit_price_tzs": "Unit Price (TZS)",
+      "confirm.delete_product": "Delete this product?",
+      "alert.product_required": "Product name and SKU are required",
+      "alert.product_exists": "A product with that name or SKU already exists.",
+      "btn.edit": "Edit",
+      "btn.delete": "Del",
+      "sales.total_revenue_label": "Total Revenue",
+      "sales.total_transactions": "Total Transactions",
+      "sales.todays_sales": "Today's Sales",
+      "search.placeholder": "Search…",
+      "form.payment_method": "Payment Method",
+      "form.customer_name": "Customer Name",
+      "form.customer_email_optional": "Customer Email (optional)",
+      "form.customer_phone_optional": "Customer Phone (optional)",
+      "form.select_product": "-- Select Product --",
+      "alert.fill_product_qty": "Fill product and quantity",
+      "confirm.no_customer_continue": "No customer name, email or phone provided. Continue?",
+      "orders.records_title": "Order Records",
+      "orders.expected_delivery": "Expected Delivery",
+      "orders.ordered_by": "Ordered By",
+      "orders.actions": "Actions",
+      "deliveries.records_title": "Delivery Records",
+      "deliveries.approve_as_is": "Approve as is",
+      "deliveries.linked_order_label": "Linked Purchase Order",
+      "form.select_order": "-- Select Order --",
+      "deliveries.notes_placeholder": "e.g. All items in good condition",
+      "reports.title": "Reports & Analytics",
+      "reports.subtitle": "Visual insights into business performance",
+      "reports.monthly_revenue": "Monthly Revenue",
+      "reports.payment_methods": "Payment Methods",
+      "reports.inventory_by_category": "Inventory by Category",
+      "users.subtitle": "{count} system users",
+      "users.system_users_title": "System Users",
+      "users.add_user": "Add System User",
+      "user.status.active": "Active",
+      "user.status.inactive": "Inactive",
+      "login.title": "Supa Kariakoo Spare Parts Centre",
+      "login.subtitle": "Inventory Management System",
+      "login.email_label": "Email Address",
+      "login.password_label": "Password",
+      "login.signing_in": "Signing in…",
+      "login.sign_in": "Sign In",
+      "login.hint_owner": "Owner:",
+      "login.hint_manager": "Manager:",
+      "login.hint_employee": "Employee:",
+    },
+    sw: {
+      "nav.dashboard": "Dashibodi",
+      "nav.inventory": "Orodha ya Stoku",
+      "nav.sales": "Mauzo",
+      "nav.orders": "Oda za Ununuzi",
+      "nav.deliveries": "Upokeaji wa Bidhaa",
+      "nav.reports": "Ripoti",
+      "nav.users": "Watumiaji",
+      "nav.navigation": "Urambazaji",
+      "page.dashboard": "Dashibodi",
+      "page.inventory": "Usimamizi wa Stoku",
+      "page.sales": "Usimamizi wa Mauzo",
+      "page.orders": "Oda za Ununuzi",
+      "page.deliveries": "Upokeaji wa Bidhaa",
+      "page.reports": "Ripoti na Uchambuzi",
+      "page.users": "Usimamizi wa Watumiaji",
+      "btn.add_product": "＋ Ongeza Bidhaa",
+      "btn.new_sale": "＋ Mauzo Mapya",
+      "btn.new_order": "＋ Oda Mpya",
+      "btn.record_delivery": "＋ Rekodi Upokeaji wa Bidhaa",
+      "btn.edit_product": "Hariri Bidhaa",
+      "btn.edit_order": "Hariri Oda",
+      "btn.add_user": "＋ Ongeza Mtumiaji",
+      "sign_out": "Toka",
+      "theme.light": "☀️ Mwanga",
+      "theme.dark": "🌙 Giza",
+      "dashboard.welcome": "Karibu tena! Haya ni yanayotokea kwenye duka.",
+      "stat.total_revenue": "Jumla ya Mapato",
+      "stat.total_sales": "Jumla ya Mauzo",
+      "stat.inventory_value": "Thamani ya Stoku",
+      "stat.low_stock_alerts": "Onyo: Stoku Kidogo",
+      "stat.all_time_sales": "Mauzo yote",
+      "stat.transactions_recorded": "Miamala iliyorekodiwa",
+      "stat.inventory_products": "{count} aina za bidhaa",
+      "charts.monthly_revenue": "Mwelekeo wa Mapato ya Mwezi",
+      "charts.stock_by_category": "Hali ya Stoku kwa Aina",
+      "inventory.product_stock": "Stoku za Bidhaa",
+      "inventory.search_placeholder": "Tafuta bidhaa…",
+      "inventory.table.product": "Bidhaa",
+      "inventory.table.sku": "SKU",
+      "inventory.table.category": "Aina",
+      "inventory.table.qty": "Idadi",
+      "inventory.table.unit_price": "Bei kwa Kifungu",
+      "inventory.table.supplier": "Mzabuni",
+      "inventory.table.location": "Mahali",
+      "inventory.table.status": "Hali",
+      "inventory.table.actions": "Vitendo",
+      "inventory.status.low": "Tahadhari: Stoku Kidogo",
+      "inventory.status.in_stock": "Stoku Ipo",
+      "btn.cancel": "Ghairi",
+      "btn.save": "Hifadhi",
+      "sales.record_sale": "Rekodi Mauzo Mapya",
+      "sales.transaction_history": "Rekodi za Miamala",
+      "orders.create_order": "Tengeneza Oda za Ununuzi",
+      "deliveries.record_incoming": "Rekodi Upokeaji wa Mzigo Unaokuja",
+      "deliveries.no_records": "Hakuna Upokeaji wa Mzigo ulioandikwa bado",
+      "table.notes": "Maelezo",
+      "form.sku": "SKU",
+      "form.category": "Aina",
+      "form.enter_sku": "Ingiza SKU",
+      "form.enter_category": "Ingiza aina",
+      "form.enter_product_name": "Ingiza jina la bidhaa",
+      "form.full_name": "Jina Kamili",
+      "form.email": "Barua pepe",
+      "form.password": "Nywila",
+      "form.role": "Cheo",
+      "btn.create_user": "Tengeneza Mtumiaji",
+      "tooltip.revenue": "Mapato",
+      "loading.dashboard": "Inapakia dashibodi…",
+      "dashboard.low_stock_title": "⚠️ Onyo: Stoku Kidogo",
+      "dashboard.recent_sales": "🕐 Mauzo ya Hivi Karibuni",
+      "label.left": "baki",
+      "label.min": "Kiwango cha Chini:",
+      "table.date": "Tarehe",
+      "table.product": "Bidhaa",
+      "table.supplier": "Mzabuni",
+      "table.customer": "Mteja",
+      "table.qty": "Kiasi",
+      "table.unit_price": "Bei",
+      "table.total": "Jumla",
+      "table.name": "Jina",
+      "table.email": "Barua pepe",
+      "table.role": "Cheo",
+      "table.payment": "Malipo",
+      "table.employee": "Mfanyakazi",
+      "table.status": "Hali",
+      "table.amount": "Kiasi",
+      "form.product_name": "Jina la Bidhaa",
+      "form.select_existing": "-- Chagua iliyopo --",
+      "form.other": "Nyingine...",
+      "form.enter_product_name": "Ingiza jina la bidhaa",
+      "form.enter_sku": "Ingiza SKU",
+      "form.enter_category": "Ingiza aina",
+      "form.supplier": "Mzabuni",
+      "form.location": "Mahali",
+      "form.quantity": "Kiasi",
+      "form.min_qty": "Kiasi cha Chini",
+      "form.unit_price_tzs": "Bei kwa Kifungu (TZS)",
+      "confirm.delete_product": "Futa bidhaa hii?",
+      "alert.product_required": "Jina la bidhaa na SKU vinahitajika",
+      "alert.product_exists": "Bidhaa yenye jina au SKU hiyo tayari ipo.",
+      "btn.edit": "Hariri",
+      "btn.delete": "Futa",
+      "sales.total_revenue_label": "Jumla ya Mapato",
+      "sales.total_transactions": "Jumla ya Miamala",
+      "sales.todays_sales": "Mauzo ya Leo",
+      "search.placeholder": "Tafuta…",
+      "form.payment_method": "Njia ya Malipo",
+      "form.customer_name": "Jina la Mteja",
+      "form.customer_email_optional": "Barua pepe ya Mteja (hiari)",
+      "form.customer_phone_optional": "Simu ya Mteja (hiari)",
+      "form.select_product": "-- Chagua Bidhaa --",
+      "alert.fill_product_qty": "Jaza bidhaa na kiasi",
+      "confirm.no_customer_continue": "Hakuna jina la mteja, barua au simu. Endelea?",
+      "orders.records_title": "Rekodi za Oda",
+      "orders.expected_delivery": "Kuwekwa Kutegemewa",
+      "orders.ordered_by": "Imeagizwa Na",
+      "orders.actions": "Vitendo",
+      "deliveries.records_title": "Rekodi za Upokeaji",
+      "deliveries.approve_as_is": "Kubali kama ilivyo",
+      "deliveries.linked_order_label": "Oda ya Ununuzi Iliyohusishwa",
+      "form.select_order": "-- Chagua Oda --",
+      "deliveries.notes_placeholder": "mf: Bidhaa zote ziko katika hali nzuri",
+      "reports.title": "Ripoti & Uchambuzi",
+      "reports.subtitle": "Vionyesho vya picha kuhusu utendaji wa biashara",
+      "reports.monthly_revenue": "Mapato ya Kila Mwezi",
+      "reports.payment_methods": "Njia za Malipo",
+      "reports.inventory_by_category": "Stoku kwa Aina",
+      "users.subtitle": "Watumiaji wa mfumo wako {count} ",
+      "users.system_users_title": "Watumiaji wa Mfumo",
+      "users.add_user": "Ongeza Mtumiaji wa Mfumo",
+      "user.status.active": "Hai",
+      "user.status.inactive": "Haiko Hai",
+      "login.title": "Kituo cha Uuzaji wa Spea Supa Kariakoo",
+      "login.subtitle": "Mfumo wa Usimamizi wa Stoku na Mauzo",
+      "login.email_label": "Barua pepe",
+      "login.password_label": "Nywila",
+      "login.signing_in": "Inakubali kuingia…",
+      "login.sign_in": "Ingia",
+      "login.hint_owner": "Mmiliki:",
+      "login.hint_manager": "Meneja:",
+      "login.hint_employee": "Mfanyakazi:",
+    }
+  };
     "form.category": "Category",
     "form.select_existing": "-- Select existing --",
     "form.other": "Other...",

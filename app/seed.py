@@ -60,12 +60,36 @@ def seed_database(db: Session) -> None:
     db.flush()
 
     # ── Products ──────────────────────────────────────────────────────────────
-    product_objs = []
-    for p in PRODUCTS:
-        obj = Product(**p)
-        db.add(obj)
-        product_objs.append(obj)
-    db.flush()
+        # ── Products (generate motorcycle-focused catalogue) ────────────────────
+        BRANDS = [
+            "TVS", "SanLG", "Boxer", "Haujue", "Sinoray",
+            "Hoyun", "Zongshen", "Sanlg", "Fekon",
+        ]
+        PART_TYPES = [
+            "Brake Pads", "Clutch Kit", "Chain", "Spark Plug", "Headlight",
+            "Tire", "Seat", "Carburetor", "Piston Kit", "Cylinder Kit",
+            "Gearbox Gasket", "Fuel Pump", "Handlebar", "Kick Starter",
+        ]
+
+        NUM_PRODUCTS = 60
+        product_objs = []
+        for i in range(NUM_PRODUCTS):
+            brand = random.choice(BRANDS)
+            part = random.choice(PART_TYPES)
+            name = f"{brand} {part} {i+1}"
+            sku = f"{brand[:3].upper()}-{i+1:04d}"
+            unit_price = random.randint(800, 25000)
+            min_q = random.randint(5, 20)
+            location = f"S-{random.randint(1,9)}{random.randint(1,9)}"
+            supplier = f"{brand} Supplies Tanzania"
+            obj = Product(
+                name=name, sku=sku, category="Motorcycle", quantity=0,
+                min_quantity=min_q, unit_price=unit_price,
+                supplier=supplier, location=location,
+            )
+            db.add(obj)
+            product_objs.append(obj)
+        db.flush()
 
     owner    = user_objs["owner"]
     manager  = user_objs["manager"]

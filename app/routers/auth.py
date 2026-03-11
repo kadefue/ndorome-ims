@@ -70,12 +70,23 @@ def update_existing_user(
     user_id: int,
     user_in: UserUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_manager_above),
+    current_user: User = Depends(require_owner),
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    # Prevent privilege escalation
-    if user_in.role == "owner" and current_user.role != "owner":
-        raise HTTPException(status_code=403, detail="Only owner can assign owner role")
+
+    # Owner can only manage manager/employee accounts via this endpoint
+    if user.role not in ("manager", "employee"):
+        raise HTTPException(status_code=403, detail="Only manager/employee accounts can be updated")
+
+    # Prevent assigning owner role from user-management update
+    if user_in.role == "owner":
+        raise HTTPException(status_code=403, detail="Owner role cannot be assigned from this action")
+
+    if user_in.email:
+        existing = get_user_by_email(db, user_in.email)
+        if existing and existing.id != user.id:
+            raise HTTPException(status_code=400, detail="Email already registered")
+
     return update_user(db, user, user_in)

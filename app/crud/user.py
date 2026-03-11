@@ -46,8 +46,18 @@ def create_user(db: Session, user_in: UserCreate) -> User:
 
 def update_user(db: Session, user: User, user_in: UserUpdate) -> User:
     update_data = user_in.model_dump(exclude_unset=True)
+
+    if "email" in update_data and update_data["email"]:
+        update_data["email"] = update_data["email"].lower()
+
+    if "password" in update_data:
+        password = update_data.pop("password")
+        if password:
+            user.hashed_password = hash_password(password)
+
     for field, value in update_data.items():
         setattr(user, field, value)
+
     db.commit()
     db.refresh(user)
     return user

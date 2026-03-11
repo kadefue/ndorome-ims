@@ -64,12 +64,25 @@ const css = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body, #root {
+    width: 100%;
+    min-height: 100vh;
+  }
   
   body {
     font-family: 'DM Sans', sans-serif;
     background: #0D1117;
     color: #E6EDF3;
+    display: block;
     min-height: 100vh;
+  }
+
+  #root {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    text-align: initial;
   }
 
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -475,6 +488,7 @@ const themeCss = `
       "table.employee": "Employee",
       "table.status": "Status",
       "table.amount": "Amount",
+      "table.page_size": "Page Size",
       "form.product_name": "Product Name",
       "form.select_existing": "-- Select existing --",
       "form.other": "Other...",
@@ -491,6 +505,7 @@ const themeCss = `
       "alert.product_exists": "A product with that name or SKU already exists.",
       "btn.edit": "Edit",
       "btn.delete": "Del",
+      "btn.edit_user": "Edit User",
       "sales.total_revenue_label": "Total Revenue",
       "sales.total_transactions": "Total Transactions",
       "sales.todays_sales": "Today's Sales",
@@ -554,6 +569,7 @@ const themeCss = `
       "btn.edit_product": "Hariri Bidhaa",
       "btn.edit_order": "Hariri Oda",
       "btn.add_user": "＋ Ongeza Mtumiaji",
+      "btn.edit_user": "Hariri Mtumiaji",
       "sign_out": "Toka",
       "theme.light": "☀️ Mwanga",
       "theme.dark": "🌙 Giza",
@@ -618,6 +634,7 @@ const themeCss = `
       "table.employee": "Mfanyakazi",
       "table.status": "Hali",
       "table.amount": "Kiasi",
+      "table.page_size": "Ukubwa wa Ukurasa",
       "form.product_name": "Jina la Bidhaa",
       "form.select_existing": "-- Chagua iliyopo --",
       "form.other": "Nyingine...",
@@ -662,6 +679,7 @@ const themeCss = `
       "users.subtitle": "Watumiaji wa mfumo wako {count} ",
       "users.system_users_title": "Watumiaji wa Mfumo",
       "users.add_user": "Ongeza Mtumiaji wa Mfumo",
+      "users.edit_user": "Hariri Mtumiaji",
       "user.status.active": "Hai",
       "user.status.inactive": "Haiko Hai",
       "login.title": "Kituo cha Uuzaji wa Spea Supa Kariakoo",
@@ -1968,27 +1986,114 @@ function Users({ locale }) {
   const [users, setUsers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({name:"",email:"",password:"",role:"employee"});
+  const [saving, setSaving] = useState(false);
+  const [modalMsg, setModalMsg] = useState({ type: "", text: "" });
+  const [editingUserId, setEditingUserId] = useState(null);
 
   const load = () => apiFetch("/auth/users").then(setUsers);
   useEffect(()=>{ load(); },[]);
 
+  function openCreateUser() {
+    setEditingUserId(null);
+    setForm({name:"",email:"",password:"",role:"employee"});
+    setModalMsg({ type: "", text: "" });
+    setShowModal(true);
+  }
+
+  function openEditUser(target) {
+    setEditingUserId(target.id);
+    setForm({
+      name: target.name || "",
+      email: target.email || "",
+      password: "",
+      role: target.role || "employee",
+      active: !!target.active,
+    });
+    setModalMsg({ type: "", text: "" });
+    setShowModal(true);
+  }
+
   async function saveUser() {
-    await apiFetch("/auth/users",{method:"POST",body:JSON.stringify(form)});
-    setShowModal(false); setForm({name:"",email:"",password:"",role:"employee"}); load();
+    if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
+      if (editingUserId && form.name.trim() && form.email.trim()) {
+        // password is optional during edit
+      } else {
+        const text = "Please fill Full Name, Email and Password.";
+        setModalMsg({ type: "error", text });
+        try { window._app_show_toast && window._app_show_toast(text, 'danger'); } catch {}
+        return;
+      }
+    }
+
+    if (!form.name.trim() || !form.email.trim()) {
+      const text = "Please fill Full Name, Email and Password.";
+      setModalMsg({ type: "error", text });
+      try { window._app_show_toast && window._app_show_toast(text, 'danger'); } catch {}
+      return;
+    }
+    setSaving(true);
+    setModalMsg({ type: "", text: "" });
+    try {
+      if (editingUserId) {
+        const payload = {
+          name: form.name,
+          email: form.email,
+          role: form.role,
+          active: form.active,
+        };
+        if (form.password && form.password.trim()) payload.password = form.password;
+        await apiFetch('/auth/users/' + editingUserId, { method: 'PUT', body: JSON.stringify(payload) });
+      } else {
+        await apiFetch("/auth/users",{method:"POST",body:JSON.stringify(form)});
+      }
+
+      const text = editingUserId ? "User account updated successfully." : "System user created successfully.";
+      setModalMsg({ type: "success", text });
+      try { window._app_show_toast && window._app_show_toast(text, 'success'); } catch {}
+      await load();
+      setTimeout(() => {
+        setShowModal(false);
+        setEditingUserId(null);
+        setForm({name:"",email:"",password:"",role:"employee"});
+        setModalMsg({ type: "", text: "" });
+      }, 500);
+    } catch (err) {
+      const text = err?.message || "Failed to create system user.";
+      setModalMsg({ type: "error", text });
+      try { window._app_show_toast && window._app_show_toast(text, 'danger'); } catch {}
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function toggleActive(target) {
+    const nextActive = !target.active;
+    const confirmText = nextActive ? "Activate this account?" : "Deactivate this account?";
+    if (!confirm(confirmText)) return;
+    try {
+      await apiFetch('/auth/users/' + target.id, {
+        method: 'PUT',
+        body: JSON.stringify({ active: nextActive }),
+      });
+      try { window._app_show_toast && window._app_show_toast(nextActive ? "Account activated." : "Account deactivated.", 'success'); } catch {}
+      await load();
+    } catch (err) {
+      try { window._app_show_toast && window._app_show_toast(err?.message || 'Failed to update account status.', 'danger'); } catch {}
+    }
   }
 
   return (
     <div className="page">
       <div className="page-header">
         <div><div className="page-title">{t(locale,'page.users')}</div><div className="page-subtitle">{t(locale,'users.subtitle').replace('{count}', users.length)}</div></div>
-        {user.role==="owner" && <button className="btn btn-primary" onClick={()=>setShowModal(true)}>{t(locale,'btn.add_user')}</button>}
+        {user.role==="owner" && <button className="btn btn-primary" onClick={openCreateUser}>{t(locale,'btn.add_user')}</button>}
       </div>
 
       <div className="card">
         <div className="card-header"><span className="card-title">{t(locale,'users.system_users_title')}</span></div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>{t(locale,'table.name')}</th><th>{t(locale,'table.email')}</th><th>{t(locale,'table.role')}</th><th>{t(locale,'table.status')}</th></tr></thead>
+            <thead><tr><th>{t(locale,'table.name')}</th><th>{t(locale,'table.email')}</th><th>{t(locale,'table.role')}</th><th>{t(locale,'table.status')}</th>{user.role==="owner" && <th>{t(locale,'orders.actions') || 'Actions'}</th>}</tr></thead>
             <tbody>
               {users.map(u=>(
                 <tr key={u.id}>
@@ -2001,6 +2106,18 @@ function Users({ locale }) {
                   <td className="td-muted">{u.email}</td>
                   <td><span className={"badge role-" + u.role}>{u.role}</span></td>
                   <td><span className={"badge " + (u.active?"badge-success":"badge-danger")}>{u.active? t(locale,'user.status.active') : t(locale,'user.status.inactive')}</span></td>
+                  {user.role==="owner" && (
+                    <td>
+                      {u.role !== 'owner' ? (
+                        <div style={{display:'flex',gap:8}}>
+                          <button className="btn btn-secondary btn-sm" onClick={()=>openEditUser(u)}>{t(locale,'btn.edit') || 'Edit'}</button>
+                          <button className="btn btn-danger btn-sm" onClick={()=>toggleActive(u)}>{u.active ? 'Deactivate' : 'Activate'}</button>
+                        </div>
+                      ) : (
+                        <span className="td-muted">—</span>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -2009,19 +2126,32 @@ function Users({ locale }) {
       </div>
 
       {showModal && (
-        <Modal title={t(locale,'users.add_user')} onClose={()=>setShowModal(false)}
-          footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveUser}>{t(locale,'btn.create_user')}</button></>}>
+        <Modal title={editingUserId ? (t(locale,'btn.edit_user') || 'Edit System User') : t(locale,'users.add_user')} onClose={()=>{ setShowModal(false); setEditingUserId(null); setModalMsg({ type: "", text: "" }); }}
+          footer={<><button className="btn btn-secondary" onClick={()=>{ setShowModal(false); setModalMsg({ type: "", text: "" }); }} disabled={saving}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveUser} disabled={saving}>{saving ? (t(locale,'btn.saving') || 'Saving...') : t(locale,'btn.create_user')}</button></>}>
+          {modalMsg.text && (
+            <div className="error-msg" style={{ marginBottom: 12, background: modalMsg.type === 'success' ? 'rgba(63,185,80,0.1)' : 'rgba(248,81,73,0.1)', borderColor: modalMsg.type === 'success' ? 'rgba(63,185,80,0.35)' : 'rgba(248,81,73,0.3)', color: modalMsg.type === 'success' ? '#3FB950' : '#F85149' }}>
+              {modalMsg.text}
+            </div>
+          )}
           <div className="form-group"><label className="form-label">{t(locale,'form.full_name')}</label><input className="form-control" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></div>
           <div className="form-group"><label className="form-label">{t(locale,'form.email')}</label><input className="form-control" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></div>
-          <div className="form-group"><label className="form-label">{t(locale,'form.password')}</label><input className="form-control" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})}/></div>
+          <div className="form-group"><label className="form-label">{editingUserId ? ((t(locale,'form.password') || 'Password') + ' (optional)') : t(locale,'form.password')}</label><input className="form-control" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})}/></div>
           <div className="form-group">
             <label className="form-label">{t(locale,'form.role')}</label>
             <select className="form-control" value={form.role} onChange={e=>setForm({...form,role:e.target.value})}>
               <option value="employee">Employee</option>
               <option value="manager">Manager</option>
-              {user.role==="owner" && <option value="owner">Owner</option>}
             </select>
           </div>
+          {editingUserId && (
+            <div className="form-group">
+              <label className="form-label">{t(locale,'table.status') || 'Status'}</label>
+              <select className="form-control" value={form.active ? 'active' : 'inactive'} onChange={e=>setForm({...form,active:e.target.value === 'active'})}>
+                <option value="active">{t(locale,'user.status.active')}</option>
+                <option value="inactive">{t(locale,'user.status.inactive')}</option>
+              </select>
+            </div>
+          )}
         </Modal>
       )}
     </div>

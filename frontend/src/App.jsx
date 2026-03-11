@@ -230,6 +230,7 @@ const css = `
 
   /* ── Charts Grid ── */
   .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .dashboard-bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
   /* ── Tables ── */
   .table-wrap { overflow-x: auto; }
@@ -378,6 +379,51 @@ const css = `
   .role-owner { background: rgba(200,134,10,0.15); color: #C8860A; }
   .role-manager { background: rgba(88,166,255,0.15); color: #58A6FF; }
   .role-employee { background: rgba(63,185,80,0.15); color: #3FB950; }
+
+  /* ── Responsive ── */
+  @media (max-width: 1180px) {
+    .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .charts-grid { grid-template-columns: 1fr; }
+    .dashboard-bottom-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 920px) {
+    .app { flex-direction: column; min-height: 100dvh; }
+    .sidebar {
+      position: static;
+      width: 100%;
+      min-width: 0;
+      border-right: 0;
+      border-bottom: 1px solid #21262D;
+      max-height: none;
+    }
+    .nav-section { padding: 12px; }
+    .main { margin-left: 0; }
+    .topbar { padding: 10px 14px; height: auto; flex-wrap: wrap; gap: 10px; }
+    .topbar h2 { font-size: 16px; }
+    .topbar-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+    .page { padding: 16px; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .card-header { padding: 12px 14px; }
+    .card-body { padding: 14px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .modal { max-width: 100%; }
+    .modal-body { padding: 16px; }
+    .modal-header, .modal-footer { padding: 12px 16px; }
+  }
+
+  @media (max-width: 640px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .sidebar-logo { padding: 14px 14px 12px; }
+    .sidebar-logo h1 { font-size: 16px; }
+    .sidebar-user { padding: 10px 14px; }
+    .nav-item { padding: 9px 10px; font-size: 13px; }
+    .page { padding: 12px; }
+    .page-title { font-size: 18px; }
+    table { font-size: 12px; }
+    th, td { white-space: nowrap; }
+    .btn { padding: 8px 12px; }
+  }
 `;
 
 const themeCss = `
@@ -1048,20 +1094,20 @@ function Dashboard({ locale }) {
             <span className="card-title">{t(locale,'charts.stock_by_category')}</span>
           </div>
           <div className="card-body">
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={200}>
               <PieChart>
-                <Pie data={catData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value">
+                <Pie data={catData} cx="50%" cy="46%" innerRadius={40} outerRadius={62} paddingAngle={3} dataKey="value">
                   {catData.map((e,i) => <Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>)}
                 </Pie>
                 <Tooltip contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:12}}/>
-                <Legend iconSize={10} wrapperStyle={{fontSize:11,color:"#8B949E"}}/>
+                <Legend verticalAlign="bottom" align="center" iconSize={10} wrapperStyle={{fontSize:11,color:"#8B949E"}}/>
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+      <div className="dashboard-bottom-grid">
         <div className="card">
           <div className="card-header">
             <span className="card-title">{t(locale,'dashboard.low_stock_title')}</span>

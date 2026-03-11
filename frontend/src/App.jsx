@@ -876,7 +876,7 @@ function Dashboard({ locale }) {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#21262D"/>
                 <XAxis dataKey="month" tick={{fill:"#8B949E",fontSize:11}} axisLine={false} tickLine={false}/>
-                <YAxis tick={{fill:"#8B949E",fontSize:11}} axisLine={false} tickLine={false} tickFormatter={v=>`${v/1000}k`}/>
+                <YAxis tick={{fill:"#8B949E",fontSize:11}} axisLine={false} tickLine={false} tickFormatter={v => (v/1000) + 'k'}/>
                 <Tooltip formatter={v=>[fmt(v),"Revenue"]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:12}}/>
                 <Area type="monotone" dataKey="revenue" stroke="#C8860A" strokeWidth={2} fill="url(#revGrad)"/>
               </AreaChart>

@@ -359,6 +359,49 @@ const css = `
   .alert-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.2); margin-bottom: 8px; }
   .alert-dot { width: 8px; height: 8px; border-radius: 50%; background: #F85149; flex-shrink: 0; }
 
+  /* ── Toasts (left stack) ── */
+  .toasts-container {
+    position: fixed;
+    left: 16px;
+    top: 80px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+    pointer-events: none;
+  }
+  .toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 260px;
+    max-width: 420px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(20,24,30,0.6);
+    border: 1px solid rgba(255,255,255,0.04);
+    color: #E6EDF3;
+    box-shadow: 0 8px 24px rgba(2,6,23,0.5);
+    animation: toastIn 220ms cubic-bezier(.2,.9,.2,1);
+  }
+  @keyframes toastIn { from { transform: translateX(-8px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
+  .toast .toast-icon { width: 28px; height: 28px; display:flex; align-items:center; justify-content:center; border-radius:6px; font-size:14px; flex-shrink:0; }
+  .toast .msg { flex: 1; font-size: 13px; }
+  .toast .close { background: none; border: none; color: #8B949E; cursor: pointer; font-size: 13px; padding: 6px; border-radius: 6px; }
+  .toast .close:hover { color: #E6EDF3; background: rgba(255,255,255,0.02); }
+
+  /* Outlined severity */
+  .toast.info { border-left: 4px solid #58A6FF; }
+  .toast.success { border-left: 4px solid #3FB950; }
+  .toast.warning { border-left: 4px solid #D29922; }
+  .toast.danger { border-left: 4px solid #F85149; }
+  .toast.info .toast-icon { background: rgba(88,166,255,0.12); }
+  .toast.success .toast-icon { background: rgba(63,185,80,0.08); }
+  .toast.warning .toast-icon { background: rgba(210,153,34,0.08); }
+  .toast.danger .toast-icon { background: rgba(248,81,73,0.08); }
+
   /* ── Section Tabs ── */
   .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
   .page-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
@@ -1237,7 +1280,7 @@ function Inventory({ locale }) {
     }
   }
   async function del(id) {
-    if (!confirm(t(locale,'confirm.delete_product'))) return;
+    if (!(await window._app_confirm(t(locale,'confirm.delete_product')))) return;
     await apiFetch('/products/' + id,{method:"DELETE"}); load();
   }
 
@@ -1401,7 +1444,7 @@ function Sales({ locale }) {
     if (!form.product_id || !form.quantity) return alert(t(locale,'alert.fill_product_qty'));
     if (!form.customer && !form.customer_email && !form.customer_phone) {
       // Allow anonymous sale but warn user; change this if you prefer to require at least one
-      if (!confirm(t(locale,'confirm.no_customer_continue'))) return;
+      if (!(await window._app_confirm(t(locale,'confirm.no_customer_continue'), { title: t(locale,'confirm.warning') || 'Warning', confirmLabel: t(locale,'btn.continue') || 'Continue', cancelLabel: t(locale,'btn.cancel') || 'Cancel' }))) return;
     }
     const body = {
       product_id: form.product_id, product_name: selProd?.name,
@@ -1639,7 +1682,7 @@ function Orders({ locale }) {
 
   async function deleteProductById(productId) {
     if (!productId) return;
-    if (!confirm('Delete product? This cannot be undone.')) return;
+    if (!(await window._app_confirm('Delete product? This cannot be undone.', { title: 'Delete product', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
     try {
       await apiFetch('/products/' + productId, { method: 'DELETE' });
       await load();
@@ -1940,7 +1983,7 @@ function Deliveries({ locale }) {
                       {statusBadge(d.status)}
                       {canManage && d.status !== 'approved' && (
                         <button className="btn btn-primary btn-sm" onClick={async()=>{
-                          if (!confirm(t(locale,'deliveries.approve_as_is'))) return;
+                          if (!(await window._app_confirm(t(locale,'deliveries.approve_as_is'), { title: t(locale,'deliveries.approve') || 'Approve Delivery', confirmLabel: t(locale,'btn.approve') || 'Approve', cancelLabel: t(locale,'btn.cancel') || 'Cancel' }))) return;
                           try { await apiFetch('/deliveries/' + d.id + '/approve',{method:'PUT'}); load(); } catch(err) { alert(err.message); }
                         }}>{t(locale,'deliveries.approve_as_is')}</button>
                       )}
@@ -2085,7 +2128,7 @@ function CategoriesPage({ locale }) {
   }
 
   async function deleteCategory(id){
-    if (!confirm('Delete category?')) return;
+    if (!(await window._app_confirm('Delete category?', { title: 'Delete category', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
     try { await apiFetch('/settings/categories/' + id, { method: 'DELETE' }); setCategories(cs=>cs.filter(c=>c.id!==id)); window._app_show_toast && window._app_show_toast('Deleted', 'success'); } catch(e){ }
   }
 
@@ -2156,7 +2199,7 @@ function ModelsPage({ locale }) {
   function startEdit(m){ setEditingId(m.id); setEditingName(m.name); }
   async function saveEdit(){ if (!editingName.trim()) return; try { const res = await apiFetch('/settings/models/' + editingId, { method: 'PUT', body: JSON.stringify({ name: editingName.trim(), categories: [] }) }); setModels(ms=>ms.map(x=> x.id === res.id ? res : x)); setEditingId(null); setEditingName(''); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); } }
 
-  async function deleteModel(id){ if (!confirm('Delete model?')) return; try { await apiFetch('/settings/models/' + id, { method: 'DELETE' }); setModels(ms=>ms.filter(m=>m.id!==id)); window._app_show_toast && window._app_show_toast('Deleted', 'success'); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); } }
+  async function deleteModel(id){ if (!(await window._app_confirm('Delete model?', { title: 'Delete model', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return; try { await apiFetch('/settings/models/' + id, { method: 'DELETE' }); setModels(ms=>ms.filter(m=>m.id!==id)); window._app_show_toast && window._app_show_toast('Deleted', 'success'); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); } }
 
   return (
     <div className="page">
@@ -2454,7 +2497,7 @@ function Users({ locale }) {
   async function toggleActive(target) {
     const nextActive = !target.active;
     const confirmText = nextActive ? "Activate this account?" : "Deactivate this account?";
-    if (!confirm(confirmText)) return;
+    if (!(await window._app_confirm(confirmText, { title: confirmText, confirmLabel: 'Yes', cancelLabel: 'No' }))) return;
     try {
       await apiFetch('/auth/users/' + target.id, {
         method: 'PUT',
@@ -2695,6 +2738,7 @@ export default function App() {
 
   // Toasts for error/notification surfacing
   const [toasts, setToasts] = useState([]);
+  const [confirmState, setConfirmState] = useState(null);
   const addToast = (message, type = 'info', ttl = 5000) => {
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
     const t = { id, message, type };
@@ -2707,7 +2751,13 @@ export default function App() {
   useEffect(() => {
     // expose a global helper so top-level helpers can show toasts
     window._app_show_toast = (msg, type = 'info') => { try { addToast(msg, type); } catch {} };
-    return () => { try { delete window._app_show_toast; } catch {} };
+    // expose a global confirm helper that returns a Promise
+    window._app_confirm = (message, opts = {}) => {
+      return new Promise(resolve => {
+        setConfirmState({ message, resolve, opts });
+      });
+    };
+    return () => { try { delete window._app_show_toast; delete window._app_confirm; } catch {} };
   }, []);
 
   // Theme state persisted across sessions
@@ -2726,11 +2776,27 @@ export default function App() {
       <div className="toasts-container" aria-live="polite">
         {toasts.map(t => (
           <div key={t.id} className={"toast " + t.type}>
+            <span className="toast-icon">{t.type === 'success' ? '✅' : t.type === 'danger' ? '⚠️' : t.type === 'warning' ? '⚠️' : 'ℹ️'}</span>
             <div className="msg">{t.message}</div>
             <button className="close" onClick={() => removeToast(t.id)}>✕</button>
           </div>
         ))}
       </div>
+      {confirmState && (
+        <Modal title={confirmState.opts?.title || 'Confirm'} onClose={() => { confirmState.resolve(false); setConfirmState(null); }}
+          footer={<>
+            <button className="btn btn-secondary" onClick={() => { confirmState.resolve(false); setConfirmState(null); }}>{confirmState.opts?.cancelLabel || 'Cancel'}</button>
+            <button className="btn btn-danger" onClick={() => { confirmState.resolve(true); setConfirmState(null); }} style={{marginLeft:8}}>{confirmState.opts?.confirmLabel || 'Delete'}</button>
+          </>}>
+          <div style={{display:'flex',gap:12,alignItems:'flex-start'}}>
+            <div style={{width:44,height:44,background:'rgba(248,81,73,0.12)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22}}>⚠️</div>
+            <div>
+              <div style={{fontWeight:700,marginBottom:6,color:'#F85149'}}>{confirmState.opts?.title || 'Are you sure?'}</div>
+              <div style={{color:'#8B949E'}}>{confirmState.message}</div>
+            </div>
+          </div>
+        </Modal>
+      )}
       {user ? <AppShell user={user} onLogout={handleLogout} locale={locale} setLocale={setLocale}/> : <LoginPage onLogin={handleLogin} locale={locale}/>} 
     </>
   );

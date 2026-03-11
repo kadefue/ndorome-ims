@@ -2078,13 +2078,21 @@ function ModelsPage({ locale }) {
 function ProductsPage({ locale }) {
   const [categories, setCategories] = useState([]);
   const [templates, setTemplates] = useState([]);
+  const [models, setModels] = useState([]);
   const [products, setProducts] = useState([]);
-  const [form, setForm] = useState({name:'',sku:'',category:'',min_quantity:5,unit_price:'',supplier:'',location:''});
-  useEffect(()=>{ Promise.all([apiFetch('/settings/categories'), apiFetch('/settings/templates'), apiFetch('/products')]).then(([c,t,p])=>{ setCategories(c||[]); setTemplates(t||[]); setProducts(p||[]); }).catch(()=>{}); },[]);
+  const [form, setForm] = useState({name:'',sku:'',category:'',model:'',min_quantity:5,location:''});
+  useEffect(()=>{ Promise.all([apiFetch('/settings/categories'), apiFetch('/settings/templates'), apiFetch('/settings/models'), apiFetch('/products')]).then(([c,t,m,p])=>{ setCategories(c||[]); setTemplates(t||[]); setModels(m||[]); setProducts(p||[]); }).catch(()=>{}); },[]);
 
   async function addProduct(){
     if (!form.name || !form.category) return alert('Provide name and select category');
-    try { const payload = { ...form, min_quantity: +form.min_quantity, unit_price: +form.unit_price, quantity: 0 }; const res = await apiFetch('/products',{method:'POST', body: JSON.stringify(payload)}); setProducts(ps=>[res,...ps]); setForm({name:'',sku:'',category:'',min_quantity:5,unit_price:'',supplier:'',location:''}); window._app_show_toast && window._app_show_toast('Product added', 'success'); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+    try {
+      const payload = { ...form, min_quantity: +form.min_quantity, unit_price: 1.0, quantity: 0 };
+      // backend expects unit_price > 0; default to 1.0 when user doesn't provide price in UI
+      const res = await apiFetch('/products',{method:'POST', body: JSON.stringify(payload)});
+      setProducts(ps=>[res,...ps]);
+      setForm({name:'',sku:'',category:'',model:'',min_quantity:5,location:''});
+      window._app_show_toast && window._app_show_toast('Product added', 'success');
+    } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
 
   return (
@@ -2098,18 +2106,21 @@ function ProductsPage({ locale }) {
       <div className="card">
         <div className="card-header"><span className="card-title">New Product</span></div>
         <div style={{padding:16}}>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 200px 160px',gap:8}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 200px 160px 200px',gap:8}}>
             <input className="form-control" placeholder="Product name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} />
             <input className="form-control" placeholder="SKU" value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} />
             <select className="form-control" value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>
               <option value="">Select category</option>
               {(categories||[]).map(c=> <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
+            <select className="form-control" value={form.model} onChange={e=>setForm({...form,model:e.target.value})}>
+              <option value="">Select model (optional)</option>
+              {(models||[]).map(m=> <option key={m.id} value={m.name}>{m.name}</option>)}
+            </select>
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'200px 200px 200px',gap:8,marginTop:8}}>
+          <div style={{display:'grid',gridTemplateColumns:'200px 200px',gap:8,marginTop:8}}>
             <input className="form-control" placeholder="Min qty" type="number" value={form.min_quantity} onChange={e=>setForm({...form,min_quantity:e.target.value})} />
-            <input className="form-control" placeholder="Unit price" type="number" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})} />
-            <input className="form-control" placeholder="Supplier" value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})} />
+            <input className="form-control" placeholder="Location" value={form.location} onChange={e=>setForm({...form,location:e.target.value})} />
           </div>
           <div style={{marginTop:12}}>
             <button className="btn btn-primary" onClick={addProduct}>Add Product</button>
@@ -2395,7 +2406,7 @@ const NAV = [
   { id:"categories",labelKey:"nav.categories", icon:"🏷️", roles:["owner","manager"] },
   { id:"models",    labelKey:"nav.models",     icon:"🏍️", roles:["owner","manager"] },
   { id:"reports",   labelKey:"nav.reports",   icon:"📈" },
-  { id:"settings",  labelKey:"nav.settings",  icon:"⚙️", roles:["owner","manager"] },
+  
   { id:"users",     labelKey:"nav.users",     icon:"👥", roles:["owner","manager"] },
 ];
 
@@ -2408,7 +2419,7 @@ const PAGE_TITLES = {
   deliveries:"page.deliveries",
   reports:"page.reports",
   users:"page.users",
-  settings:"page.settings",
+  
   categories:"page.categories",
   models:"page.models",
 };
@@ -2423,10 +2434,13 @@ function AppShell({ user, onLogout, locale, setLocale }) {
     switch(page) {
       case "dashboard": return <Dashboard locale={locale}/>;
       case "inventory": return <Inventory locale={locale}/>;
+      case "products":  return <ProductsPage locale={locale}/>;
       case "sales":     return <Sales locale={locale}/>;
       case "orders":    return <Orders locale={locale}/>;
       case "deliveries":return <Deliveries locale={locale}/>;
-      case "settings":  return <Settings locale={locale}/>;
+      
+      case "categories":return <CategoriesPage locale={locale}/>;
+      case "models":    return <ModelsPage locale={locale}/>;
       case "reports":   return <Reports locale={locale}/>;
       case "users":     return <Users locale={locale}/>;
       default:          return <Dashboard/>;

@@ -30,6 +30,16 @@ async function apiFetch(path, options = {}) {
   return res.json();
 }
 
+function initials(name) {
+  return (name || "")
+    .split(" ")
+    .filter(Boolean)
+    .map(word => word[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 // ── Colors & Theme ────────────────────────────────────────────────────────────
 const C = {
   primary: "#C8860A",
@@ -598,6 +608,15 @@ const themeCss = `
 
 const t = (locale, key) => (TRANSLATIONS[locale] && TRANSLATIONS[locale][key]) || TRANSLATIONS.en[key] || key;
 
+const fmt = (n) => 'TZS ' + Number(n || 0).toLocaleString();
+
+const humanDate = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
 function statusBadge(s) {
   const map = {
     completed: "badge-success", received: "badge-success",
@@ -699,19 +718,6 @@ function LoginPage({ onLogin, locale }) {
           <div><strong>{t(locale,'login.hint_owner')}</strong> owner@supakariakoo.com / owner123</div>
           <div><strong>{t(locale,'login.hint_manager')}</strong> manager@supakariakoo.com / manager123</div>
           <div><strong>{t(locale,'login.hint_employee')}</strong> employee@supakariakoo.com / emp123</div>
-        </div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10}}>
-          <div>
-            <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
-            <select value={pageSize} onChange={e=>{ setPageSize(+e.target.value); setPage(1); }}>
-              {pageOptions.map(n=> <option key={n} value={n}>{n}</option>)}
-            </select>
-          </div>
-          <div>
-            <button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Prev</button>
-            <span style={{margin:'0 8px'}}>{Math.min((page-1)*pageSize+1, total || 0)}-{Math.min(page*pageSize,total || 0)} of {total}</span>
-            <button disabled={page>=pageCount} onClick={()=>setPage(p=>Math.min(pageCount,p+1))}>Next</button>
-          </div>
         </div>
       </div>
     </div>

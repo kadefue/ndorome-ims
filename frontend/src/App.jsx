@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext, useMemo } from "react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -148,6 +148,216 @@ const css = `
     transition: background 0.15s; width: 100%;
     background: none; border: none;
   }
+  .logout-btn:hover { background: rgba(248,81,73,0.1); }
+
+  /* ── Main Content ── */
+  .main { margin-left: 240px; flex: 1; min-width: 0; }
+  .topbar {
+    background: #161B22; border-bottom: 1px solid #21262D;
+    padding: 0 28px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar h2 {
+    font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700;
+    color: #E6EDF3;
+  }
+  .topbar-actions { display: flex; align-items: center; gap: 12px; }
+  .badge-pill {
+    background: rgba(200,134,10,0.2);
+    color: #C8860A; border: 1px solid rgba(200,134,10,0.3);
+    border-radius: 20px; font-size: 11px; font-weight: 600;
+    padding: 3px 10px; letter-spacing: 0.3px;
+  }
+  .page { padding: 28px; }
+
+  /* ── Cards ── */
+  .card {
+    background: #161B22; border: 1px solid #21262D;
+    border-radius: 12px; overflow: hidden;
+  }
+  .card-header {
+    padding: 16px 20px; border-bottom: 1px solid #21262D;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: #E6EDF3;
+  }
+  .card-body { padding: 20px; }
+
+  /* ── Stat Cards ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: #161B22; border: 1px solid #21262D;
+    border-radius: 12px; padding: 20px;
+    position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .stat-card.gold::before { background: linear-gradient(90deg, #C8860A, #F5B942); }
+  .stat-card.blue::before { background: linear-gradient(90deg, #58A6FF, #1F6FEB); }
+  .stat-card.green::before { background: linear-gradient(90deg, #3FB950, #2EA043); }
+  .stat-card.red::before { background: linear-gradient(90deg, #F85149, #DA3633); }
+  .stat-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 12px;
+  }
+  .stat-icon.gold { background: rgba(200,134,10,0.15); }
+  .stat-icon.blue { background: rgba(88,166,255,0.15); }
+  .stat-icon.green { background: rgba(63,185,80,0.15); }
+  .stat-icon.red { background: rgba(248,81,73,0.15); }
+  .stat-label { font-size: 12px; color: #8B949E; margin-bottom: 6px; font-weight: 400; }
+  .stat-value {
+    font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800;
+    color: #E6EDF3; line-height: 1;
+  }
+  .stat-sub { font-size: 11px; color: #8B949E; margin-top: 6px; }
+
+  /* ── Charts Grid ── */
+  .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+  /* ── Tables ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; padding: 10px 14px;
+    color: #8B949E; font-weight: 500; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid #21262D;
+    background: rgba(28,35,51,0.5);
+  }
+  tbody tr { border-bottom: 1px solid #1C2333; transition: background 0.1s; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  tbody tr:last-child { border-bottom: none; }
+  td { padding: 12px 14px; color: #E6EDF3; }
+  .td-muted { color: #8B949E; }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block; border-radius: 6px;
+    font-size: 11px; font-weight: 600; padding: 3px 8px;
+  }
+  .badge-success { background: rgba(63,185,80,0.15); color: #3FB950; }
+  .badge-warning { background: rgba(210,153,34,0.15); color: #D29922; }
+  .badge-danger  { background: rgba(248,81,73,0.15); color: #F85149; }
+  .badge-info    { background: rgba(88,166,255,0.15); color: #58A6FF; }
+  .badge-purple  { background: rgba(188,140,255,0.15); color: #BC8CFF; }
+  .badge-gold    { background: rgba(200,134,10,0.15); color: #C8860A; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    cursor: pointer; border: none; transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-primary {
+    background: #C8860A; color: #0D1117;
+  }
+  .btn-primary:hover { background: #F5B942; }
+  .btn-secondary {
+    background: #21262D; color: #E6EDF3; border: 1px solid #30363D;
+  }
+  .btn-secondary:hover { background: #1C2333; border-color: #C8860A; color: #C8860A; }
+  .btn-danger { background: rgba(248,81,73,0.15); color: #F85149; border: 1px solid rgba(248,81,73,0.3); }
+  .btn-danger:hover { background: rgba(248,81,73,0.25); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* ── Forms & Modals ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+  .modal {
+    background: #161B22; border: 1px solid #30363D;
+    border-radius: 16px; width: 100%; max-width: 520px;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal-header {
+    padding: 20px 24px; border-bottom: 1px solid #21262D;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid #21262D; display: flex; justify-content: flex-end; gap: 10px; }
+  .close-btn {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: #21262D; border: none; color: #8B949E;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; transition: all 0.1s;
+  }
+  .close-btn:hover { background: rgba(248,81,73,0.2); color: #F85149; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 12px; font-weight: 500; color: #8B949E; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-control {
+    width: 100%; background: #0D1117; border: 1px solid #30363D;
+    border-radius: 8px; padding: 10px 12px; color: #E6EDF3;
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .form-control:focus { border-color: #C8860A; box-shadow: 0 0 0 3px rgba(200,134,10,0.1); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* ── Search ── */
+  .search-wrap { position: relative; }
+  .search-wrap input { padding-left: 34px; }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #8B949E; font-size: 14px; }
+
+  /* ── Login ── */
+  .login-page {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: #0D1117;
+    background-image: radial-gradient(ellipse at 20% 50%, rgba(200,134,10,0.07) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(88,166,255,0.05) 0%, transparent 50%);
+  }
+  .login-card {
+    background: #161B22; border: 1px solid #21262D;
+    border-radius: 20px; padding: 40px; width: 100%; max-width: 400px;
+  }
+  .login-logo { text-align: center; margin-bottom: 32px; }
+  .login-logo h1 { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: #C8860A; }
+  .login-logo p { font-size: 13px; color: #8B949E; margin-top: 4px; }
+  .login-btn {
+    width: 100%; padding: 12px; background: #C8860A; color: #0D1117;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: 'Syne', sans-serif; transition: all 0.15s;
+    margin-top: 8px;
+  }
+  .login-btn:hover { background: #F5B942; }
+  .login-hint {
+    text-align: center; margin-top: 20px; padding: 12px;
+    background: #0D1117; border-radius: 8px; font-size: 12px; color: #8B949E;
+  }
+  .login-hint strong { color: #C8860A; }
+  .error-msg { background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3); color: #F85149; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
+
+  /* ── Low Stock Alert ── */
+  .alert-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.2); margin-bottom: 8px; }
+  .alert-dot { width: 8px; height: 8px; border-radius: 50%; background: #F85149; flex-shrink: 0; }
+
+  /* ── Section Tabs ── */
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .page-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
+  .page-subtitle { font-size: 13px; color: #8B949E; margin-top: 2px; }
+
+  /* ── Loading ── */
+  .loading { display: flex; align-items: center; justify-content: center; padding: 60px; color: #8B949E; gap: 12px; }
+  .spinner { width: 24px; height: 24px; border: 2px solid #21262D; border-top-color: #C8860A; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Tooltip override ── */
+  .recharts-tooltip-wrapper .recharts-default-tooltip {
+    background: #1C2333 !important; border-color: #30363D !important;
+    border-radius: 8px !important;
+  }
+
+  /* ── Role badge colors ── */
+  .role-owner { background: rgba(200,134,10,0.15); color: #C8860A; }
+  .role-manager { background: rgba(88,166,255,0.15); color: #58A6FF; }
+  .role-employee { background: rgba(63,185,80,0.15); color: #3FB950; }
 `;
 
 const themeCss = `
@@ -903,7 +1113,7 @@ function Inventory({ locale }) {
   );
 
   // Sort
-  const sorted = React.useMemo(()=>{
+  const sorted = useMemo(()=>{
     if (!sortField) return filtered;
     const rows = [...filtered];
     rows.sort((a,b)=>{
@@ -1068,7 +1278,7 @@ function Sales({ locale }) {
     (s.employee?.name || s.employee_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const sorted = React.useMemo(()=>{
+  const sorted = useMemo(()=>{
     if (!sortField) return filtered;
     const rows = [...filtered];
     const getVal = (item, field) => {
@@ -1363,7 +1573,7 @@ function Orders({ locale }) {
       || (o.status || "").toLowerCase().includes(q);
   });
 
-  const sorted = React.useMemo(()=>{
+  const sorted = useMemo(()=>{
     if (!sortField) return filtered;
     const rows = [...filtered];
     const getVal = (item, field) => {
@@ -1559,7 +1769,7 @@ function Deliveries({ locale }) {
       || (d.status||"").toLowerCase().includes(q);
   });
 
-  const sorted = React.useMemo(()=>{
+  const sorted = useMemo(()=>{
     if (!sortField) return filtered;
     const rows = [...filtered];
     rows.sort((a,b)=>{

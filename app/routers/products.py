@@ -23,10 +23,11 @@ def list_products(
     limit: int = Query(200, ge=1, le=500),
     category: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    include_unstocked: bool = Query(False),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return get_all_products(db, skip=skip, limit=limit, category=category, search=search)
+    return get_all_products(db, skip=skip, limit=limit, category=category, search=search, include_unstocked=include_unstocked)
 
 
 @router.get("/low-stock", response_model=list[ProductResponse], summary="Products below minimum stock")

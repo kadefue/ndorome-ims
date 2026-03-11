@@ -24,7 +24,8 @@ def get_stats(
 ):
     current_year = datetime.utcnow().year
 
-    total_products  = db.query(__import__("app.models.product", fromlist=["Product"]).Product).count()
+    Product = __import__("app.models.product", fromlist=["Product"]).Product
+    total_products  = db.query(Product).filter(Product.quantity > 0).count()
     total_sales_cnt = db.query(Sale).count()
     low_stock       = get_low_stock_products(db)
     pending_orders  = get_pending_orders(db)

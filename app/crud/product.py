@@ -25,8 +25,12 @@ def get_all_products(
     limit: int = 200,
     category: Optional[str] = None,
     search: Optional[str] = None,
+    include_unstocked: bool = False,
 ) -> list[Product]:
+    # By default only return products that have been restocked (i.e. approved delivery applied)
     query = db.query(Product)
+    if not include_unstocked:
+        query = query.filter(Product.quantity > 0)
     if category:
         query = query.filter(Product.category == category)
     if search:
@@ -39,7 +43,8 @@ def get_all_products(
 
 def get_low_stock_products(db: Session) -> list[Product]:
     """Return products where quantity is at or below the minimum threshold."""
-    return db.query(Product).filter(Product.quantity <= Product.min_quantity).all()
+    # Only consider products that are actually in inventory (quantity > 0)
+    return db.query(Product).filter(Product.quantity > 0).filter(Product.quantity <= Product.min_quantity).all()
 
 
 def create_product(db: Session, product_in: ProductCreate) -> Product:
@@ -97,12 +102,14 @@ def get_category_stock_summary(db: Session) -> dict[str, int]:
         .group_by(Product.category)
         .all()
     )
-    return {cat: int(qty) for cat, qty in rows}
+    # Filter out None categories and ensure quantities are ints; omit zero-stock categories
+    return {cat: int(qty) for cat, qty in rows if qty and int(qty) > 0}
 
 
 def get_inventory_value(db: Session) -> float:
     """Sum of (quantity × unit_price) across all products."""
+    # Only include products that are actually stocked (quantity > 0)
     result = db.query(
         func.sum(Product.quantity * Product.unit_price)
-    ).scalar()
+    ).filter(Product.quantity > 0).scalar()
     return float(result or 0)

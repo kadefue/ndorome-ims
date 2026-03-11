@@ -530,6 +530,7 @@ const themeCss = `
       "btn.edit_product": "Edit Product",
       "btn.edit_order": "Edit Order",
       "btn.add_user": "＋ Add User",
+      "btn.approve": "Approve",
       "sign_out": "Sign Out",
       "theme.light": "☀️ Light",
       "theme.dark": "🌙 Dark",
@@ -563,6 +564,7 @@ const themeCss = `
       "orders.create_order": "Create Purchase Order",
       "deliveries.record_incoming": "Record Incoming Delivery",
       "deliveries.no_records": "No deliveries recorded yet",
+      "deliveries.approve": "Approve Delivery",
       "table.notes": "Notes",
       "form.sku": "SKU",
       "form.category": "Category",
@@ -682,6 +684,7 @@ const themeCss = `
       "btn.edit_order": "Hariri Oda",
       "btn.add_user": "＋ Ongeza Mtumiaji",
       "btn.edit_user": "Hariri Mtumiaji",
+      "btn.approve": "Kubali",
       "sign_out": "Toka",
       "theme.light": "☀️ Mwanga",
       "theme.dark": "🌙 Giza",
@@ -715,6 +718,7 @@ const themeCss = `
       "orders.create_order": "Tengeneza Oda za Ununuzi",
       "deliveries.record_incoming": "Rekodi Upokeaji wa Mzigo Unaokuja",
       "deliveries.no_records": "Hakuna Upokeaji wa Mzigo ulioandikwa bado",
+      "deliveries.approve": "Kubali Upokeaji",
       "table.notes": "Maelezo",
       "form.sku": "SKU",
       "form.category": "Aina",
@@ -803,154 +807,8 @@ const themeCss = `
       "login.hint_owner": "Mmiliki:",
       "login.hint_manager": "Meneja:",
       "login.hint_employee": "Mfanyakazi:",
-    },
-  sw: {
-    "nav.dashboard": "Dashibodi",
-    "nav.inventory": "Orodha ya Stoku",
-    "nav.sales": "Mauzo",
-    "nav.orders": "Oda za Ununuzi",
-    "nav.deliveries": "Upokeaji wa Bidhaa",
-    "nav.reports": "Ripoti",
-    "nav.users": "Watumiaji",
-    "page.dashboard": "Dashibodi",
-    "page.inventory": "Usimamizi wa Stoku",
-    "page.sales": "Usimamizi wa Mauzo",
-    "page.orders": "Oda za Ununuzi",
-    "page.deliveries": "Upokeaji wa Bidhaa",
-    "page.reports": "Ripoti na Uchambuzi",
-    "page.users": "Usimamizi wa Watumiaji",
-    "btn.add_product": "＋ Ongeza Bidhaa",
-    "btn.new_sale": "＋ Mauzo Mapya",
-    "btn.new_order": "＋ Oda Mpya",
-    "btn.record_delivery": "＋ Rekodi Upokeaji wa Bidhaa",
-    "btn.edit_product": "Hariri Bidhaa",
-     "btn.edit_order": "Hariri Oda",
-    "btn.add_user": "＋ Ongeza Mtumiaji",
-    "sign_out": "Toka",
-    "theme.light": "☀️ Mwanga",
-    "theme.dark": "🌙 Giza",
-    "dashboard.welcome": "Karibu tena! Haya ni yanayotokea kwenye duka.",
-    "stat.total_revenue": "Jumla ya Mapato",
-    "stat.total_sales": "Jumla ya Mauzo",
-    "stat.inventory_value": "Thamani ya Stoku",
-    "stat.low_stock_alerts": "Onyo: Stoku Kidogo",
-    "stat.all_time_sales": "Mauzo yote",
-    "stat.transactions_recorded": "Miamala iliyorekodiwa",
-    "stat.inventory_products": "{count} aina za bidhaa",
-    "charts.monthly_revenue": "Mwelekeo wa Mapato ya Mwezi",
-    "charts.stock_by_category": "Hali ya Stoku kwa Aina",
-    "inventory.product_stock": "Stoku za Bidhaa",
-    "inventory.search_placeholder": "Tafuta bidhaa…",
-    "inventory.table.product": "Bidhaa",
-    "inventory.table.sku": "SKU",
-    "inventory.table.category": "Aina",
-    "inventory.table.qty": "Idadi",
-    "inventory.table.unit_price": "Bei kwa Kifungu",
-    "inventory.table.supplier": "Mzabuni",
-    "inventory.table.location": "Mahali",
-    "inventory.table.status": "Hali",
-    "inventory.table.actions": "Vitendo",
-    "inventory.status.low": "Tahadhari: Stoku Kidogo",
-    "inventory.status.in_stock": "Stoku Ipo",
-    "btn.cancel": "Ghairi",
-    "btn.save": "Hifadhi",
-    "sales.record_sale": "Rekodi Mauzo Mapya",
-    "sales.transaction_history": "Rekodi za Miamala",
-    "orders.create_order": "Tengeneza Oda za Ununuzi",
-    "deliveries.record_incoming": "Rekodi Upokeaji wa Mzigo Unaokuja",
-    "deliveries.no_records": "Hakuna Upokeaji wa Mzigo ulioandikwa bado",
-    "table.notes": "Maelezo",
-    "form.sku": "SKU",
-    "form.category": "Aina",
-    "form.enter_sku": "Ingiza SKU",
-    "form.enter_category": "Ingiza aina",
-    "form.enter_product_name": "Ingiza jina la bidhaa",
-    "form.full_name": "Jina Kamili",
-    "form.email": "Barua pepe",
-    "form.password": "Nywila",
-    "form.role": "Cheo",
-    "btn.create_user": "Tengeneza Mtumiaji",
-    "nav.navigation": "Urambazaji",
-    "tooltip.revenue": "Mapato",
-    "loading.dashboard": "Inapakia dashibodi…",
-    "dashboard.low_stock_title": "⚠️ Onyo: Stoku Kidogo",
-    "dashboard.recent_sales": "🕐 Mauzo ya Hivi Karibuni",
-    "label.left": "baki",
-    "label.min": "Kiwango cha Chini:",
-    "table.date": "Tarehe",
-    "table.product": "Bidhaa",
-    "table.supplier": "Mzabuni",
-    "table.customer": "Mteja",
-    "table.qty": "Kiasi",
-    "table.unit_price": "Bei",
-    "table.total": "Jumla",
-    "table.name": "Jina",
-    "table.email": "Barua pepe",
-    "table.role": "Cheo",
-    "table.payment": "Malipo",
-    "table.employee": "Mfanyakazi",
-    "table.status": "Hali",
-    "table.amount": "Kiasi",
-    "form.product_name": "Jina la Bidhaa",
-    "form.sku": "SKU",
-    "form.category": "Aina",
-    "form.select_existing": "-- Chagua iliyopo --",
-    "form.other": "Nyingine...",
-    "form.enter_product_name": "Ingiza jina la bidhaa",
-    "form.enter_sku": "Ingiza SKU",
-    "form.enter_category": "Ingiza aina",
-    "form.supplier": "Mzabuni",
-    "form.location": "Mahali",
-    "form.quantity": "Kiasi",
-    "form.min_qty": "Kiasi cha Chini",
-    "form.unit_price_tzs": "Bei kwa Kifungu (TZS)",
-    "confirm.delete_product": "Futa bidhaa hii?",
-    "alert.product_required": "Jina la bidhaa na SKU vinahitajika",
-    "alert.product_exists": "Bidhaa yenye jina au SKU hiyo tayari ipo.",
-    "btn.edit": "Hariri",
-    "btn.delete": "Futa",
-    "sales.total_revenue_label": "Jumla ya Mapato",
-    "sales.total_transactions": "Jumla ya Miamala",
-    "sales.todays_sales": "Mauzo ya Leo",
-    "search.placeholder": "Tafuta…",
-    "form.payment_method": "Njia ya Malipo",
-    "form.customer_name": "Jina la Mteja",
-    "form.customer_email_optional": "Barua pepe ya Mteja (hiari)",
-    "form.customer_phone_optional": "Simu ya Mteja (hiari)",
-    "form.select_product": "-- Chagua Bidhaa --",
-    "alert.fill_product_qty": "Jaza bidhaa na kiasi",
-    "confirm.no_customer_continue": "Hakuna jina la mteja, barua au simu. Endelea?",
-    "orders.records_title": "Rekodi za Oda",
-    "orders.expected_delivery": "Kuwekwa Kutegemewa",
-    "orders.ordered_by": "Imeagizwa Na",
-    "orders.actions": "Vitendo",
-    "deliveries.records_title": "Rekodi za Upokeaji",
-    "deliveries.approve_as_is": "Kubali kama ilivyo",
-    "deliveries.linked_order_label": "Oda ya Ununuzi Iliyohusishwa",
-    "form.select_order": "-- Chagua Oda --",
-    "deliveries.notes_placeholder": "mf: Bidhaa zote ziko katika hali nzuri",
-    "reports.title": "Ripoti & Uchambuzi",
-    "reports.subtitle": "Vionyesho vya picha kuhusu utendaji wa biashara",
-    "reports.monthly_revenue": "Mapato ya Kila Mwezi",
-    "reports.payment_methods": "Njia za Malipo",
-    "reports.inventory_by_category": "Stoku kwa Aina",
-    "users.subtitle": "Watumiaji wa mfumo wako {count} ",
-    "users.system_users_title": "Watumiaji wa Mfumo",
-    "users.add_user": "Ongeza Mtumiaji wa Mfumo",
-    "btn.create_user": "Tengeneza Mtumiaji",
-    "user.status.active": "Hai",
-    "user.status.inactive": "Haiko Hai",
-    "nav.navigation": "Urambazaji",
-    "login.title": "Kituo cha Uuzaji wa Spea Supa Kariakoo",
-    "login.subtitle": "Mfumo wa Usimamizi wa Stoku na Mauzo",
-    "login.email_label": "Barua pepe",
-    "login.password_label": "Nywila",
-    "login.signing_in": "Inakubali kuingia…",
-    "login.sign_in": "Ingia",
-    "login.hint_owner": "Mmiliki:",
-    "login.hint_manager": "Meneja:",
-    "login.hint_employee": "Mfanyakazi:",
-  }
+      "inventory.sold_below": "Bidhaa hii imeuzwa chini ya {threshold} {currency} kwa kifungu. Thamani ya sasa: {current_price} {currency}.",
+    }
 };
 
 const t = (locale, key) => (TRANSLATIONS[locale] && TRANSLATIONS[locale][key]) || TRANSLATIONS.en[key] || key;
@@ -1285,9 +1143,10 @@ function Inventory({ locale }) {
     try {
       await apiFetch('/products/' + editing.id, { method: "PUT", body: JSON.stringify(body) });
       setShowSidebar(false);
+      window._app_show_toast && window._app_show_toast('Product updated', 'success');
       load();
     } catch (err) {
-      alert(err.message || err);
+      window._app_show_toast && window._app_show_toast(err.message || err, 'danger');
     }
   }
   async function del(id) {
@@ -1452,7 +1311,10 @@ function Sales({ locale }) {
   const calcTotal = selProd ? selProd.unit_price * (+form.quantity||0) : 0;
 
   async function saveSale() {
-    if (!form.product_id || !form.quantity) return alert(t(locale,'alert.fill_product_qty'));
+    if (!form.product_id || !form.quantity) {
+      window._app_show_toast && window._app_show_toast(t(locale,'alert.fill_product_qty'), 'warning');
+      return;
+    }
     if (!form.customer && !form.customer_email && !form.customer_phone) {
       // Allow anonymous sale but warn user; change this if you prefer to require at least one
       if (!(await window._app_confirm(t(locale,'confirm.no_customer_continue'), { title: t(locale,'confirm.warning') || 'Warning', confirmLabel: t(locale,'btn.continue') || 'Continue', cancelLabel: t(locale,'btn.cancel') || 'Cancel' }))) return;
@@ -1464,6 +1326,7 @@ function Sales({ locale }) {
       customer_email: form.customer_email || null, customer_phone: form.customer_phone || null,
     };
     await apiFetch("/sales",{method:"POST",body:JSON.stringify(body)});
+    window._app_show_toast && window._app_show_toast('Sale recorded', 'success');
     setShowModal(false); setForm({product_id:"",quantity:"",customer:"",payment:"Cash",customer_email:"",customer_phone:""}); load();
   }
 
@@ -1603,7 +1466,7 @@ function Orders({ locale }) {
   const [form, setForm] = useState({product_id:"",product_name:"",quantity:"",unit_price:"",supplier:"",expected_delivery:""});
   const canManage = user.role !== "employee";
 
-  const load = () => Promise.all([apiFetch("/orders"),apiFetch("/products"), apiFetch('/settings/categories'), apiFetch('/settings/templates')]).then(([o,p,c,t])=>{setOrders(o);setProducts(p); setCategories(c||[]); setTemplates(t||[]);});
+  const load = () => Promise.all([apiFetch("/orders"),apiFetch("/products?include_unstocked=true"), apiFetch('/settings/categories'), apiFetch('/settings/templates')]).then(([o,p,c,t])=>{setOrders(o);setProducts(p); setCategories(c||[]); setTemplates(t||[]);});
   useEffect(()=>{ load(); },[]);
 
   async function saveOrder() {
@@ -1635,7 +1498,7 @@ function Orders({ locale }) {
 
   function openProductEditorForSelected() {
     const sel = products.find(p => p.id === form.product_id);
-    if (!sel) return alert('Select a product first');
+    if (!sel) { window._app_show_toast && window._app_show_toast('Select a product first', 'warning'); return; }
     setProductEditorForm({...sel});
     setProductEditorShow(true);
   }
@@ -1654,8 +1517,8 @@ function Orders({ locale }) {
     setProductEditorLoading(true);
     try {
       let res;
-      if (productEditorForm.id) {
-        res = await apiFetch('/products/' + productEditorForm.id, { method: 'PUT', body: JSON.stringify(body) });
+      if (!productEditorForm.id) {
+        res = await apiFetch('/products', { method: 'POST', body: JSON.stringify(body) });
       } else {
         // when creating new product, set initial stock to 0; min_quantity remains 5
         body.quantity = 0;
@@ -1664,7 +1527,7 @@ function Orders({ locale }) {
         res = await apiFetch('/products', { method: 'POST', body: JSON.stringify(body) });
       }
       setProductEditorShow(false);
-      const [pList, oList] = await Promise.all([apiFetch('/products'), apiFetch('/orders')]);
+      const [pList, oList] = await Promise.all([apiFetch('/products?include_unstocked=true'), apiFetch('/orders')]);
       setProducts(pList); setOrders(oList);
       // if created new product, set it on the order form
       if (!productEditorForm.id && res && res.id) {
@@ -1908,7 +1771,7 @@ function Deliveries({ locale }) {
   const [form, setForm] = useState({order_id:"",product_id:"",product_name:"",quantity:"",supplier:"",notes:""});
   const canManage = user.role !== "employee";
 
-  const load = () => Promise.all([apiFetch("/deliveries"),apiFetch("/orders"),apiFetch("/products"),apiFetch("/auth/users")]).then(([d,o,p,u])=>{setDeliveries(d);setOrders(o);setProducts(p);setUsers(u);});
+  const load = () => Promise.all([apiFetch("/deliveries"),apiFetch("/orders"),apiFetch("/products?include_unstocked=true"),apiFetch("/auth/users")]).then(([d,o,p,u])=>{setDeliveries(d);setOrders(o);setProducts(p);setUsers(u);});
   useEffect(()=>{ load(); },[]);
 
   const pendingOrders = orders.filter(o=>["pending","in_transit"].includes(o.status));
@@ -1995,7 +1858,11 @@ function Deliveries({ locale }) {
                       {canManage && d.status !== 'approved' && (
                         <button className="btn btn-primary btn-sm" onClick={async()=>{
                           if (!(await window._app_confirm(t(locale,'deliveries.approve_as_is'), { title: t(locale,'deliveries.approve') || 'Approve Delivery', confirmLabel: t(locale,'btn.approve') || 'Approve', cancelLabel: t(locale,'btn.cancel') || 'Cancel' }))) return;
-                          try { await apiFetch('/deliveries/' + d.id + '/approve',{method:'PUT'}); load(); } catch(err) { alert(err.message); }
+                          try {
+                            await apiFetch('/deliveries/' + d.id + '/approve',{method:'PUT'});
+                            window._app_show_toast && window._app_show_toast('Delivery approved', 'success');
+                            load();
+                          } catch(err) { window._app_show_toast && window._app_show_toast(err.message || err, 'danger'); }
                         }}>{t(locale,'deliveries.approve_as_is')}</button>
                       )}
                     </td>
@@ -2052,13 +1919,14 @@ function Settings({ locale }) {
   }
 
   async function addTemplate() {
-    if (!tmpl.name || !tmpl.category) return alert('Provide name and category');
-    try { const res = await apiFetch('/settings/templates',{method:'POST', body: JSON.stringify(tmpl)}); setTemplates(ts=>[...ts, res]); setTmpl({name:'',category:'',sku:'',unit_price:''}); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+    if (!tmpl.name || !tmpl.category) { window._app_show_toast && window._app_show_toast('Provide name and category', 'warning'); return; }
+    try { const res = await apiFetch('/settings/templates',{method:'POST', body: JSON.stringify(tmpl)}); setTemplates(ts=>[...ts, res]); setTmpl({name:'',category:'',sku:'',unit_price:''}); window._app_show_toast && window._app_show_toast('Template added', 'success'); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
 
   async function addModel() {
-    if (!modelInput.name) return alert('Provide model name'); const cats = modelInput.categories.split(',').map(s=>s.trim()).filter(Boolean);
-    try { const res = await apiFetch('/settings/models',{method:'POST', body: JSON.stringify({name: modelInput.name, categories: cats})}); setModels(ms=>[...ms, res]); setModelInput({name:'',categories:''}); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+    if (!modelInput.name) { window._app_show_toast && window._app_show_toast('Provide model name', 'warning'); return; }
+    const cats = modelInput.categories.split(',').map(s=>s.trim()).filter(Boolean);
+    try { const res = await apiFetch('/settings/models',{method:'POST', body: JSON.stringify({name: modelInput.name, categories: cats})}); setModels(ms=>[...ms, res]); setModelInput({name:'',categories:''}); window._app_show_toast && window._app_show_toast('Model added', 'success'); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
 
   return (
@@ -2203,8 +2071,8 @@ function ModelsPage({ locale }) {
   useEffect(()=>{ apiFetch('/settings/models').then(m=>setModels(m||[])).catch(()=>{}); apiFetch('/settings/models/usage').then(u=>{ const map={}; (u||[]).forEach(x=>map[x.id]=x.count); setModelsUsage(map); }).catch(()=>{}); },[]);
 
   async function addModel(){
-    if (!modelInput.name) return alert('Provide model name');
-    try { const res = await apiFetch('/settings/models',{method:'POST', body: JSON.stringify({name: modelInput.name})}); setModels(ms=>[...ms, res]); setModelInput({name:''}); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+    if (!modelInput.name) { window._app_show_toast && window._app_show_toast('Provide model name', 'warning'); return; }
+    try { const res = await apiFetch('/settings/models',{method:'POST', body: JSON.stringify({name: modelInput.name})}); setModels(ms=>[...ms, res]); setModelInput({name:''}); window._app_show_toast && window._app_show_toast('Model added', 'success'); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
 
   function startEdit(m){ setEditingId(m.id); setEditingName(m.name); }
@@ -2257,7 +2125,7 @@ function ProductsPage({ locale }) {
   const [models, setModels] = useState([]);
   const [products, setProducts] = useState([]);
   const [form, setForm] = useState({name:'',sku:'',category:'',model:'',min_quantity:5});
-  useEffect(()=>{ Promise.all([apiFetch('/settings/categories'), apiFetch('/settings/templates'), apiFetch('/settings/models'), apiFetch('/products')]).then(([c,t,m,p])=>{ setCategories(c||[]); setTemplates(t||[]); setModels(m||[]); setProducts(p||[]); }).catch(()=>{}); },[]);
+  useEffect(()=>{ Promise.all([apiFetch('/settings/categories'), apiFetch('/settings/templates'), apiFetch('/settings/models'), apiFetch('/products?include_unstocked=true')]).then(([c,t,m,p])=>{ setCategories(c||[]); setTemplates(t||[]); setModels(m||[]); setProducts(p||[]); }).catch(()=>{}); },[]);
 
   function inferModelName(prod) {
     if (!prod) return '';
@@ -2286,7 +2154,7 @@ function ProductsPage({ locale }) {
   }
 
   async function addProduct(){
-    if (!form.name || !form.category) return alert('Provide name and select category');
+    if (!form.name || !form.category) { window._app_show_toast && window._app_show_toast('Provide name and select category', 'warning'); return; }
     try {
       const payload = { name: form.name, sku: form.sku, category: form.category, min_quantity: +form.min_quantity, unit_price: 1.0, quantity: 0 };
       if (form.model) payload.motorcycle_model_id = +form.model;

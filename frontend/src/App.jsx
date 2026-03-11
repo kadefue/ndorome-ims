@@ -3,7 +3,102 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from "recharts";
-// ...existing code...
+
+// ── Auth Context ──────────────────────────────────────────────────────────────
+const AuthContext = createContext(null);
+const API = "http://localhost:8000";
+
+function useAuth() { return useContext(AuthContext); }
+
+// ── API Helper ────────────────────────────────────────────────────────────────
+async function apiFetch(path, options = {}) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(API + path, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
+      ...options.headers,
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const msg = err.detail || err.message || `Request failed (${res.status})`;
+    try { window._app_show_toast && window._app_show_toast(msg, 'danger'); } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+// ── Colors & Theme ────────────────────────────────────────────────────────────
+const C = {
+  primary: "#C8860A",
+  primaryDark: "#9E6A08",
+  primaryLight: "#F5B942",
+  bg: "#0D1117",
+  bgCard: "#161B22",
+  bgHover: "#1C2333",
+  border: "#21262D",
+  text: "#E6EDF3",
+  textMuted: "#8B949E",
+  success: "#3FB950",
+  danger: "#F85149",
+  warning: "#D29922",
+  info: "#58A6FF",
+  purple: "#BC8CFF",
+};
+
+const PIE_COLORS = ["#C8860A", "#58A6FF", "#3FB950", "#F85149", "#BC8CFF", "#D29922"];
+
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0D1117;
+    color: #E6EDF3;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0D1117; }
+  ::-webkit-scrollbar-thumb { background: #21262D; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #C8860A; }
+
+  .app { display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: #161B22;
+    border-right: 1px solid #21262D;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid #21262D;
+  }
+  .sidebar-logo h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: #C8860A;
+    line-height: 1.1;
+    letter-spacing: -0.3px;
+  }
+  .sidebar-logo span {
+    font-size: 11px;
+    color: #8B949E;
+    font-weight: 400;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
   }
   .sidebar-user {
@@ -929,7 +1024,7 @@ function Inventory({ locale }) {
       // Do not allow direct quantity updates from Inventory UI; stock updates only via delivery approval
     };
     try {
-      await apiFetch('/products/' + editing.id, { method: "PUT", body: JSON.stringify(body) });
+      await apiFetch(`/products/${editing.id}`, { method: "PUT", body: JSON.stringify(body) });
       setShowSidebar(false);
       load();
     } catch (err) {
@@ -938,8 +1033,7 @@ function Inventory({ locale }) {
   }
   async function del(id) {
     if (!confirm(t(locale,'confirm.delete_product'))) return;
-    await apiFetch('/products/' + id, { method: "DELETE" });
-    load();
+    await apiFetch(`/products/${id}`,{method:"DELETE"}); load();
   }
 
   return (
@@ -1256,12 +1350,12 @@ function Orders({ locale }) {
     const payload = { product_id: +form.product_id, product_name: selProd?.name||form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, supplier: form.supplier, expected_delivery: form.expected_delivery, notes: form.notes };
     try {
       if (editingOrder) {
-        await apiFetch('/orders/' + editingOrder.id, { method: 'PUT', body: JSON.stringify(payload) });
+        await apiFetch(`/orders/${editingOrder.id}`, { method: 'PUT', body: JSON.stringify(payload) });
       } else {
         const created = await apiFetch("/orders",{method:"POST",body:JSON.stringify(payload)});
         // set status if user picked one
         if (form.status) {
-          try { await apiFetch('/orders/' + created.id, { method: 'PUT', body: JSON.stringify({ status: form.status }) }); } catch {}
+          try { await apiFetch(`/orders/${created.id}`, { method: 'PUT', body: JSON.stringify({ status: form.status }) }); } catch {}
         }
       }
       setShowModal(false);
@@ -1300,13 +1394,13 @@ function Orders({ locale }) {
     try {
       let res;
       if (productEditorForm.id) {
-        res = await apiFetch('/products/' + productEditorForm.id, { method: 'PUT', body: JSON.stringify(body) });
+        res = await apiFetch(`/products/${productEditorForm.id}`, { method: 'PUT', body: JSON.stringify(body) });
       } else {
         // when creating new product, set initial stock to 0; min_quantity remains 5
         body.quantity = 0;
         // log payload for debugging when server-side validation fails
         try { console.debug('Creating product payload', body); } catch {}
-        res = await apiFetch('/products', { method: 'POST', body: JSON.stringify(body) });
+        res = await apiFetch(`/products`, { method: 'POST', body: JSON.stringify(body) });
       }
       setProductEditorShow(false);
       const [pList, oList] = await Promise.all([apiFetch('/products'), apiFetch('/orders')]);
@@ -1323,7 +1417,7 @@ function Orders({ locale }) {
   }
 
   async function updateStatus(id, status) {
-    await apiFetch('/orders/' + id,{method:"PUT",body:JSON.stringify({status})});
+    await apiFetch(`/orders/${id}`,{method:"PUT",body:JSON.stringify({status})});
     load();
   }
 
@@ -1340,7 +1434,7 @@ function Orders({ locale }) {
     if (!productId) return;
     if (!confirm('Delete product? This cannot be undone.')) return;
     try {
-      await apiFetch('/products/' + productId, { method: 'DELETE' });
+      await apiFetch(`/products/${productId}`, { method: 'DELETE' });
       await load();
       window._app_show_toast && window._app_show_toast('Product deleted', 'success');
     } catch (err) {
@@ -1626,7 +1720,7 @@ function Deliveries({ locale }) {
                       {canManage && d.status !== 'approved' && (
                         <button className="btn btn-primary btn-sm" onClick={async()=>{
                           if (!confirm(t(locale,'deliveries.approve_as_is'))) return;
-                          try { await apiFetch('/deliveries/' + d.id + '/approve',{method:'PUT'}); load(); } catch(err) { alert(err.message); }
+                          try { await apiFetch(`/deliveries/${d.id}/approve`,{method:'PUT'}); load(); } catch(err) { alert(err.message); }
                         }}>{t(locale,'deliveries.approve_as_is')}</button>
                       )}
                     </td>
@@ -1698,7 +1792,7 @@ function Reports({ locale }) {
               <BarChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#21262D"/>
                 <XAxis dataKey="month" tick={{fill:"#8B949E",fontSize:10}} axisLine={false} tickLine={false}/>
-                <YAxis tick={{fill:"#8B949E",fontSize:10}} axisLine={false} tickLine={false} tickFormatter={v => (v/1000) + 'k'}/>
+                <YAxis tick={{fill:"#8B949E",fontSize:10}} axisLine={false} tickLine={false} tickFormatter={v=>`${v/1000}k`}/>
                 <Tooltip formatter={v=>[fmt(v)]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:12}}/>
                 <Bar dataKey="revenue" fill="#C8860A" radius={[4,4,0,0]}/>
               </BarChart>
@@ -1711,7 +1805,7 @@ function Reports({ locale }) {
           <div className="card-body">
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
-                <Pie data={payData} cx="50%" cy="50%" outerRadius={75} dataKey="value" label={({name,percent})=>name + ' ' + (percent*100).toFixed(0) + '%'} labelLine={{stroke:"#8B949E"}}>
+                <Pie data={payData} cx="50%" cy="50%" outerRadius={75} dataKey="value" label={({name,percent})=>`${name} ${(percent*100).toFixed(0)}%`} labelLine={{stroke:"#8B949E"}}>
                   {payData.map((e,i)=><Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>)}
                 </Pie>
                 <Tooltip formatter={v=>[fmt(v)]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:12}}/>
@@ -1776,8 +1870,8 @@ function Users({ locale }) {
                     </div>
                   </td>
                   <td className="td-muted">{u.email}</td>
-                  <td><span className={"badge role-" + u.role}>{u.role}</span></td>
-                  <td><span className={"badge " + (u.active ? "badge-success" : "badge-danger")}>{u.active ? t(locale,'user.status.active') : t(locale,'user.status.inactive')}</span></td>
+                  <td><span className={`badge role-${u.role}`}>{u.role}</span></td>
+                  <td><span className={`badge ${u.active?"badge-success":"badge-danger"}`}>{u.active? t(locale,'user.status.active') : t(locale,'user.status.inactive')}</span></td>
                 </tr>
               ))}
             </tbody>
@@ -1854,7 +1948,7 @@ function AppShell({ user, onLogout, locale, setLocale }) {
         <div className="nav-section">
           <div className="nav-label">{t(locale,'nav.navigation')}</div>
           {navItems.map(n => (
-            <div key={n.id} className={"nav-item " + (page===n.id ? "active" : "")} onClick={()=>setPage(n.id)}>
+            <div key={n.id} className={`nav-item ${page===n.id?"active":""}`} onClick={()=>setPage(n.id)}>
               <span className="icon">{n.icon}</span>
               {t(locale, n.labelKey)}
             </div>
@@ -1869,7 +1963,7 @@ function AppShell({ user, onLogout, locale, setLocale }) {
 
       <main className="main">
         <div className="topbar">
-          <h2>{t(locale, 'page.' + page)}</h2>
+          <h2>{t(locale, `page.${page}`)}</h2>
           <div className="topbar-actions">
             <button className="btn btn-secondary btn-sm" onClick={() => {
               const next = theme === "dark" ? "light" : "dark";
@@ -1881,7 +1975,7 @@ function AppShell({ user, onLogout, locale, setLocale }) {
               <option value="en">EN</option>
               <option value="sw">SW</option>
             </select>
-            <span className={"badge role-" + user.role} style={{padding:"4px 12px",fontSize:12}}>{user.role}</span>
+            <span className={`badge role-${user.role}`} style={{padding:"4px 12px",fontSize:12}}>{user.role}</span>
             <div className="user-avatar" style={{width:32,height:32,fontSize:12}}>{initials(user.name)}</div>
           </div>
         </div>
@@ -1933,7 +2027,7 @@ export default function App() {
       <style>{css + themeCss}</style>
       <div className="toasts-container" aria-live="polite">
         {toasts.map(t => (
-          <div key={t.id} className={"toast " + t.type}> 
+          <div key={t.id} className={`toast ${t.type}`}>
             <div className="msg">{t.message}</div>
             <button className="close" onClick={() => removeToast(t.id)}>✕</button>
           </div>

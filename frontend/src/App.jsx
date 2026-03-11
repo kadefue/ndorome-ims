@@ -13,11 +13,11 @@ function useAuth() { return useContext(AuthContext); }
 // ── API Helper ────────────────────────────────────────────────────────────────
 async function apiFetch(path, options = {}) {
   const token = localStorage.getItem("token");
-  const res = await fetch(`${API}${path}`, {
+  const res = await fetch(API + path, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
       ...options.headers,
     },
   });
@@ -748,7 +748,7 @@ function LoginPage({ onLogin, locale }) {
       const fd = new FormData();
       fd.append("username", form.username);
       fd.append("password", form.password);
-      const res = await fetch(`${API}/auth/token`, { method: "POST", body: fd });
+      const res = await fetch(API + "/auth/token", { method: "POST", body: fd });
       if (!res.ok) { const d = await res.json(); throw new Error(d.detail); }
       const data = await res.json();
       localStorage.setItem("token", data.access_token);

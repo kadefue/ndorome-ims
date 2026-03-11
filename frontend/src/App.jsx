@@ -855,6 +855,19 @@ function LoginPage({ onLogin, locale }) {
           <div><strong>{t(locale,'login.hint_manager')}</strong> manager@supakariakoo.com / manager123</div>
           <div><strong>{t(locale,'login.hint_employee')}</strong> employee@supakariakoo.com / emp123</div>
         </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10}}>
+          <div>
+            <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
+            <select value={pageSize} onChange={e=>{ setPageSize(+e.target.value); setPage(1); }}>
+              {pageOptions.map(n=> <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div>
+            <button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Prev</button>
+            <span style={{margin:'0 8px'}}>{Math.min((page-1)*pageSize+1, total || 0)}-{Math.min(page*pageSize,total || 0)} of {total}</span>
+            <button disabled={page>=pageCount} onClick={()=>setPage(p=>Math.min(pageCount,p+1))}>Next</button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1002,6 +1015,11 @@ function Inventory({ locale }) {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const pageOptions = [10,20,50,100];
+  const [sortField, setSortField] = useState(null);
+  const [sortDir, setSortDir] = useState('asc');
   const [showSidebar, setShowSidebar] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({name:"",sku:"",category:"",quantity:"",min_quantity:"",unit_price:"",supplier:"",location:"",name_select:"",sku_select:"",category_select:""});
@@ -1025,11 +1043,36 @@ function Inventory({ locale }) {
   // For inventory we want to indicate products that have been sold below current product price
   // load will be replaced in Inventory component to fetch sales too
 
+  // Search
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.sku.toLowerCase().includes(search.toLowerCase()) ||
-    p.category.toLowerCase().includes(search.toLowerCase())
+    p.category.toLowerCase().includes(search.toLowerCase()) ||
+    (p.supplier||"").toLowerCase().includes(search.toLowerCase())
   );
+
+  // Sort
+  const sorted = React.useMemo(()=>{
+    if (!sortField) return filtered;
+    const rows = [...filtered];
+    rows.sort((a,b)=>{
+      const va = (a[sortField] ?? "").toString();
+      const vb = (b[sortField] ?? "").toString();
+      // date
+      if (!isNaN(Date.parse(va)) && !isNaN(Date.parse(vb))) return (new Date(va) - new Date(vb)) * (sortDir==='asc'?1:-1);
+      // number
+      if (!isNaN(parseFloat(va)) && !isNaN(parseFloat(vb))) return (parseFloat(va) - parseFloat(vb)) * (sortDir==='asc'?1:-1);
+      return va.localeCompare(vb) * (sortDir==='asc'?1:-1);
+    });
+    return rows;
+  }, [filtered, sortField, sortDir]);
+
+  // Pagination
+  const total = sorted.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const paged = sorted.slice((page-1)*pageSize, page*pageSize);
+
+  function toggleSort(field) { if (sortField===field) setSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setSortField(field); setSortDir('asc'); } }
 
   function openAdd() { setEditing(null); setForm({name:"",sku:"",category:"",quantity:"",min_quantity:"",unit_price:"",supplier:"",location:"",name_select:"",sku_select:"",category_select:""}); setShowSidebar(true); }
   function openEdit(p) { setEditing(p); setForm({...p, name_select:p.name, sku_select:p.sku, category_select:p.category}); setShowSidebar(true); }
@@ -1074,10 +1117,20 @@ function Inventory({ locale }) {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>{t(locale,'inventory.table.product')}</th><th>{t(locale,'inventory.table.sku')}</th><th>{t(locale,'inventory.table.category')}</th><th>{t(locale,'inventory.table.qty')}</th><th>{t(locale,'inventory.table.unit_price')}</th><th>{t(locale,'inventory.table.supplier')}</th><th>{t(locale,'inventory.table.location')}</th><th>{t(locale,'inventory.table.status')}</th>{canEdit&&<th>{t(locale,'inventory.table.actions')}</th>}</tr>
+              <tr>
+                <th onClick={()=>toggleSort('name')}>{t(locale,'inventory.table.product')}</th>
+                <th onClick={()=>toggleSort('sku')}>{t(locale,'inventory.table.sku')}</th>
+                <th onClick={()=>toggleSort('category')}>{t(locale,'inventory.table.category')}</th>
+                <th onClick={()=>toggleSort('quantity')}>{t(locale,'inventory.table.qty')}</th>
+                <th onClick={()=>toggleSort('unit_price')}>{t(locale,'inventory.table.unit_price')}</th>
+                <th onClick={()=>toggleSort('supplier')}>{t(locale,'inventory.table.supplier')}</th>
+                <th onClick={()=>toggleSort('location')}>{t(locale,'inventory.table.location')}</th>
+                <th>{t(locale,'inventory.table.status')}</th>
+                {canEdit&&<th>{t(locale,'inventory.table.actions')}</th>}
+              </tr>
             </thead>
             <tbody>
-              {filtered.map(p => (
+              {paged.map(p => (
                 <tr key={p.id}>
                   <td><div style={{fontWeight:500}}>{p.name} {p.soldBelow && <span style={{marginLeft:8}} className="badge badge-danger">{t(locale,'inventory.sold_below')||'Sold below price'}</span>}</div></td>
                   <td className="td-muted" style={{fontFamily:"monospace",fontSize:12}}>{p.sku}</td>
@@ -1097,6 +1150,19 @@ function Inventory({ locale }) {
               ))}
             </tbody>
           </table>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10}}>
+          <div>
+            <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
+            <select value={pageSize} onChange={e=>{ setPageSize(+e.target.value); setPage(1); }}>
+              {pageOptions.map(n=> <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div>
+            <button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Prev</button>
+            <span style={{margin:'0 8px'}}>{Math.min((page-1)*pageSize+1, total || 0)}-{Math.min(page*pageSize,total || 0)} of {total}</span>
+            <button disabled={page>=pageCount} onClick={()=>setPage(p=>Math.min(pageCount,p+1))}>Next</button>
+          </div>
         </div>
       </div>
 
@@ -1134,6 +1200,11 @@ function Sales({ locale }) {
   const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const pageOptions = [10,20,50,100];
+  const [sortField, setSortField] = useState(null);
+  const [sortDir, setSortDir] = useState('asc');
   const [form, setForm] = useState({product_id:"",quantity:"",customer:"",customer_email:"",customer_phone:"",payment:"Cash"});
 
   const load = () => Promise.all([apiFetch("/sales"),apiFetch("/products")]).then(([s,p])=>{setSales(s);setProducts(p);});
@@ -1141,8 +1212,37 @@ function Sales({ locale }) {
 
   const filtered = sales.filter(s =>
     s.customer?.toLowerCase().includes(search.toLowerCase()) ||
-    (s.product?.name || s.product_name || "").toLowerCase().includes(search.toLowerCase())
+    (s.product?.name || s.product_name || "").toLowerCase().includes(search.toLowerCase()) ||
+    (s.payment || "").toLowerCase().includes(search.toLowerCase()) ||
+    (s.employee?.name || s.employee_name || "").toLowerCase().includes(search.toLowerCase())
   );
+
+  const sorted = React.useMemo(()=>{
+    if (!sortField) return filtered;
+    const rows = [...filtered];
+    const getVal = (item, field) => {
+      switch(field) {
+        case 'product_name': return (item.product?.name || item.product_name || '');
+        case 'ordered_by_name': return (item.ordered_by_user?.name || item.ordered_by_name || '');
+        case 'expected_delivery': return item.expected_delivery || '';
+        default: return item[field] ?? '';
+      }
+    };
+    rows.sort((a,b)=>{
+      const va = (getVal(a, sortField) ?? "").toString();
+      const vb = (getVal(b, sortField) ?? "").toString();
+      if (!isNaN(Date.parse(va)) && !isNaN(Date.parse(vb))) return (new Date(va) - new Date(vb)) * (sortDir==='asc'?1:-1);
+      if (!isNaN(parseFloat(va)) && !isNaN(parseFloat(vb))) return (parseFloat(va) - parseFloat(vb)) * (sortDir==='asc'?1:-1);
+      return va.localeCompare(vb) * (sortDir==='asc'?1:-1);
+    });
+    return rows;
+  }, [filtered, sortField, sortDir]);
+
+  const total = sorted.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const paged = sorted.slice((page-1)*pageSize, page*pageSize);
+
+  function toggleSort(field) { if (sortField===field) setSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setSortField(field); setSortDir('asc'); } }
 
   const totalRevenue = sales.reduce((a,s)=>a+s.total,0);
   const todayISO = new Date().toISOString().slice(0,10);
@@ -1195,9 +1295,21 @@ function Sales({ locale }) {
         </div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>{t(locale,'table.date')}</th><th>{t(locale,'table.product')}</th><th>{t(locale,'table.customer')}</th><th>{t(locale,'table.qty')}</th><th>{t(locale,'table.unit_price')}</th><th>{t(locale,'table.total')}</th><th>{t(locale,'table.payment')}</th><th>{t(locale,'table.employee')}</th><th>{t(locale,'table.status')}</th></tr></thead>
+            <thead>
+              <tr>
+                <th onClick={()=>toggleSort('date')}>{t(locale,'table.date')}</th>
+                <th onClick={()=>toggleSort('product_name')}>{t(locale,'table.product')}</th>
+                <th onClick={()=>toggleSort('customer')}>{t(locale,'table.customer')}</th>
+                <th onClick={()=>toggleSort('quantity')}>{t(locale,'table.qty')}</th>
+                <th onClick={()=>toggleSort('unit_price')}>{t(locale,'table.unit_price')}</th>
+                <th onClick={()=>toggleSort('total')}>{t(locale,'table.total')}</th>
+                <th onClick={()=>toggleSort('payment')}>{t(locale,'table.payment')}</th>
+                <th onClick={()=>toggleSort('employee_name')}>{t(locale,'table.employee')}</th>
+                <th onClick={()=>toggleSort('status')}>{t(locale,'table.status')}</th>
+              </tr>
+            </thead>
             <tbody>
-              {filtered.map(s=>(
+              {paged.map(s=>(
                 <tr key={s.id}>
                   <td className="td-muted" style={{fontSize:12}}>{humanDate(s.date)}</td>
                   <td style={{fontWeight:500}}>{s.product?.name || s.product_name || (products.find(p=>p.id===s.product_id)?.name) || "—"}</td>
@@ -1212,6 +1324,19 @@ function Sales({ locale }) {
               ))}
             </tbody>
           </table>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10}}>
+          <div>
+            <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
+            <select value={pageSize} onChange={e=>{ setPageSize(+e.target.value); setPage(1); }}>
+              {pageOptions.map(n=> <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div>
+            <button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Prev</button>
+            <span style={{margin:'0 8px'}}>{Math.min((page-1)*pageSize+1, total || 0)}-{Math.min(page*pageSize,total || 0)} of {total}</span>
+            <button disabled={page>=pageCount} onClick={()=>setPage(p=>Math.min(pageCount,p+1))}>Next</button>
+          </div>
         </div>
       </div>
 
@@ -1263,6 +1388,12 @@ function Sales({ locale }) {
 function Orders({ locale }) {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const pageOptions = [10,20,50,100];
+  const [sortField, setSortField] = useState(null);
+  const [sortDir, setSortDir] = useState('asc');
   const [editingOrder, setEditingOrder] = useState(null);
   const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -1372,6 +1503,42 @@ function Orders({ locale }) {
     }
   }
 
+  // Filter, sort, paginate orders
+  const filtered = orders.filter(o => {
+    const q = search.toLowerCase();
+    return (o.product?.name || o.product_name || "").toLowerCase().includes(q)
+      || (o.supplier||"").toLowerCase().includes(q)
+      || (o.ordered_by_user?.name || o.ordered_by_name || "").toLowerCase().includes(q)
+      || (o.status || "").toLowerCase().includes(q);
+  });
+
+  const sorted = React.useMemo(()=>{
+    if (!sortField) return filtered;
+    const rows = [...filtered];
+    const getVal = (item, field) => {
+      switch(field) {
+        case 'product_name': return (item.product?.name || item.product_name || '');
+        case 'received_by_name': return (item.received_by_user?.name || item.received_by_name || '');
+        case 'order_id': return item.order_id || '';
+        default: return item[field] ?? '';
+      }
+    };
+    rows.sort((a,b)=>{
+      const va = (getVal(a, sortField) ?? "").toString();
+      const vb = (getVal(b, sortField) ?? "").toString();
+      if (!isNaN(Date.parse(va)) && !isNaN(Date.parse(vb))) return (new Date(va) - new Date(vb)) * (sortDir==='asc'?1:-1);
+      if (!isNaN(parseFloat(va)) && !isNaN(parseFloat(vb))) return (parseFloat(va) - parseFloat(vb)) * (sortDir==='asc'?1:-1);
+      return va.localeCompare(vb) * (sortDir==='asc'?1:-1);
+    });
+    return rows;
+  }, [filtered, sortField, sortDir]);
+
+  const total = sorted.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const paged = sorted.slice((page-1)*pageSize, page*pageSize);
+
+  function toggleSort(field) { if (sortField===field) setSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setSortField(field); setSortDir('asc'); } }
+
   return (
     <div className="page">
       <div className="page-header">
@@ -1383,12 +1550,31 @@ function Orders({ locale }) {
       </div>
 
       <div className="card">
-        <div className="card-header"><span className="card-title">{t(locale,'orders.records_title')}</span></div>
+        <div className="card-header">
+          <span className="card-title">{t(locale,'orders.records_title')}</span>
+          <div className="search-wrap">
+            <span className="search-icon">🔍</span>
+            <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} />
+          </div>
+        </div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>{t(locale,'table.date')}</th><th>{t(locale,'table.product')}</th><th>{t(locale,'table.supplier')}</th><th>{t(locale,'table.qty')}</th><th>Per Unit Price</th><th>{t(locale,'table.total')}</th><th>{t(locale,'orders.expected_delivery')}</th><th>{t(locale,'orders.ordered_by')}</th><th>{t(locale,'table.status')}</th>{canManage&&<th>{t(locale,'orders.actions')}</th>}</tr></thead>
+            <thead>
+              <tr>
+                <th onClick={()=>toggleSort('date')}>{t(locale,'table.date')}</th>
+                <th onClick={()=>toggleSort('product_name')}>{t(locale,'table.product')}</th>
+                <th onClick={()=>toggleSort('supplier')}>{t(locale,'table.supplier')}</th>
+                <th onClick={()=>toggleSort('quantity')}>{t(locale,'table.qty')}</th>
+                <th onClick={()=>toggleSort('unit_price')}>Per Unit Price</th>
+                <th onClick={()=>toggleSort('total')}>{t(locale,'table.total')}</th>
+                <th onClick={()=>toggleSort('expected_delivery')}>{t(locale,'orders.expected_delivery')}</th>
+                <th onClick={()=>toggleSort('ordered_by_name')}>{t(locale,'orders.ordered_by')}</th>
+                <th onClick={()=>toggleSort('status')}>{t(locale,'table.status')}</th>
+                {canManage&&<th>{t(locale,'orders.actions')}</th>}
+              </tr>
+            </thead>
             <tbody>
-              {orders.map(o=>(
+              {paged.map(o=>(
                 <tr key={o.id}>
                   <td className="td-muted" style={{fontSize:12}}>{humanDate(o.date)}</td>
                   <td style={{fontWeight:500}}>{o.product?.name || o.product_name || (products.find(p=>p.id===o.product_id)?.name) || "—"}</td>
@@ -1418,6 +1604,19 @@ function Orders({ locale }) {
               {orders.length===0 && <tr><td colSpan={8} style={{textAlign:"center",color:"#8B949E",padding:40}}>{t(locale,'orders.no_records')}</td></tr>}
             </tbody>
           </table>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10}}>
+          <div>
+            <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
+            <select value={pageSize} onChange={e=>{ setPageSize(+e.target.value); setPage(1); }}>
+              {pageOptions.map(n=> <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div>
+            <button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Prev</button>
+            <span style={{margin:'0 8px'}}>{Math.min((page-1)*pageSize+1, total || 0)}-{Math.min(page*pageSize,total || 0)} of {total}</span>
+            <button disabled={page>=pageCount} onClick={()=>setPage(p=>Math.min(pageCount,p+1))}>Next</button>
+          </div>
         </div>
       </div>
 
@@ -1482,6 +1681,12 @@ function Orders({ locale }) {
 function Deliveries({ locale }) {
   const { user } = useAuth();
   const [deliveries, setDeliveries] = useState([]);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const pageOptions = [10,20,50,100];
+  const [sortField, setSortField] = useState(null);
+  const [sortDir, setSortDir] = useState('asc');
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
@@ -1493,6 +1698,34 @@ function Deliveries({ locale }) {
   useEffect(()=>{ load(); },[]);
 
   const pendingOrders = orders.filter(o=>["pending","in_transit"].includes(o.status));
+
+  // search, sort and paginate deliveries
+  const filtered = deliveries.filter(d => {
+    const q = search.toLowerCase();
+    return (d.product?.name || d.product_name || "").toLowerCase().includes(q)
+      || (d.supplier||"").toLowerCase().includes(q)
+      || (String(d.order_id)||"").toLowerCase().includes(q)
+      || (d.status||"").toLowerCase().includes(q);
+  });
+
+  const sorted = React.useMemo(()=>{
+    if (!sortField) return filtered;
+    const rows = [...filtered];
+    rows.sort((a,b)=>{
+      const va = (a[sortField] ?? "").toString();
+      const vb = (b[sortField] ?? "").toString();
+      if (!isNaN(Date.parse(va)) && !isNaN(Date.parse(vb))) return (new Date(va) - new Date(vb)) * (sortDir==='asc'?1:-1);
+      if (!isNaN(parseFloat(va)) && !isNaN(parseFloat(vb))) return (parseFloat(va) - parseFloat(vb)) * (sortDir==='asc'?1:-1);
+      return va.localeCompare(vb) * (sortDir==='asc'?1:-1);
+    });
+    return rows;
+  }, [filtered, sortField, sortDir]);
+
+  const total = sorted.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const paged = sorted.slice((page-1)*pageSize, page*pageSize);
+
+  function toggleSort(field) { if (sortField===field) setSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setSortField(field); setSortDir('asc'); } }
 
   async function saveDelivery() {
     const selOrder = orders.find(o=>o.id===form.order_id);
@@ -1512,12 +1745,29 @@ function Deliveries({ locale }) {
       </div>
 
       <div className="card">
-        <div className="card-header"><span className="card-title">{t(locale,'deliveries.records_title')}</span></div>
+        <div className="card-header">
+          <span className="card-title">{t(locale,'deliveries.records_title')}</span>
+          <div className="search-wrap">
+            <span className="search-icon">🔍</span>
+            <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} />
+          </div>
+        </div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>{t(locale,'table.date')}</th><th>{t(locale,'table.product')}</th><th>{t(locale,'table.supplier')}</th><th>{t(locale,'table.qty')}</th><th>Order Ref</th><th>{t(locale,'table.employee')}</th><th>{t(locale,'table.notes') || 'Notes'}</th><th>{t(locale,'table.status')}</th></tr></thead>
+            <thead>
+              <tr>
+                <th onClick={()=>toggleSort('date')}>{t(locale,'table.date')}</th>
+                <th onClick={()=>toggleSort('product_name')}>{t(locale,'table.product')}</th>
+                <th onClick={()=>toggleSort('supplier')}>{t(locale,'table.supplier')}</th>
+                <th onClick={()=>toggleSort('quantity')}>{t(locale,'table.qty')}</th>
+                <th onClick={()=>toggleSort('order_id')}>Order Ref</th>
+                <th onClick={()=>toggleSort('received_by_name')}>{t(locale,'table.employee')}</th>
+                <th>{t(locale,'table.notes') || 'Notes'}</th>
+                <th onClick={()=>toggleSort('status')}>{t(locale,'table.status')}</th>
+              </tr>
+            </thead>
             <tbody>
-              {deliveries.map(d=>(
+              {paged.map(d=>(
                 <tr key={d.id}>
                       <td className="td-muted" style={{fontSize:12}}>{humanDate(d.date)}</td>
                       <td style={{fontWeight:500}}>{d.product?.name || d.product_name || (products.find(p=>p.id===d.product_id)?.name) || "—"}</td>

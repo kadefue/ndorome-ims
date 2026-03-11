@@ -49,7 +49,8 @@ def get_models(db: Session) -> List[MotorcycleModel]:
 
 
 def create_model(db: Session, name: str, categories: List[str]) -> MotorcycleModel:
-    obj = MotorcycleModel(name=name, categories=','.join(categories or []))
+    obj = MotorcycleModel(name=name)
+    obj.categories = categories or []
     db.add(obj)
     db.commit()
     db.refresh(obj)

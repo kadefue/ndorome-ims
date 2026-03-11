@@ -18,35 +18,37 @@ from app.models.delivery import Delivery
 
 USERS = [
     {"name": "James Ndorome",  "email": "owner@ndorome.com",   "password": "owner123",   "role": "owner"},
-    {"name": "Alice Mwangi",   "email": "manager@ndorome.com", "password": "manager123", "role": "manager"},
-    {"name": "Brian Ochieng",  "email": "employee@ndorome.com","password": "emp123",     "role": "employee"},
+    {"name": "Alice Mangi",   "email": "manager@ndorome.com", "password": "manager123", "role": "manager"},
+    {"name": "Brian Mwalukasa",  "email": "employee@ndorome.com","password": "emp123",     "role": "employee"},
 ]
 
 BRANDS = [
-    "TVS", "SanLG", "Boxer", "Haujue", "Sinoray",
-    "Hoyun", "Zongshen", "Sanlg", "Fekon",
+    "TVS", "SanLG", "Boxer", "Haojue", "Sinoray",
+    "Hoyun", "Zongshen", "Sanlg", "Fekon", "Universal", "Lifan", "Loncin", "Bajaj", "Hero", "Yamaha",
 ]
 PART_TYPES = [
     "Brake Pads", "Clutch Kit", "Chain", "Spark Plug", "Headlight",
     "Tire", "Seat", "Carburetor", "Piston Kit", "Cylinder Kit",
-    "Gearbox Gasket", "Fuel Pump", "Handlebar", "Kick Starter",
+    "Gearbox Gasket", "Fuel Pump", "Handlebar", "Kick Starter", 
+    "Wheel Rim", "Oil Filter", "Battery", "Wiper Blade", "Accessory Set", 
+    "Gasket Set", "Suspension Fork", "Exhaust Pipe", "Air Filter", "Radiator", "Starter Motor",
 ]
 
 # Generate PRODUCTS so the first 50 items represent delivered/approved stock
 PRODUCTS = []
 DELIVERED_QTY = []
-NUM_PRODUCTS = 60
+NUM_PRODUCTS = 130
 for i in range(NUM_PRODUCTS):
     brand = random.choice(BRANDS)
     part = random.choice(PART_TYPES)
-    name = f"{brand} {part} {i+1}"
+    name = f"{part} - {brand}"
     sku = f"{brand[:3].upper()}-{i+1:04d}"
     unit_price = random.randint(800, 25000)
     min_q = random.randint(5, 20)
     location = f"S-{random.randint(1,9)}{random.randint(1,9)}"
     supplier = f"{brand} Supplies Tanzania"
     # delivered_qty for first 50, zero for the rest; actual Product.quantity will be set by deliveries
-    delivered = random.randint(50, 200) if i < 50 else 0
+    delivered = random.randint(50, 200) if i < 90 else 0
     DELIVERED_QTY.append(delivered)
     # assign a meaningful category based on part type to aid grouping/comparison
     CATEGORY_MAP = {
@@ -72,7 +74,11 @@ for i in range(NUM_PRODUCTS):
         "Gasket": "Gaskets",
         "Pump": "Fuel System",
         "Starter": "Engine",
-        "Accessory": "Accessories",
+        "Accessory": "Accessories", 
+        "Suspension": "Suspension",
+        "Radiator": "Cooling System",
+        "Exhaust": "Exhaust System",
+        "Air Filter": "Air Intake",
     }
     category = "Accessories"
     for key, cat in CATEGORY_MAP.items():

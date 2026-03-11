@@ -24,5 +24,22 @@ class MotorcycleModel(Base):
     __tablename__ = "motorcycle_models"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(200), nullable=False, unique=True)
-    # comma-separated category list for simplicity
-    categories = Column(Text, nullable=True)
+    # store raw comma-separated categories in DB but expose `categories` as list
+    _categories = Column('categories', Text, nullable=True)
+
+    @property
+    def categories(self):
+        raw = self._categories or ''
+        if isinstance(raw, list):
+            return raw
+        return [c for c in (raw.split(',') if raw else []) if c]
+
+    @categories.setter
+    def categories(self, value):
+        # accept list or comma-separated string
+        if value is None:
+            self._categories = None
+        elif isinstance(value, list):
+            self._categories = ','.join([str(x) for x in value])
+        else:
+            self._categories = str(value)

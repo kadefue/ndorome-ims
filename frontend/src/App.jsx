@@ -407,6 +407,9 @@ const themeCss = `
       "nav.sales": "Sales",
       "nav.orders": "Orders",
       "nav.deliveries": "Deliveries",
+      "nav.categories": "Motorcycle Categories/Types",
+      "nav.models": "Motorcycle Models",
+      "nav.products": "Motorcycle Products",
       "nav.reports": "Reports",
       "nav.users": "Users",
       "nav.navigation": "Navigation",
@@ -415,6 +418,9 @@ const themeCss = `
       "page.sales": "Sales Management",
       "page.orders": "Purchase Orders",
       "page.deliveries": "Deliveries",
+      "page.categories": "Motorcycle Categories/Types",
+      "page.models": "Motorcycle Models",
+      "page.products": "Motorcycle Products",
       "page.reports": "Reports & Analytics",
       "page.users": "User Management",
       "btn.add_product": "＋ Add Product",
@@ -555,10 +561,16 @@ const themeCss = `
       "nav.reports": "Ripoti",
       "nav.users": "Watumiaji",
       "nav.navigation": "Urambazaji",
+      "nav.categories": "Aina za vifaa",
+      "nav.models": "Modeli za Pikipiki",
+      "nav.products": "Bidhaa za Pikipiki",
       "page.dashboard": "Dashibodi",
       "page.inventory": "Usimamizi wa Stoku",
       "page.sales": "Usimamizi wa Mauzo",
       "page.orders": "Oda za Ununuzi",
+       "page.categories": "Aina za vifaa",
+      "page.models": "Modeli za Pikipiki",
+      "page.products": "Bidhaa za Pikipiki",
       "page.deliveries": "Upokeaji wa Bidhaa",
       "page.reports": "Ripoti na Uchambuzi",
       "page.users": "Usimamizi wa Watumiaji",
@@ -1060,7 +1072,7 @@ function Dashboard({ locale }) {
               <div key={p.id} className="alert-row">
                 <div className="alert-dot"/>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:13,fontWeight:500}}>{p.name}</div>
+                  <div style={{fontSize:13,fontWeight:500}}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))}</div>
                   <div style={{fontSize:11,color:"#8B949E"}}>{p.sku}</div>
                 </div>
                 <div style={{textAlign:"right"}}>
@@ -1131,7 +1143,7 @@ function Inventory({ locale }) {
 
   // Search
   const filtered = products.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    (p.display_name || p.name).toLowerCase().includes(search.toLowerCase()) ||
     p.sku.toLowerCase().includes(search.toLowerCase()) ||
     p.category.toLowerCase().includes(search.toLowerCase()) ||
     (p.supplier||"").toLowerCase().includes(search.toLowerCase())
@@ -1218,7 +1230,7 @@ function Inventory({ locale }) {
             <tbody>
               {paged.map(p => (
                 <tr key={p.id}>
-                  <td><div style={{fontWeight:500}}>{p.name} {p.soldBelow && <span style={{marginLeft:8}} className="badge badge-danger">{t(locale,'inventory.sold_below')||'Sold below price'}</span>}</div></td>
+                  <td><div style={{fontWeight:500}}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))} {p.soldBelow && <span style={{marginLeft:8}} className="badge badge-danger">{t(locale,'inventory.sold_below')||'Sold below price'}</span>}</div></td>
                   <td className="td-muted" style={{fontFamily:"monospace",fontSize:12}}>{p.sku}</td>
                   <td><span className="badge badge-info">{p.category}</span></td>
                   <td style={{fontWeight:700,color: p.quantity<=p.min_quantity?"#F85149":p.quantity<=p.min_quantity*2?"#D29922":"#3FB950"}}>{p.quantity}</td>
@@ -1298,7 +1310,7 @@ function Sales({ locale }) {
 
   const filtered = sales.filter(s =>
     s.customer?.toLowerCase().includes(search.toLowerCase()) ||
-    (s.product?.name || s.product_name || "").toLowerCase().includes(search.toLowerCase()) ||
+    (s.product?.display_name || s.product_name || s.product?.name || "").toLowerCase().includes(search.toLowerCase()) ||
     (s.payment || "").toLowerCase().includes(search.toLowerCase()) ||
     (s.employee?.name || s.employee_name || "").toLowerCase().includes(search.toLowerCase())
   );
@@ -1308,7 +1320,7 @@ function Sales({ locale }) {
     const rows = [...filtered];
     const getVal = (item, field) => {
       switch(field) {
-        case 'product_name': return (item.product?.name || item.product_name || '');
+        case 'product_name': return (item.product?.display_name || item.product_name || item.product?.name || '');
         case 'ordered_by_name': return (item.ordered_by_user?.name || item.ordered_by_name || '');
         case 'expected_delivery': return item.expected_delivery || '';
         default: return item[field] ?? '';
@@ -1398,7 +1410,7 @@ function Sales({ locale }) {
               {paged.map(s=>(
                 <tr key={s.id}>
                   <td className="td-muted" style={{fontSize:12}}>{humanDate(s.date)}</td>
-                  <td style={{fontWeight:500}}>{s.product?.name || s.product_name || (products.find(p=>p.id===s.product_id)?.name) || "—"}</td>
+                  <td style={{fontWeight:500}}>{s.product?.display_name || s.product_name || (products.find(p=>p.id===s.product_id)?.display_name) || (products.find(p=>p.id===s.product_id)?.name) || "—"}</td>
                   <td className="td-muted">{s.customer}</td>
                   <td style={{textAlign:"center"}}>{s.quantity}</td>
                   <td>{fmt(s.unit_price)}</td>
@@ -1433,7 +1445,7 @@ function Sales({ locale }) {
             <label className="form-label">{t(locale,'form.product_name')}</label>
             <select className="form-control" value={form.product_id} onChange={e=>setForm({...form,product_id:e.target.value})}>
               <option value="">{t(locale,'form.select_product')}</option>
-              {products.map(p=><option key={p.id} value={p.id}>{p.name} (Stock: {p.quantity})</option>)}
+              {products.map(p=><option key={p.id} value={p.id}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))} (Stock: {p.quantity})</option>)}
             </select>
           </div>
           {selProd && <div style={{padding:"10px 12px",background:"rgba(200,134,10,0.1)",borderRadius:8,marginBottom:16,fontSize:13}}>Unit Price: <strong style={{color:"#C8860A"}}>{fmt(selProd.unit_price)}</strong></div>}
@@ -1496,7 +1508,7 @@ function Orders({ locale }) {
 
   async function saveOrder() {
     const selProd = products.find(p=>p.id===form.product_id);
-    const payload = { product_id: +form.product_id, product_name: selProd?.name||form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, supplier: form.supplier, expected_delivery: form.expected_delivery, notes: form.notes };
+    const payload = { product_id: +form.product_id, product_name: selProd?.display_name || selProd?.name || form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, supplier: form.supplier, expected_delivery: form.expected_delivery, notes: form.notes };
     try {
       if (editingOrder) {
         await apiFetch('/orders/' + editingOrder.id, { method: 'PUT', body: JSON.stringify(payload) });
@@ -1594,7 +1606,7 @@ function Orders({ locale }) {
   // Filter, sort, paginate orders
   const filtered = orders.filter(o => {
     const q = search.toLowerCase();
-    return (o.product?.name || o.product_name || "").toLowerCase().includes(q)
+    return (o.product?.display_name || o.product_name || o.product?.name || "").toLowerCase().includes(q)
       || (o.supplier||"").toLowerCase().includes(q)
       || (o.ordered_by_user?.name || o.ordered_by_name || "").toLowerCase().includes(q)
       || (o.status || "").toLowerCase().includes(q);
@@ -1605,7 +1617,7 @@ function Orders({ locale }) {
     const rows = [...filtered];
     const getVal = (item, field) => {
       switch(field) {
-        case 'product_name': return (item.product?.name || item.product_name || '');
+        case 'product_name': return (item.product?.display_name || item.product_name || item.product?.name || '');
         case 'received_by_name': return (item.received_by_user?.name || item.received_by_name || '');
         case 'order_id': return item.order_id || '';
         default: return item[field] ?? '';
@@ -1665,7 +1677,7 @@ function Orders({ locale }) {
               {paged.map(o=>(
                 <tr key={o.id}>
                   <td className="td-muted" style={{fontSize:12}}>{humanDate(o.date)}</td>
-                  <td style={{fontWeight:500}}>{o.product?.name || o.product_name || (products.find(p=>p.id===o.product_id)?.name) || "—"}</td>
+                  <td style={{fontWeight:500}}>{o.product?.display_name || o.product_name || (products.find(p=>p.id===o.product_id)?.display_name) || (products.find(p=>p.id===o.product_id)?.name) || "—"}</td>
                   <td className="td-muted">{o.supplier}</td>
                   <td style={{textAlign:"center",color:"#3FB950",fontWeight:700}}>{o.quantity}</td>
                   <td style={{color:"#C8860A",fontWeight:600}}>{fmt(o.unit_price)}</td>
@@ -1726,8 +1738,7 @@ function Orders({ locale }) {
                 setForm({ ...form, product_id: val, supplier: p?.supplier || "", unit_price: p?.unit_price || "" });
               }}>
                 <option value="">{t(locale,'form.select_product')}</option>
-              <option value="__new">{t(locale,'orders.add_new_product') || '＋ Add new product'}</option>
-                {products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                {products.map(p=><option key={p.id} value={p.id}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))}</option>)}
               </select>
               {/* Edit/Delete moved to table actions */}
             </div>
@@ -1758,7 +1769,7 @@ function Orders({ locale }) {
                 {/* templates from settings */}
                 {templates && templates.map(t => <option key={`tmpl-${t.id}`} value={t.name}>{t.name}</option>)}
                 {/* existing product names */}
-                {products && products.map(p=> <option key={p.id} value={p.name}>{p.name}</option>)}
+                {products && products.map(p=> <option key={p.id} value={p.name}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))}</option>)}
               </select>
             </div>
             <div className="form-group"><label className="form-label">{t(locale,'form.sku')}</label><input className="form-control" value={productEditorForm?.sku||""} onChange={e=>setProductEditorForm({...productEditorForm,sku:e.target.value})}/></div>
@@ -1805,7 +1816,7 @@ function Deliveries({ locale }) {
   // search, sort and paginate deliveries
   const filtered = deliveries.filter(d => {
     const q = search.toLowerCase();
-    return (d.product?.name || d.product_name || "").toLowerCase().includes(q)
+    return (d.product?.display_name || d.product_name || d.product?.name || "").toLowerCase().includes(q)
       || (d.supplier||"").toLowerCase().includes(q)
       || (String(d.order_id)||"").toLowerCase().includes(q)
       || (d.status||"").toLowerCase().includes(q);
@@ -1871,9 +1882,9 @@ function Deliveries({ locale }) {
             </thead>
             <tbody>
               {paged.map(d=>(
-                <tr key={d.id}>
+                    <tr key={d.id}>
                       <td className="td-muted" style={{fontSize:12}}>{humanDate(d.date)}</td>
-                      <td style={{fontWeight:500}}>{d.product?.name || d.product_name || (products.find(p=>p.id===d.product_id)?.name) || "—"}</td>
+                      <td style={{fontWeight:500}}>{d.product?.display_name || d.product_name || (products.find(p=>p.id===d.product_id)?.display_name) || (products.find(p=>p.id===d.product_id)?.name) || "—"}</td>
                       <td className="td-muted">{d.supplier}</td>
                       <td style={{textAlign:"center",color:"#3FB950",fontWeight:700}}>{d.quantity}</td>
                       <td className="td-muted" style={{fontFamily:"monospace",fontSize:12}}>{d.order_id}</td>
@@ -2003,12 +2014,28 @@ function Settings({ locale }) {
 function CategoriesPage({ locale }) {
   const { user } = useAuth();
   const [categories, setCategories] = useState([]);
+  const [categoriesUsage, setCategoriesUsage] = useState({});
   const [catInput, setCatInput] = useState('');
-  useEffect(()=>{ apiFetch('/settings/categories').then(c=>setCategories(c||[])).catch(()=>{}); },[]);
+  const [editingId, setEditingId] = useState(null);
+  const [editingName, setEditingName] = useState('');
+  useEffect(()=>{
+    apiFetch('/settings/categories').then(c=>setCategories(c||[])).catch(()=>{});
+    apiFetch('/settings/categories/usage').then(u=>{ const map={}; (u||[]).forEach(x=>map[x.id]=x.count); setCategoriesUsage(map); }).catch(()=>{});
+  },[]);
 
   async function addCategory(){
     const v = catInput.trim(); if (!v) return;
     try { const res = await apiFetch('/settings/categories',{method:'POST', body: JSON.stringify({name:v})}); setCategories(cs=>[...cs, res]); setCatInput(''); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+  }
+
+  function startEdit(cat){ setEditingId(cat.id); setEditingName(cat.name); }
+
+  async function saveEdit(){
+    if (!editingName.trim()) return;
+    try { const res = await apiFetch('/settings/categories/' + editingId, { method: 'PUT', body: JSON.stringify({ name: editingName.trim() }) });
+      setCategories(cs => cs.map(c => c.id === res.id ? res : c));
+      setEditingId(null); setEditingName('');
+    } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
 
   async function deleteCategory(id){
@@ -2031,7 +2058,35 @@ function CategoriesPage({ locale }) {
             <input className="form-control" placeholder="Add category" value={catInput} onChange={e=>setCatInput(e.target.value)} style={{width:220}} />
             <button className="btn btn-primary" onClick={addCategory}>Add</button>
           </div>
-          <div style={{marginTop:12}}>{categories.length?categories.map(c=> <div key={c.id} style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}><strong>{c.name}</strong><button className="btn btn-danger btn-sm" style={{marginLeft:8}} onClick={()=>deleteCategory(c.id)}>Delete</button></div>) : <span className="td-muted">No categories yet</span>}</div>
+          <div style={{marginTop:12}}>
+            {categories.length ? (
+              <div className="table-wrap">
+                <table>
+                  <thead><tr><th>Name</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    {categories.map(c => (
+                      <tr key={c.id}>
+                            <td>{editingId===c.id ? <input className="form-control" value={editingName} onChange={e=>setEditingName(e.target.value)} /> : <strong>{c.name}</strong>}</td>
+                            <td>
+                              {editingId===c.id ? (
+                                <>
+                                  <button className="btn btn-primary btn-sm" onClick={saveEdit}>Save</button>
+                                  <button className="btn btn-secondary btn-sm" style={{marginLeft:8}} onClick={()=>{ setEditingId(null); setEditingName(''); }}>Cancel</button>
+                                </>
+                              ) : (
+                                <>
+                                  <button className="btn btn-secondary btn-sm" onClick={()=>startEdit(c)}>Edit</button>
+                                  <button className="btn btn-danger btn-sm" style={{marginLeft:8}} onClick={()=>deleteCategory(c.id)} disabled={(categoriesUsage[c.id]||0) > 0}>{(categoriesUsage[c.id]||0) > 0 ? `Delete (${categoriesUsage[c.id]})` : 'Delete'}</button>
+                                </>
+                              )}
+                            </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : <span className="td-muted">No categories yet</span>}
+          </div>
         </div>
       </div>
     </div>
@@ -2042,14 +2097,20 @@ function CategoriesPage({ locale }) {
 function ModelsPage({ locale }) {
   const [models, setModels] = useState([]);
   const [modelInput, setModelInput] = useState({name:''});
-  useEffect(()=>{ apiFetch('/settings/models').then(m=>setModels(m||[])).catch(()=>{}); },[]);
+  const [editingId, setEditingId] = useState(null);
+  const [editingName, setEditingName] = useState('');
+  const [modelsUsage, setModelsUsage] = useState({});
+  useEffect(()=>{ apiFetch('/settings/models').then(m=>setModels(m||[])).catch(()=>{}); apiFetch('/settings/models/usage').then(u=>{ const map={}; (u||[]).forEach(x=>map[x.id]=x.count); setModelsUsage(map); }).catch(()=>{}); },[]);
 
   async function addModel(){
     if (!modelInput.name) return alert('Provide model name');
     try { const res = await apiFetch('/settings/models',{method:'POST', body: JSON.stringify({name: modelInput.name})}); setModels(ms=>[...ms, res]); setModelInput({name:''}); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
 
-  async function deleteModel(id){ if (!confirm('Delete model?')) return; try { await apiFetch('/settings/models/' + id, { method: 'DELETE' }); setModels(ms=>ms.filter(m=>m.id!==id)); window._app_show_toast && window._app_show_toast('Deleted', 'success'); } catch(e){} }
+  function startEdit(m){ setEditingId(m.id); setEditingName(m.name); }
+  async function saveEdit(){ if (!editingName.trim()) return; try { const res = await apiFetch('/settings/models/' + editingId, { method: 'PUT', body: JSON.stringify({ name: editingName.trim(), categories: [] }) }); setModels(ms=>ms.map(x=> x.id === res.id ? res : x)); setEditingId(null); setEditingName(''); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); } }
+
+  async function deleteModel(id){ if (!confirm('Delete model?')) return; try { await apiFetch('/settings/models/' + id, { method: 'DELETE' }); setModels(ms=>ms.filter(m=>m.id!==id)); window._app_show_toast && window._app_show_toast('Deleted', 'success'); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); } }
 
   return (
     <div className="page">
@@ -2066,7 +2127,23 @@ function ModelsPage({ locale }) {
             <input className="form-control" placeholder="Model name (e.g. CG125)" value={modelInput.name} onChange={e=>setModelInput({...modelInput,name:e.target.value})} />
             <button className="btn btn-primary" onClick={addModel}>Add</button>
           </div>
-          <div style={{marginTop:12}}>{models.length?models.map(m=> <div key={m.id} style={{marginBottom:8}}><strong>{m.name}</strong> <button className="btn btn-danger btn-sm" style={{marginLeft:8}} onClick={()=>deleteModel(m.id)}>Delete</button></div>) : <span className="td-muted">No models yet</span>}</div>
+            <div style={{marginTop:12}}>
+            {models.length ? (
+              <div className="table-wrap">
+                <table>
+                  <thead><tr><th>Name</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    {models.map(m=> (
+                      <tr key={m.id}>
+                        <td>{editingId===m.id ? <input className="form-control" value={editingName} onChange={e=>setEditingName(e.target.value)} /> : <strong>{m.name}</strong>}</td>
+                        <td>{editingId===m.id ? (<><button className="btn btn-primary btn-sm" onClick={saveEdit}>Save</button><button className="btn btn-secondary btn-sm" style={{marginLeft:8}} onClick={()=>{ setEditingId(null); setEditingName(''); }}>Cancel</button></>) : (<><button className="btn btn-secondary btn-sm" onClick={()=>startEdit(m)}>Edit</button><button className="btn btn-danger btn-sm" style={{marginLeft:8}} onClick={()=>deleteModel(m.id)} disabled={(modelsUsage[m.id]||0) > 0}>{(modelsUsage[m.id]||0) > 0 ? `Delete (${modelsUsage[m.id]})` : 'Delete'}</button></>)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : <span className="td-muted">No models yet</span>}
+          </div>
         </div>
       </div>
     </div>
@@ -2158,7 +2235,7 @@ function ProductsPage({ locale }) {
         <div className="table-wrap" style={{padding:16}}>
           <table>
             <thead><tr><th>Name</th><th>SKU</th><th>Category</th><th>Model</th></tr></thead>
-            <tbody>{products.length?products.map(p=> <tr key={p.id}><td>{p.name}</td><td className="td-muted">{p.sku}</td><td className="td-muted">{p.category}</td><td className="td-muted">{inferModelName(p) || ''}</td></tr>) : <tr><td colSpan={4} style={{padding:20}} className="td-muted">No products yet</td></tr>}</tbody>
+            <tbody>{products.length?products.map(p=> <tr key={p.id}><td>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))}</td><td className="td-muted">{p.sku}</td><td className="td-muted">{p.category}</td><td className="td-muted">{inferModelName(p) || ''}</td></tr>) : <tr><td colSpan={4} style={{padding:20}} className="td-muted">No products yet</td></tr>}</tbody>
           </table>
         </div>
       </div>
@@ -2424,15 +2501,16 @@ function Users({ locale }) {
 const NAV = [
   { id:"dashboard", labelKey:"nav.dashboard", icon:"📊" },
   { id:"inventory", labelKey:"nav.inventory", icon:"📦" },
-  { id:"products", labelKey:"nav.products", icon:"🧩" },
+  
   { id:"sales",     labelKey:"nav.sales",     icon:"🛒" },
   { id:"orders",    labelKey:"nav.orders",    icon:"📋" },
   { id:"deliveries",labelKey:"nav.deliveries",icon:"🚚" },
-  { id:"categories",labelKey:"nav.categories", icon:"🏷️", roles:["owner","manager"] },
-  { id:"models",    labelKey:"nav.models",     icon:"🏍️", roles:["owner","manager"] },
   { id:"reports",   labelKey:"nav.reports",   icon:"📈" },
   
   { id:"users",     labelKey:"nav.users",     icon:"👥", roles:["owner","manager"] },
+  { id:"categories",labelKey:"nav.categories", icon:"🏷️", roles:["owner","manager"] },
+  { id:"models",    labelKey:"nav.models",     icon:"🏍️", roles:["owner","manager"] },
+  { id:"products", labelKey:"nav.products", icon:"🧩" },
 ];
 
 const PAGE_TITLES = {

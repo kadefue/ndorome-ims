@@ -9,8 +9,7 @@ class CategoryCreate(BaseModel):
 class CategoryRead(BaseModel):
     id: int
     name: str
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 class ProductTemplateCreate(BaseModel):
@@ -30,8 +29,7 @@ class ProductTemplateRead(BaseModel):
     unit_price: Optional[float]
     supplier: Optional[str]
     location: Optional[str]
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 class MotorcycleModelCreate(BaseModel):
@@ -43,5 +41,4 @@ class MotorcycleModelRead(BaseModel):
     id: int
     name: str
     categories: Optional[List[str]] = []
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}

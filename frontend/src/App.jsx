@@ -1999,6 +1999,137 @@ function Settings({ locale }) {
   );
 }
 
+// ── Categories Page ───────────────────────────────────────────────────────
+function CategoriesPage({ locale }) {
+  const { user } = useAuth();
+  const [categories, setCategories] = useState([]);
+  const [catInput, setCatInput] = useState('');
+  useEffect(()=>{ apiFetch('/settings/categories').then(c=>setCategories(c||[])).catch(()=>{}); },[]);
+
+  async function addCategory(){
+    const v = catInput.trim(); if (!v) return;
+    try { const res = await apiFetch('/settings/categories',{method:'POST', body: JSON.stringify({name:v})}); setCategories(cs=>[...cs, res]); setCatInput(''); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+  }
+
+  async function deleteCategory(id){
+    if (!confirm('Delete category?')) return;
+    try { await apiFetch('/settings/categories/' + id, { method: 'DELETE' }); setCategories(cs=>cs.filter(c=>c.id!==id)); window._app_show_toast && window._app_show_toast('Deleted', 'success'); } catch(e){ }
+  }
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <div className="page-title">{t(locale,'page.categories') || 'Categories'}</div>
+          <div className="page-subtitle">Manage product categories</div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-header"><span className="card-title">Categories</span></div>
+        <div style={{padding:16}}>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <input className="form-control" placeholder="Add category" value={catInput} onChange={e=>setCatInput(e.target.value)} style={{width:220}} />
+            <button className="btn btn-primary" onClick={addCategory}>Add</button>
+          </div>
+          <div style={{marginTop:12}}>{categories.length?categories.map(c=> <div key={c.id} style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}><strong>{c.name}</strong><button className="btn btn-danger btn-sm" style={{marginLeft:8}} onClick={()=>deleteCategory(c.id)}>Delete</button></div>) : <span className="td-muted">No categories yet</span>}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Models Page ───────────────────────────────────────────────────────────
+function ModelsPage({ locale }) {
+  const [models, setModels] = useState([]);
+  const [modelInput, setModelInput] = useState({name:'',categories:''});
+  useEffect(()=>{ apiFetch('/settings/models').then(m=>setModels(m||[])).catch(()=>{}); },[]);
+
+  async function addModel(){
+    if (!modelInput.name) return alert('Provide model name'); const cats = modelInput.categories.split(',').map(s=>s.trim()).filter(Boolean);
+    try { const res = await apiFetch('/settings/models',{method:'POST', body: JSON.stringify({name: modelInput.name, categories: cats})}); setModels(ms=>[...ms, res]); setModelInput({name:'',categories:''}); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+  }
+
+  async function deleteModel(id){ if (!confirm('Delete model?')) return; try { await apiFetch('/settings/models/' + id, { method: 'DELETE' }); setModels(ms=>ms.filter(m=>m.id!==id)); window._app_show_toast && window._app_show_toast('Deleted', 'success'); } catch(e){} }
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <div className="page-title">{t(locale,'page.models') || 'Motorcycle Models'}</div>
+          <div className="page-subtitle">Manage motorcycle models and their categories</div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-header"><span className="card-title">Add Model</span></div>
+        <div style={{padding:16}}>
+          <div style={{display:'grid',gridTemplateColumns:'200px 300px 120px',gap:8}}>
+            <input className="form-control" placeholder="Model name (e.g. CG125)" value={modelInput.name} onChange={e=>setModelInput({...modelInput,name:e.target.value})} />
+            <input className="form-control" placeholder="Categories (comma separated)" value={modelInput.categories} onChange={e=>setModelInput({...modelInput,categories:e.target.value})} />
+            <button className="btn btn-primary" onClick={addModel}>Add</button>
+          </div>
+          <div style={{marginTop:12}}>{models.length?models.map(m=> <div key={m.id} style={{marginBottom:8}}><strong>{m.name}</strong> <span className="td-muted">{(m.categories||[]).join(', ')}</span> <button className="btn btn-danger btn-sm" style={{marginLeft:8}} onClick={()=>deleteModel(m.id)}>Delete</button></div>) : <span className="td-muted">No models yet</span>}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Products Page (add product with category dropdown) ──────────────────────
+function ProductsPage({ locale }) {
+  const [categories, setCategories] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [form, setForm] = useState({name:'',sku:'',category:'',min_quantity:5,unit_price:'',supplier:'',location:''});
+  useEffect(()=>{ Promise.all([apiFetch('/settings/categories'), apiFetch('/settings/templates'), apiFetch('/products')]).then(([c,t,p])=>{ setCategories(c||[]); setTemplates(t||[]); setProducts(p||[]); }).catch(()=>{}); },[]);
+
+  async function addProduct(){
+    if (!form.name || !form.category) return alert('Provide name and select category');
+    try { const payload = { ...form, min_quantity: +form.min_quantity, unit_price: +form.unit_price, quantity: 0 }; const res = await apiFetch('/products',{method:'POST', body: JSON.stringify(payload)}); setProducts(ps=>[res,...ps]); setForm({name:'',sku:'',category:'',min_quantity:5,unit_price:'',supplier:'',location:''}); window._app_show_toast && window._app_show_toast('Product added', 'success'); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
+  }
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <div className="page-title">{t(locale,'page.products') || 'Products'}</div>
+          <div className="page-subtitle">Create products (category chosen from dropdown)</div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-header"><span className="card-title">New Product</span></div>
+        <div style={{padding:16}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 200px 160px',gap:8}}>
+            <input className="form-control" placeholder="Product name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} />
+            <input className="form-control" placeholder="SKU" value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} />
+            <select className="form-control" value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>
+              <option value="">Select category</option>
+              {(categories||[]).map(c=> <option key={c.id} value={c.name}>{c.name}</option>)}
+            </select>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'200px 200px 200px',gap:8,marginTop:8}}>
+            <input className="form-control" placeholder="Min qty" type="number" value={form.min_quantity} onChange={e=>setForm({...form,min_quantity:e.target.value})} />
+            <input className="form-control" placeholder="Unit price" type="number" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})} />
+            <input className="form-control" placeholder="Supplier" value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})} />
+          </div>
+          <div style={{marginTop:12}}>
+            <button className="btn btn-primary" onClick={addProduct}>Add Product</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="card" style={{marginTop:12}}>
+        <div className="card-header"><span className="card-title">Existing Products</span></div>
+        <div className="table-wrap" style={{padding:16}}>
+          <table>
+            <thead><tr><th>Name</th><th>SKU</th><th>Category</th><th>Qty</th></tr></thead>
+            <tbody>{products.length?products.map(p=> <tr key={p.id}><td>{p.name}</td><td className="td-muted">{p.sku}</td><td className="td-muted">{p.category}</td><td style={{fontWeight:700,color:'#3FB950'}}>{p.quantity||0}</td></tr>) : <tr><td colSpan={4} style={{padding:20}} className="td-muted">No products yet</td></tr>}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Reports ───────────────────────────────────────────────────────────────────
 function Reports({ locale }) {
   const [stats, setStats] = useState(null);
@@ -2257,15 +2388,30 @@ function Users({ locale }) {
 const NAV = [
   { id:"dashboard", labelKey:"nav.dashboard", icon:"📊" },
   { id:"inventory", labelKey:"nav.inventory", icon:"📦" },
+  { id:"products", labelKey:"nav.products", icon:"🧩" },
   { id:"sales",     labelKey:"nav.sales",     icon:"🛒" },
   { id:"orders",    labelKey:"nav.orders",    icon:"📋" },
   { id:"deliveries",labelKey:"nav.deliveries",icon:"🚚" },
+  { id:"categories",labelKey:"nav.categories", icon:"🏷️", roles:["owner","manager"] },
+  { id:"models",    labelKey:"nav.models",     icon:"🏍️", roles:["owner","manager"] },
   { id:"reports",   labelKey:"nav.reports",   icon:"📈" },
   { id:"settings",  labelKey:"nav.settings",  icon:"⚙️", roles:["owner","manager"] },
   { id:"users",     labelKey:"nav.users",     icon:"👥", roles:["owner","manager"] },
 ];
 
-const PAGE_TITLES = {dashboard:"page.dashboard",inventory:"page.inventory",sales:"page.sales",orders:"page.orders",deliveries:"page.deliveries",reports:"page.reports",users:"page.users",settings:"page.settings"};
+const PAGE_TITLES = {
+  dashboard:"page.dashboard",
+  inventory:"page.inventory",
+  products:"page.products",
+  sales:"page.sales",
+  orders:"page.orders",
+  deliveries:"page.deliveries",
+  reports:"page.reports",
+  users:"page.users",
+  settings:"page.settings",
+  categories:"page.categories",
+  models:"page.models",
+};
 
 function AppShell({ user, onLogout, locale, setLocale }) {
   const [page, setPage] = useState("dashboard");

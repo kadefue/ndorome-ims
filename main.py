@@ -12,7 +12,7 @@ from app.seed import seed_database
 # Import all models so SQLAlchemy registers them before create_all
 import app.models  # noqa: F401
 
-from app.routers import auth, products, sales, orders, deliveries, dashboard
+from app.routers import auth, products, sales, orders, deliveries, dashboard, settings as settings_router
 
 
 # ── Lifespan (replaces deprecated on_event startup/shutdown) ──────────────────
@@ -76,7 +76,7 @@ app.include_router(products.router)
 app.include_router(sales.router)
 app.include_router(orders.router)
 app.include_router(deliveries.router)
-app.include_router(settings.router)
+app.include_router(settings_router.router)
 
 
 # ── Root health-check ─────────────────────────────────────────────────────────

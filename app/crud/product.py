@@ -43,10 +43,7 @@ def get_low_stock_products(db: Session) -> list[Product]:
 
 
 def create_product(db: Session, product_in: ProductCreate) -> Product:
-    # Ensure products are created with zero stock; stock increases only via approved deliveries
-    data = product_in.model_dump()
-    data['quantity'] = 0
-    db_product = Product(**data)
+    db_product = Product(**product_in.model_dump())
     db.add(db_product)
     db.commit()
     db.refresh(db_product)

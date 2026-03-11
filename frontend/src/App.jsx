@@ -699,7 +699,7 @@ function statusBadge(s) {
     delivered: "badge-success", cancelled: "badge-danger",
   };
   return (
-    <span className={`badge ${map[s] || 'badge-gold'}`}>{s ? s.replace('_',' ') : ''}</span>
+    <span className={'badge ' + (map[s] || 'badge-gold')}>{s ? s.replace('_',' ') : ''}</span>
   );
 }
 

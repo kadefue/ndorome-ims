@@ -41,7 +41,7 @@ NUM_PRODUCTS = 130
 for i in range(NUM_PRODUCTS):
     brand = random.choice(BRANDS)
     part = random.choice(PART_TYPES)
-    name = f"{part} - {brand}"
+    name = f"{part}"
     sku = f"{brand[:3].upper()}-{i+1:04d}"
     unit_price = random.randint(800, 25000)
     min_q = random.randint(5, 20)

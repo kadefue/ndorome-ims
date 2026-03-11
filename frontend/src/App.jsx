@@ -140,6 +140,25 @@ const css = `
   }
 `;
 
+const themeCss = `
+  .theme-light body {
+    background: #F6F8FA;
+    color: #0D1117;
+  }
+  .theme-light .sidebar { background: #FFFFFF; border-right-color: #E6EDF3; }
+  .theme-light .sidebar-logo h1 { color: #C8860A; }
+  .theme-light .sidebar-logo span, .theme-light .user-info span, .theme-light .td-muted, .theme-light .page-subtitle { color: #6B7280; }
+  .theme-light .user-avatar { color: #FFFFFF; }
+  .theme-light .main { background: #F6F8FA; }
+  .theme-light .topbar, .theme-light .card, .theme-light .login-card, .theme-light .stat-card, .theme-light .modal { background: #FFFFFF; border-color: #E6EDF3; }
+  .theme-light .card-title, .theme-light .page-title, .theme-light .stat-value, .theme-light td { color: #0D1117; }
+  .theme-light .nav-item { color: #374151; }
+  .theme-light .nav-item:hover { background: #F3F4F6; }
+  .theme-light .form-control { background: #FFFFFF; color: #0D1117; border: 1px solid #E6EDF3; }
+  .theme-light thead th { background: rgba(15,23,42,0.02); color: #6B7280; border-bottom-color: #EEF2F7; }
+  .theme-light .badge { background: rgba(0,0,0,0.03); color: #0D1117; }
+`;
+
   // ── Translations ───────────────────────────────────────────────────────────
   const TRANSLATIONS = {
     en: {

@@ -4,20 +4,6 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from "recharts";
 // ...existing code...
-  }
-  .sidebar-logo h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: 18px;
-    font-weight: 800;
-    color: #C8860A;
-    line-height: 1.1;
-    letter-spacing: -0.3px;
-  }
-  .sidebar-logo span {
-    font-size: 11px;
-    color: #8B949E;
-    font-weight: 400;
-    letter-spacing: 0.5px;
     text-transform: uppercase;
   }
   .sidebar-user {

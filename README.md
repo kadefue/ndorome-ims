@@ -31,155 +31,166 @@ ndorome-ims/
 ├── .env.example
 │
 ├── app/
-│   ├── config.py              # Settings via pydantic-settings (.env support)
-│   ├── database.py            # SQLAlchemy engine, SessionLocal, Base, get_db()
-│   ├── auth.py                # JWT helpers + role-gate dependencies
-│   ├── seed.py                # One-time seeder (skips if data exists)
-│   │
-│   ├── models/                # SQLAlchemy ORM — one file per table
-│   │   ├── user.py
-│   │   ├── product.py
-│   │   ├── sale.py
-│   │   ├── order.py
-│   │   └── delivery.py
-│   │
-│   ├── schemas/               # Pydantic v2 request/response contracts
-│   │   ├── user.py
-│   │   ├── product.py
-│   │   ├── sale.py
-│   │   ├── order.py
-│   │   ├── delivery.py
-│   │   └── dashboard.py
-│   │
-│   ├── crud/                  # All DB queries — no SQL in routers
-│   │   ├── user.py
-│   │   ├── product.py
-│   │   ├── sale.py
-│   │   ├── order.py
-│   │   └── delivery.py
-│   │
-│   └── routers/               # Thin route handlers — delegate to crud/
-│       ├── auth.py
-│       ├── products.py
-│       ├── sales.py
-│       ├── orders.py
-│       ├── deliveries.py
-│       └── dashboard.py
+# 🔧 Ndorome Spare Parts — Inventory Management System
+
+A full-stack Inventory Management System for Ndorome Spare Parts. It supports stock tracking, sales recording, purchase orders, delivery approval, and role-based access for owners, managers, and employees.
+
+Stack overview:
+- Backend: FastAPI · SQLAlchemy 2.0 · SQLite · Alembic · JWT Auth
+- Frontend: React 18 · Vite · Recharts
+
+This README includes step-by-step setup for development on macOS using Python 3.11 and Node 22.
+
+---
+
+## Features
+
+- Dashboard: KPI cards, monthly revenue chart, stock-by-category pie, low-stock alerts
+- Inventory: product CRUD with SKU and low-stock indicators
+- Sales: record sales with automatic stock adjustments
+- Purchase Orders: create & track orders (pending → in_transit → delivered)
+- Deliveries: record incoming deliveries; manager approves to restock
+- Users & Roles: Owner / Manager / Employee with role-based permissions
+
+---
+
+## Project Structure
+
+```
+ndorome-ims/
 │
-├── alembic/versions/          # Database migration scripts
+├── main.py                    # FastAPI entry point
+├── requirements.txt
+├── alembic.ini
+├── .env.example
 │
+├── app/
+│   ├── config.py
+│   ├── database.py
+│   ├── auth.py
+│   ├── seed.py
+│   ├── models/
+│   ├── schemas/
+│   ├── crud/
+│   └── routers/
+│
+├── alembic/versions/          # DB migration scripts
 └── frontend/
-    ├── App.jsx                # Full React application (single file)
-    └── README.md
+    ├── src/App.jsx            # Single-file React app (monolithic)
+    └── package.json
 ```
 
 ---
 
-## Getting Started
+## Getting Started (Development)
 
-### Backend
+Prerequisites
+
+- Python 3.11 installed and on PATH
+- Node.js 22 and npm installed (use `nvm` to manage Node versions)
+
+Backend (Python 3.11)
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/ndorome-ims.git
 cd ndorome-ims
 
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+# Create and activate Python 3.11 venv
+python3.11 -m venv ./venv
+source ./venv/bin/activate
 
+# Install Python deps
 pip install -r requirements.txt
 
-cp .env.example .env            # Edit .env — change SECRET_KEY before deploying
+# Copy example env and edit values (DATABASE_URL, SECRET_KEY, etc.)
+cp .env.example .env
+# You can leave DATABASE_URL as the default sqlite:///./ndorome_ims.db for local dev
 
-uvicorn main:app --reload --port 8000
+# (Optional) Apply Alembic migrations if you prefer managed migrations
+# alembic upgrade head
+
+# Start the API server (dev)
+./venv/bin/uvicorn main:app --reload --port 8000
 ```
 
-The server creates `ndorome_ims.db` and seeds sample data automatically on first run.
+Notes:
+- API base: http://localhost:8000
+- Swagger UI: http://localhost:8000/docs
 
-- **API:** http://localhost:8000  
-- **Interactive Docs:** http://localhost:8000/docs
-
-### Frontend
+Frontend (Node 22)
 
 ```bash
 cd frontend
-npm create vite@latest . -- --template react
-npm install && npm install recharts
-# Replace src/App.jsx with frontend/App.jsx
+npm install
 npm run dev
 ```
 
-Frontend: http://localhost:5173
+Frontend dev UI: http://localhost:5173
 
----
-
-## Default Credentials
-
-| Role     | Email                   | Password     |
-|----------|-------------------------|--------------|
-| Owner    | owner@ndorome.com       | owner123     |
-| Manager  | manager@ndorome.com     | manager123   |
-| Employee | employee@ndorome.com    | emp123       |
-
-> Change all passwords before deploying to production.
-
----
-
-## Role Permissions
-
-| Feature                      | Owner | Manager | Employee |
-|------------------------------|:-----:|:-------:|:--------:|
-| Dashboard & Reports          | ✅    | ✅      | ✅       |
-| View Inventory               | ✅    | ✅      | ✅       |
-| Add / Edit / Delete Products | ✅    | ✅      | ❌       |
-| Record Sales                 | ✅    | ✅      | ✅       |
-| View All Sales               | ✅    | ✅      | Own only |
-| Create Purchase Orders       | ✅    | ✅      | ❌       |
-| Update Order Status          | ✅    | ✅      | ❌       |
-| Record Deliveries            | ✅    | ✅      | ❌       |
-| Manage Users                 | ✅    | ✅      | ❌       |
-| Create Owner Accounts        | ✅    | ❌      | ❌       |
-
----
-
-## Database Migrations
+Production build example
 
 ```bash
-# Generate a migration after changing a model
-alembic revision --autogenerate -m "describe your change"
+cd frontend
+npm run build
+# Serve the `dist/` folder from a static host or integrate with your backend
+```
+
+---
+
+## Environment & Configuration
+
+The project uses `app/config.py` (Pydantic settings). By default the app reads `.env`. The important settings:
+
+- `DATABASE_URL` — connection string (defaults to `sqlite:///./ndorome_ims.db`)
+- `SECRET_KEY` — JWT secret (change in production)
+- `CORS_ORIGINS` — allowed origins for frontend in development
+
+Copy `.env.example` to `.env` and update values before deploying.
+
+---
+
+## Database Migrations (Alembic)
+
+```bash
+# Create migration after model changes
+alembic revision --autogenerate -m "describe change"
 
 # Apply migrations
 alembic upgrade head
 
-# Roll back one step
+# Roll back
 alembic downgrade -1
 ```
 
+If you are using the default SQLite dev DB the app will also create `ndorome_ims.db` when started.
+
 ---
 
-## Switching to PostgreSQL
+## Default Credentials (Dev)
 
-Update `DATABASE_URL` in `.env`:
+| Role     | Email                   | Password  |
+|----------|-------------------------|-----------|
+| Owner    | owner@ndorome.com       | owner123  |
+| Manager  | manager@ndorome.com     | manager123|
+| Employee | employee@ndorome.com    | emp123    |
 
-```
-DATABASE_URL=postgresql://user:password@localhost:5432/ndorome_ims
-```
+Change these before production.
 
-Then run `alembic upgrade head`. No code changes required.
+---
+
+## Recommendations / Production Notes
+
+- Replace the default `SECRET_KEY` in `.env`.
+- Use Postgres in production: set `DATABASE_URL=postgresql://user:pass@host/dbname` and run migrations.
+- Add DB-level UNIQUE constraints on `products.sku` and `products.name` before deploying (recommended).
+- Run the backend under a process manager (systemd / Docker / supervisor) and serve the frontend as static files behind Nginx.
 
 ---
 
 ## Tech Stack
 
-| Layer      | Technology                                    |
-|------------|-----------------------------------------------|
-| Backend    | FastAPI 0.104, Uvicorn                        |
-| ORM        | SQLAlchemy 2.0 (declarative)                  |
-| Database   | SQLite (WAL mode, FK constraints enforced)    |
-| Migrations | Alembic 1.12                                  |
-| Auth       | JWT (python-jose), bcrypt (passlib)           |
-| Validation | Pydantic v2, pydantic-settings                |
-| Frontend   | React 18, Recharts, Vite                      |
-| Styling    | Custom CSS — Syne + DM Sans, dark theme       |
+Backend: FastAPI · Uvicorn · SQLAlchemy 2.0 · Alembic  
+Frontend: React 18 · Vite · Recharts
 
 ---
 

@@ -1142,12 +1142,53 @@ function Inventory({ locale }) {
       // Do not allow direct quantity updates from Inventory UI; stock updates only via delivery approval
     };
     try {
+      const proposed = +form.unit_price;
+      // Check latest order price for this product to provide clearer feedback before sending to server
+      try {
+        const orders = await apiFetch('/orders');
+        const related = (orders || []).filter(o => (o.product_id === editing.id) || (o.product && o.product.id === editing.id));
+        if (related.length) {
+          related.sort((a,b) => new Date(b.date) - new Date(a.date));
+          const last = related[0];
+          const lastPrice = Number(last.unit_price || 0);
+          const minAllowed = lastPrice * 1.25;
+          if (proposed < minAllowed) {
+            window._app_show_toast && window._app_show_toast(`Proposed price ${fmt(proposed)} is below required minimum ${fmt(minAllowed)} (last order price was ${fmt(lastPrice)})`, 'warning');
+            return;
+          }
+        }
+      } catch (e) {
+        // if orders fetch fails, continue and let server validate
+      }
+
       await apiFetch('/products/' + editing.id, { method: "PUT", body: JSON.stringify(body) });
       setShowSidebar(false);
       window._app_show_toast && window._app_show_toast('Product updated', 'success');
       load();
     } catch (err) {
-      window._app_show_toast && window._app_show_toast(err.message || err, 'danger');
+      // If server returns the price rule message, attempt to surface clearer numbers
+      const msg = err.message || String(err);
+      // backend message includes min_allowed in parentheses sometimes
+      const m = String(msg).match(/\((\d+(?:\.\d+)?)\)/);
+      if (m) {
+        const minAllowed = Number(m[1]);
+        const proposed = +form.unit_price;
+        // Try to obtain last order price for richer message
+        try {
+          const orders = await apiFetch('/orders');
+          const related = (orders || []).filter(o => (o.product_id === editing.id) || (o.product && o.product.id === editing.id));
+          if (related.length) {
+            related.sort((a,b) => new Date(b.date) - new Date(a.date));
+            const last = related[0];
+            const lastPrice = Number(last.unit_price || 0);
+            window._app_show_toast && window._app_show_toast(`New price ${fmt(proposed)} is below required minimum ${fmt(minAllowed)} (based on last order price ${fmt(lastPrice)})`, 'danger');
+            return;
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+      window._app_show_toast && window._app_show_toast(msg, 'danger');
     }
   }
   async function del(id) {

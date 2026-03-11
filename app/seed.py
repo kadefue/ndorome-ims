@@ -8,6 +8,7 @@ import random
 from sqlalchemy.orm import Session
 
 from app.crud.user import hash_password, get_user_by_email
+from app.crud import settings as settings_crud
 from app.models.user import User
 from app.models.product import Product
 from app.models.sale import Sale
@@ -80,6 +81,7 @@ for i in range(NUM_PRODUCTS):
             break
 
     PRODUCTS.append({
+        "brand": brand,
         "name": name,
         "sku": sku,
         "category": category,
@@ -116,8 +118,36 @@ def seed_database(db: Session) -> None:
 
     # ── Products (create from PRODUCTS list — first 50 are delivered/approved)
     product_objs = []
+    # create categories and models first
+    unique_categories = sorted({p['category'] for p in PRODUCTS})
+    category_map = {}
+    for c in unique_categories:
+        existing = [x for x in settings_crud.get_categories(db) if x.name.lower() == c.lower()]
+        if existing:
+            category_map[c] = existing[0]
+        else:
+            obj = settings_crud.create_category(db, c)
+            category_map[c] = obj
+
+    # create motorcycle models (one per brand) and map brand->model
+    model_map = {}
+    for br in sorted(set([p['brand'] for p in PRODUCTS])):
+        # check existing
+        existing = [m for m in settings_crud.get_models(db) if m.name.lower() == br.lower()]
+        if existing:
+            model_map[br] = existing[0]
+        else:
+            mobj = settings_crud.create_model(db, br, [])
+            model_map[br] = mobj
+
     for pdef in PRODUCTS:
-        obj = Product(**pdef)
+        # attach motorcycle_model_id based on brand
+        brand = pdef.pop('brand', None)
+        model_obj = model_map.get(brand)
+        data = dict(pdef)
+        if model_obj:
+            data['motorcycle_model_id'] = model_obj.id
+        obj = Product(**data)
         db.add(obj)
         product_objs.append(obj)
     db.flush()

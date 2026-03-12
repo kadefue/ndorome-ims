@@ -525,7 +525,7 @@ const themeCss = `
       "page.products": "Motorcycle Products/Parts",
       "page.reports": "Reports & Analytics",
       "page.users": "User Management",
-      "btn.add_product": "＋ Add Product",
+      "btn.add_product": "＋ Add Product/Part",
       "btn.new_sale": "＋ New Sale",
       "btn.new_order": "＋ New Order",
       "btn.record_delivery": "＋ Record Delivery",
@@ -2298,7 +2298,7 @@ function ProductsPage({ locale }) {
   const [templates, setTemplates] = useState([]);
   const [models, setModels] = useState([]);
   const [products, setProducts] = useState([]);
-  const [form, setForm] = useState({name:'',sku:'',category:'',model:'',min_quantity:5});
+  const [form, setForm] = useState({name:'',sku:'',category:'',model:'',min_quantity:5, supplier:'', location:''});
   useEffect(()=>{ Promise.all([apiFetch('/settings/categories'), apiFetch('/settings/templates'), apiFetch('/settings/models'), apiFetch('/products?include_unstocked=true')]).then(([c,t,m,p])=>{ setCategories(c||[]); setTemplates(t||[]); setModels(m||[]); setProducts(p||[]); }).catch(()=>{}); },[]);
 
   function inferModelName(prod) {
@@ -2330,12 +2330,12 @@ function ProductsPage({ locale }) {
   async function addProduct(){
     if (!form.name || !form.category) { window._app_show_toast && window._app_show_toast('Provide name and select category', 'warning'); return; }
     try {
-      const payload = { name: form.name, sku: form.sku, category: form.category, min_quantity: +form.min_quantity, unit_price: 1.0, quantity: 0 };
+      const payload = { name: form.name, sku: form.sku, category: form.category, min_quantity: +form.min_quantity, unit_price: 1.0, quantity: 0, supplier: form.supplier || null, location: form.location || null };
       if (form.model) payload.motorcycle_model_id = +form.model;
       // backend expects unit_price > 0; default to 1.0 when user doesn't provide price in UI
       const res = await apiFetch('/products',{method:'POST', body: JSON.stringify(payload)});
       setProducts(ps=>[res,...ps]);
-      setForm({name:'',sku:'',category:'',model:'',min_quantity:5});
+      setForm({name:'',sku:'',category:'',model:'',min_quantity:5, supplier:'', location:''});
       window._app_show_toast && window._app_show_toast('Product added', 'success');
     } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }

@@ -656,6 +656,18 @@ const themeCss = `
       "login.hint_manager": "Manager:",
       "login.hint_employee": "Employee:",
       "inventory.sold_below": "⚠️ This product has been sold below {threshold} per unit. Current: {current_price}.",
+      "status.completed": "Completed",
+      "status.cancelled": "Cancelled",
+      "status.in_transit": "In transit",
+      "status.approved": "Approved",
+      "status.pending": "Pending",
+      "status.delivered": "Delivered",
+      "deliveries.recorded": "Deliveries recorded",
+      "orders.in_transit": "Orders in transit",
+      "role.owner": "Owner",
+      "role.manager": "Manager",
+      "role.employee": "Employee",
+      "btn.change_password": "Change password",
     },
     sw: {
       "title.dashboard": "Mfumo wa Kuuza na Kusambaza Spea",
@@ -812,6 +824,18 @@ const themeCss = `
       "login.hint_manager": "Meneja:",
       "login.hint_employee": "Mfanyakazi:",
       "inventory.sold_below": "Bidhaa hii imeuzwa chini ya {threshold} kwa kifungu. Thamani ya sasa: {current_price}.",
+      "status.completed": "Imekamilika",
+      "status.cancelled": "Imekatishwa",
+      "status.in_transit": "Njiani",
+      "status.approved": "Imeidhinishwa",
+      "status.pending": "Inasubiri",
+      "status.delivered": "Imepokelewa",
+      "deliveries.recorded": "Upokeaji uliorekodiwa",
+      "orders.in_transit": "Oda njiani",
+      "role.owner": "Mmiliki",
+      "role.manager": "Meneja",
+      "role.employee": "Mfanyakazi",
+      "btn.change_password": "Badili nywila",
     }
 };
 
@@ -832,14 +856,15 @@ const humanDate = (value) => {
   return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-function statusBadge(s) {
+function statusBadge(s, locale = 'en') {
   const map = {
     completed: "badge-success", received: "badge-success",
     pending: "badge-warning", in_transit: "badge-info",
     delivered: "badge-success", cancelled: "badge-danger",
   };
+  const label = (typeof s === 'string') ? (t(locale, 'status.' + s) || s.replace('_',' ')) : '';
   return (
-    <span className={'badge ' + (map[s] || 'badge-gold')}>{s ? s.replace('_',' ') : ''}</span>
+    <span className={'badge ' + (map[s] || 'badge-gold')}>{label}</span>
   );
 }
 
@@ -1491,7 +1516,7 @@ function Sales({ locale }) {
                   <td style={{color:"#3FB950",fontWeight:700}}>{fmt(s.total)}</td>
                   <td><span className="badge badge-purple">{s.payment}</span></td>
                   <td className="td-muted" style={{fontSize:12}}>{s.employee?.name || s.employee_name || s.employee_id || "—"}</td>
-                  <td>{statusBadge(s.status)}</td>
+                  <td>{statusBadge(s.status, locale)}</td>
                 </tr>
               ))}
             </tbody>
@@ -1771,7 +1796,7 @@ function Orders({ locale }) {
                   <td style={{color:"#C8860A",fontWeight:600}}>{fmt(o.total)}</td>
                   <td className="td-muted" style={{fontSize:12}}>{o.expected_delivery ? new Date(o.expected_delivery).toLocaleDateString() : "—"}</td>
                   <td className="td-muted" style={{fontSize:12}}>{o.ordered_by_user?.name || o.ordered_by_name || o.ordered_by_id || "—"}</td>
-                  <td>{statusBadge(o.status)}</td>
+                  <td>{statusBadge(o.status, locale)}</td>
                   {canManage && <td style={{display:'flex',gap:8,alignItems:'center'}}>
                     <select className="form-control" style={{padding:"4px 8px",fontSize:12,width:"auto"}}
                       value={o.status} onChange={e=>updateStatus(o.id,e.target.value)}>
@@ -1981,7 +2006,7 @@ function Deliveries({ locale }) {
                       <td className="td-muted" style={{fontSize:12}}>{d.received_by_user?.name || d.received_by_name || (users.find(u=>u.id===d.received_by_id)?.name) || "—"}</td>
                   <td className="td-muted" style={{fontSize:12,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.notes}</td>
                     <td style={{display:'flex',gap:8,alignItems:'center'}}>
-                      {statusBadge(d.status)}
+                      {statusBadge(d.status, locale)}
                       {canManage && d.status !== 'approved' && (
                         <button className="btn btn-primary btn-sm" onClick={async()=>{
                           if (!(await window._app_confirm(t(locale,'deliveries.approve_as_is'), { title: t(locale,'deliveries.approve') || 'Approve Delivery', confirmLabel: t(locale,'btn.approve') || 'Approve', cancelLabel: t(locale,'btn.cancel') || 'Cancel' }))) return;

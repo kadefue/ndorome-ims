@@ -187,7 +187,7 @@ Change these before production.
 
 ## Deployment
 
-This project serves a React/Vite frontend as static files. The production frontend build outputs to `frontend/dist/` and should be served by Nginx from a system path such as `/var/www/supabacked`.
+This project serves a React/Vite frontend as static files. The production frontend build outputs to `frontend/dist/` and should be served by Nginx from a system path such as `/var/www/supafrontend`.
 
 Frontend build and deployment (manual)
 
@@ -202,26 +202,26 @@ npm run build
 - Copy files to the server path (example, run as root or with `sudo`):
 
 ```bash
-sudo rm -rf /var/www/supabacked/*
-sudo cp -r frontend/dist/* /var/www/supabacked/
-sudo chown -R www-data:www-data /var/www/supabacked
-sudo chmod -R 755 /var/www/supabacked
+sudo rm -rf /var/www/supafrontend/*
+sudo cp -r frontend/dist/* /var/www/supafrontend/
+sudo chown -R www-data:www-data /var/www/supafrontend
+sudo chmod -R 755 /var/www/supafrontend
 ```
 
 Nginx example configuration
 
-Place this site config in `/etc/nginx/sites-available/supabacked` and symlink to `/etc/nginx/sites-enabled/`:
+Place this site config in `/etc/nginx/sites-available/supafrontend` and symlink to `/etc/nginx/sites-enabled/`:
 
 ```
 server {
         listen 80;
         server_name example.com; # change to your domain or IP
 
-        root /var/www/supabacked;
+        root /var/www/supafrontend;
         index index.html;
 
-        access_log /var/log/nginx/supabacked.access.log;
-        error_log  /var/log/nginx/supabacked.error.log;
+        access_log /var/log/nginx/supafrontend.access.log;
+        error_log  /var/log/nginx/supafrontend.error.log;
 
         location / {
                 try_files $uri $uri/ /index.html;
@@ -242,8 +242,8 @@ sudo systemctl reload nginx
 
 Permissions & security notes
 
-- Ensure the web server user (commonly `www-data`) owns the files under `/var/www/supabacked`.
-- If using SELinux, apply appropriate contexts (e.g., `semanage fcontext -a -t httpd_sys_content_t '/var/www/supabacked(/.*)?' && restorecon -R /var/www/supabacked`).
+- Ensure the web server user (commonly `www-data`) owns the files under `/var/www/supafrontend`.
+- If using SELinux, apply appropriate contexts (e.g., `semanage fcontext -a -t httpd_sys_content_t '/var/www/supafrontend(/.*)?' && restorecon -R /var/www/supafrontend`).
 
 Automating builds & updates from GitHub
 
@@ -293,7 +293,7 @@ There are two common, simple approaches to automate deploying updated frontend b
                          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
                          chmod 600 ~/.ssh/id_rsa
                          ssh-keyscan -p $SSH_PORT $SSH_HOST >> ~/.ssh/known_hosts || true
-                         rsync -avz -e "ssh -p $SSH_PORT -i ~/.ssh/id_rsa" frontend/dist/ $SSH_USER@$SSH_HOST:/var/www/supabacked/
+                        rsync -avz -e "ssh -p $SSH_PORT -i ~/.ssh/id_rsa" frontend/dist/ $SSH_USER@$SSH_HOST:/var/www/supafrontend/
      ```
 
      - Pros: simple, secure (when using key auth), builds on GitHub runners.
@@ -301,7 +301,7 @@ There are two common, simple approaches to automate deploying updated frontend b
 
 2) Server-side webhook + pull script
 
-     - Run a small deploy script on the server that pulls the repository, builds, and copies files to `/var/www/supabacked`.
+    - Run a small deploy script on the server that pulls the repository, builds, and copies files to `/var/www/supafrontend`.
      - Trigger that script with a GitHub webhook (POST) to a small HTTP listener (or use `git` + `post-receive` hooks if pushing to a bare repo on the server).
 
      Example minimal server script (`/usr/local/bin/deploy-ndorome.sh`):
@@ -315,9 +315,9 @@ There are two common, simple approaches to automate deploying updated frontend b
      cd frontend
      npm ci
      npm run build
-     sudo rm -rf /var/www/supabacked/*
-     sudo cp -r dist/* /var/www/supabacked/
-     sudo chown -R www-data:www-data /var/www/supabacked
+    sudo rm -rf /var/www/supafrontend/*
+    sudo cp -r dist/* /var/www/supafrontend/
+    sudo chown -R www-data:www-data /var/www/supafrontend
      sudo systemctl reload nginx
      ```
 

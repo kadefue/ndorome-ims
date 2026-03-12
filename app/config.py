@@ -10,6 +10,7 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "sqlite:///./ndorome_ims.db"
+    DATABASE_SQLITE: bool = True  # Set to False for PostgreSQL
 
     # JWT
     SECRET_KEY: str = "supa-kariakoo-spare-parts-super-secret-key-change-in-production"
@@ -21,6 +22,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        
         case_sensitive = True
 
 

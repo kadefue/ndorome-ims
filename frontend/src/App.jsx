@@ -654,7 +654,7 @@ const themeCss = `
       "login.hint_owner": "Owner:",
       "login.hint_manager": "Manager:",
       "login.hint_employee": "Employee:",
-      "inventory.sold_below": "⚠️ This product has been sold below cost price. Please review the unit price.",
+      "inventory.sold_below": "⚠️ This product has been sold below {threshold} {currency} per unit. Current: {current_price}.",
     },
     sw: {
       "nav.dashboard": "Dashibodi",
@@ -809,13 +809,19 @@ const themeCss = `
       "login.hint_owner": "Mmiliki:",
       "login.hint_manager": "Meneja:",
       "login.hint_employee": "Mfanyakazi:",
-      "inventory.sold_below": "Bidhaa hii imeuzwa chini ya {threshold} {currency} kwa kifungu. Thamani ya sasa: {current_price} {currency}.",
+      "inventory.sold_below": "Bidhaa hii imeuzwa chini ya {threshold} {currency} kwa kifungu. Thamani ya sasa: {current_price}.",
     }
 };
 
 const t = (locale, key) => (TRANSLATIONS[locale] && TRANSLATIONS[locale][key]) || TRANSLATIONS.en[key] || key;
 
 const fmt = (n) => 'TZS ' + Number(n || 0).toLocaleString();
+
+// Simple template replacer for translation strings with {placeholders}
+const formatMessage = (template, vars = {}) => {
+  if (!template) return '';
+  return Object.keys(vars).reduce((s, k) => s.split('{' + k + '}').join(vars[k]), template);
+};
 
 const humanDate = (value) => {
   if (!value) return '';
@@ -1088,10 +1094,12 @@ function Inventory({ locale }) {
       const [pList, sList, oList] = await Promise.all([apiFetch('/products'), apiFetch('/sales').catch(()=>[]), apiFetch('/orders').catch(()=>[])]);
       // mark products that have been sold below current unit_price and whether referenced by sales/orders
       const withFlag = pList.map(p => {
-        const soldBelow = (sList || []).some(s => ((s.product_id || s.product?.id) === p.id) && (s.unit_price < p.unit_price));
-        const hasSales = (sList || []).some(s => (s.product_id === p.id) || (s.product && s.product.id === p.id));
+          const salePrices = (sList || []).filter(s => ((s.product_id || s.product?.id) === p.id) && typeof s.unit_price === 'number').map(s => s.unit_price);
+          const minSalePrice = salePrices.length ? Math.min(...salePrices) : null;
+          const soldBelow = (minSalePrice !== null) && (minSalePrice < p.unit_price);
+          const hasSales = (sList || []).some(s => (s.product_id === p.id) || (s.product && s.product.id === p.id));
         const hasOrders = (oList || []).some(o => (o.product_id === p.id) || (o.product && o.product.id === p.id));
-        return { ...p, soldBelow, hasReferences: !!(hasSales || hasOrders) };
+        return { ...p, soldBelow, soldBelowValue: minSalePrice, hasReferences: !!(hasSales || hasOrders) };
       });
       setProducts(withFlag);
     } catch (err) {
@@ -1277,7 +1285,7 @@ function Inventory({ locale }) {
                 <tr key={p.id}>
                   <td>
                     <div style={{display:'flex',alignItems:'center',gap:8}}>
-                      <div style={{flex:1,fontWeight:500}}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))} {p.soldBelow && <span style={{marginLeft:8}} className="badge badge-danger">{t(locale,'inventory.sold_below')||'Sold below price'}</span>}</div>
+                      <div style={{flex:1,fontWeight:500}}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))} {p.soldBelow && <span style={{marginLeft:8}} className="badge badge-danger">{formatMessage(t(locale,'inventory.sold_below')||'Sold below price', { threshold: fmt(p.soldBelowValue), current_price: fmt(p.unit_price), currency: 'TZS' })}</span>}</div>
                       <div style={{display:'flex',gap:6}}>
                         <button className="btn btn-secondary btn-sm" onClick={()=>openEdit(p)} disabled={!canEdit} title={!canEdit ? 'Insufficient permissions' : 'Edit product'}>✎</button>
                         <button className="btn btn-danger btn-sm" onClick={() => del(p.id)} disabled={!canEdit || p.hasReferences} title={!canEdit ? 'Insufficient permissions' : (p.hasReferences ? 'Cannot delete: existing sales or orders reference this item' : 'Delete product')}>🗑</button>

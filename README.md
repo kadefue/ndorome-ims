@@ -185,6 +185,151 @@ Change these before production.
 - Add DB-level UNIQUE constraints on `products.sku` and `products.name` before deploying (recommended).
 - Run the backend under a process manager (systemd / Docker / supervisor) and serve the frontend as static files behind Nginx.
 
+## Deployment
+
+This project serves a React/Vite frontend as static files. The production frontend build outputs to `frontend/dist/` and should be served by Nginx from a system path such as `/var/www/supabacked`.
+
+Frontend build and deployment (manual)
+
+- Build the frontend:
+
+```bash
+cd frontend
+npm ci
+npm run build
+```
+
+- Copy files to the server path (example, run as root or with `sudo`):
+
+```bash
+sudo rm -rf /var/www/supabacked/*
+sudo cp -r frontend/dist/* /var/www/supabacked/
+sudo chown -R www-data:www-data /var/www/supabacked
+sudo chmod -R 755 /var/www/supabacked
+```
+
+Nginx example configuration
+
+Place this site config in `/etc/nginx/sites-available/supabacked` and symlink to `/etc/nginx/sites-enabled/`:
+
+```
+server {
+        listen 80;
+        server_name example.com; # change to your domain or IP
+
+        root /var/www/supabacked;
+        index index.html;
+
+        access_log /var/log/nginx/supabacked.access.log;
+        error_log  /var/log/nginx/supabacked.error.log;
+
+        location / {
+                try_files $uri $uri/ /index.html;
+        }
+
+        # Optional: enable gzip for static assets
+        gzip on;
+        gzip_types text/css application/javascript application/json image/svg+xml;
+}
+```
+
+After creating the config, test and reload Nginx:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Permissions & security notes
+
+- Ensure the web server user (commonly `www-data`) owns the files under `/var/www/supabacked`.
+- If using SELinux, apply appropriate contexts (e.g., `semanage fcontext -a -t httpd_sys_content_t '/var/www/supabacked(/.*)?' && restorecon -R /var/www/supabacked`).
+
+Automating builds & updates from GitHub
+
+There are two common, simple approaches to automate deploying updated frontend builds from GitHub:
+
+1) GitHub Actions → SSH (recommended for small setups)
+
+     - Create a GitHub Actions workflow that builds the frontend and copies the built files to your server using SSH/SCP or `rsync`.
+     - Store `SSH_PRIVATE_KEY`, `SSH_USER`, `SSH_HOST`, and optional `SSH_PORT` as repository secrets.
+
+     Example workflow (save as `.github/workflows/deploy-frontend.yml`):
+
+     ```yaml
+     name: Build and Deploy Frontend
+
+     on:
+         push:
+             branches: [ main ]
+
+     jobs:
+         build-and-deploy:
+             runs-on: ubuntu-latest
+
+             steps:
+                 - name: Checkout
+                     uses: actions/checkout@v4
+
+                 - name: Setup Node
+                     uses: actions/setup-node@v4
+                     with:
+                         node-version: '22'
+
+                 - name: Install and Build
+                     working-directory: frontend
+                     run: |
+                         npm ci
+                         npm run build
+
+                 - name: Deploy to server with rsync
+                     env:
+                         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+                         SSH_USER: ${{ secrets.SSH_USER }}
+                         SSH_HOST: ${{ secrets.SSH_HOST }}
+                         SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+                     run: |
+                         mkdir -p ~/.ssh
+                         echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+                         chmod 600 ~/.ssh/id_rsa
+                         ssh-keyscan -p $SSH_PORT $SSH_HOST >> ~/.ssh/known_hosts || true
+                         rsync -avz -e "ssh -p $SSH_PORT -i ~/.ssh/id_rsa" frontend/dist/ $SSH_USER@$SSH_HOST:/var/www/supabacked/
+     ```
+
+     - Pros: simple, secure (when using key auth), builds on GitHub runners.
+     - Cons: requires SSH access from CI to server.
+
+2) Server-side webhook + pull script
+
+     - Run a small deploy script on the server that pulls the repository, builds, and copies files to `/var/www/supabacked`.
+     - Trigger that script with a GitHub webhook (POST) to a small HTTP listener (or use `git` + `post-receive` hooks if pushing to a bare repo on the server).
+
+     Example minimal server script (`/usr/local/bin/deploy-ndorome.sh`):
+
+     ```bash
+     #!/usr/bin/env bash
+     set -e
+     cd /home/deploy/ndorome-ims || exit 1
+     git fetch --all
+     git reset --hard origin/main
+     cd frontend
+     npm ci
+     npm run build
+     sudo rm -rf /var/www/supabacked/*
+     sudo cp -r dist/* /var/www/supabacked/
+     sudo chown -R www-data:www-data /var/www/supabacked
+     sudo systemctl reload nginx
+     ```
+
+     - Protect the webhook endpoint (shared secret, IP allowlist, or use a tool like `git-php-deploy`, `webhook` by `adnanh`, or `ngrok` for dev).
+
+Which method to choose
+
+- For small teams or straightforward setups, GitHub Actions → rsync is easiest and requires no additional server services.
+- For more control on the server (e.g., building server-side or complex deployment steps), use the webhook + server-side script approach.
+
+If you'd like, I can add the GitHub Actions workflow file and an example Nginx site file into this repo — tell me which option you prefer.
+
 ---
 
 ## Tech Stack

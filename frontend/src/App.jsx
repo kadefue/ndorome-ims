@@ -1139,8 +1139,31 @@ function Inventory({ locale }) {
 
   async function save() {
     // Inventory page only allows updating unit_price and quantity
-    if (!editing) return;
     try { window._app_show_toast && window._app_show_toast('Saving product...', 'info'); } catch {}
+
+    // If no `editing` product, create a new product
+    if (!editing) {
+      const payload = {
+        name: form.name,
+        sku: form.sku,
+        category: form.category || form.category_select || 'Uncategorized',
+        quantity: +(form.quantity || 0),
+        min_quantity: +(form.min_quantity || 5),
+        unit_price: +form.unit_price,
+        supplier: form.supplier || null,
+        location: form.location || null,
+      };
+      try {
+        const created = await apiFetch('/products', { method: 'POST', body: JSON.stringify(payload) });
+        setShowSidebar(false);
+        window._app_show_toast && window._app_show_toast('Product created', 'success');
+        load();
+      } catch (err) {
+        // apiFetch already shows toast on error
+      }
+      return;
+    }
+
     const body = {
       name: form.name,
       sku: form.sku,

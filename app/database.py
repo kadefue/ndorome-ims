@@ -4,11 +4,18 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from app.config import settings
 
 # SQLite engine with WAL mode for better concurrency
-engine = create_engine(
-    settings.DATABASE_URL,
-    connect_args={"check_same_thread": False},  # Required for SQLite + FastAPI threading
-    echo=settings.DEBUG,                         # Log SQL queries in DEBUG mode
-)
+if settings.DATABASE_SQLITE:
+    engine = create_engine(
+        settings.DATABASE_URL,
+        connect_args={"check_same_thread": False},  # Required for SQLite + FastAPI threading
+        echo=settings.DEBUG,                         # Log SQL queries in DEBUG mode
+    )
+else:
+    # PostgreSQL engine (no special connect_args needed)
+    engine = create_engine(
+        settings.DATABASE_URL,
+        pool_pre_ping=True
+    )
 
 # Enable WAL journal mode and foreign keys for SQLite
 @event.listens_for(engine, "connect")

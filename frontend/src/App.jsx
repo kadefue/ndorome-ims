@@ -503,6 +503,7 @@ const themeCss = `
   // ── Translations ───────────────────────────────────────────────────────────
   const TRANSLATIONS = {
     en: {
+      "title.dashboard": "Spare Parts IMS",
       "nav.dashboard": "Dashboard",
       "nav.inventory": "Inventory",
       "nav.sales": "Sales",
@@ -654,9 +655,10 @@ const themeCss = `
       "login.hint_owner": "Owner:",
       "login.hint_manager": "Manager:",
       "login.hint_employee": "Employee:",
-      "inventory.sold_below": "⚠️ This product has been sold below {threshold} {currency} per unit. Current: {current_price}.",
+      "inventory.sold_below": "⚠️ This product has been sold below {threshold} per unit. Current: {current_price}.",
     },
     sw: {
+      "title.dashboard": "Mfumo wa Kuuza na Kusambaza Spea",
       "nav.dashboard": "Dashibodi",
       "nav.inventory": "Orodha ya Stoku",
       "nav.sales": "Mauzo",
@@ -809,7 +811,7 @@ const themeCss = `
       "login.hint_owner": "Mmiliki:",
       "login.hint_manager": "Meneja:",
       "login.hint_employee": "Mfanyakazi:",
-      "inventory.sold_below": "Bidhaa hii imeuzwa chini ya {threshold} {currency} kwa kifungu. Thamani ya sasa: {current_price}.",
+      "inventory.sold_below": "Bidhaa hii imeuzwa chini ya {threshold} kwa kifungu. Thamani ya sasa: {current_price}.",
     }
 };
 
@@ -2662,7 +2664,7 @@ function AppShell({ user, onLogout, locale, setLocale }) {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>🔧 Supa Kariakoo</h1>
-          <span>Spare Parts IMS</span>
+          <span>{t(locale,'title.dashboard')}</span>
         </div>
         <div className="sidebar-user">
           <div className="user-avatar">{initials(user.name)}</div>

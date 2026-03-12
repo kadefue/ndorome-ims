@@ -6,7 +6,8 @@ import {
 
 // ── Auth Context ──────────────────────────────────────────────────────────────
 const AuthContext = createContext(null);
-const API = "http://localhost:8000";
+// API base URL read from Vite env variable `VITE_API_URL` with fallback
+const API = (import.meta && import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:8000";
 
 function useAuth() { return useContext(AuthContext); }
 

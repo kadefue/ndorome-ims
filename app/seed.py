@@ -18,7 +18,7 @@ from app.config import settings
 from app.database import engine, Base
 from sqlalchemy import func
 
-
+#sample data definitions for seeding
 USERS = [
     {"name": "Kadeghe Ndorome",  "email": "owner@ndorome.com",   "password": "owner123",   "role": "owner"},
     {"name": "Alice Mangi",   "email": "manager@ndorome.com", "password": "manager123", "role": "manager"},

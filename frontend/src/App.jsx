@@ -955,9 +955,9 @@ function LoginPage({ onLogin, locale }) {
           </button>
         </form>
         <div className="login-hint">
-          <div><strong>{t(locale,'login.hint_owner')}</strong> owner@supakariakoo.com / owner123</div>
-          <div><strong>{t(locale,'login.hint_manager')}</strong> manager@supakariakoo.com / manager123</div>
-          <div><strong>{t(locale,'login.hint_employee')}</strong> employee@supakariakoo.com / emp123</div>
+          <div><strong>{t(locale,'login.hint_owner')}</strong> owner@ndorome.com / owner123</div>
+          <div><strong>{t(locale,'login.hint_manager')}</strong> manager@ndorome.com / manager123</div>
+          <div><strong>{t(locale,'login.hint_employee')}</strong> employee@ndorome.com / emp123</div>
         </div>
       </div>
     </div>

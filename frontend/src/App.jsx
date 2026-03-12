@@ -1799,16 +1799,25 @@ function Orders({ locale }) {
                   <td>{statusBadge(o.status, locale)}</td>
                   {canManage && <td style={{display:'flex',gap:8,alignItems:'center'}}>
                     <select className="form-control" style={{padding:"4px 8px",fontSize:12,width:"auto"}}
-                      value={o.status} onChange={e=>updateStatus(o.id,e.target.value)}>
-                      {["pending","in_transit","delivered","cancelled"].map(s=><option key={s} value={s}>{s.replace("_"," ")}</option>)}
+                      value={o.status}
+                      disabled={o.delivery_status === 'approved' && user.role !== 'owner'}
+                      onChange={e=>{
+                        const newStatus = e.target.value;
+                        if (o.delivery_status === 'approved' && user.role !== 'owner') {
+                          try { window._app_show_toast && window._app_show_toast('Cannot change status: delivery already approved', 'warning'); } catch {}
+                          return;
+                        }
+                        updateStatus(o.id, newStatus);
+                      }}>
+                      {["pending","in_transit","delivered","cancelled"].map(s=> <option key={s} value={s}>{s.replace("_"," ")}</option>)}
                     </select>
                     <button className="btn btn-secondary btn-sm" onClick={()=>{
-                      if (o.delivery_status === 'approved') {
+                      if (o.delivery_status === 'approved' && user.role !== 'owner') {
                         try { window._app_show_toast && window._app_show_toast('Cannot edit order: delivery already approved', 'warning'); } catch {}
                         return;
                       }
                       openEditOrder(o);
-                    }} title={o.delivery_status==='approved'? 'Order has approved delivery and cannot be edited':''}>{t(locale,'btn.edit_order')||'Edit'}</button>
+                    }} title={o.delivery_status==='approved' && user.role !== 'owner' ? 'Order has approved delivery and cannot be edited' : ''}>{t(locale,'btn.edit_order')||'Edit'}</button>
                    
                   </td>}
                 </tr>

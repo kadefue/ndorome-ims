@@ -330,6 +330,115 @@ Which method to choose
 
 If you'd like, I can add the GitHub Actions workflow file and an example Nginx site file into this repo — tell me which option you prefer.
 
+## Backend deployment (Gunicorn + PM2)
+
+The backend runs locally on port `8000` and should be routed by Nginx under the `/api/` path. Below are two complementary ways to run and manage the Python FastAPI app in production: (1) Gunicorn with Uvicorn workers (recommended), and (2) PM2 (useful when you already use PM2 for other services).
+
+1) Gunicorn + Uvicorn workers (recommended)
+
+Install requirements in your virtualenv:
+
+```bash
+pip install "gunicorn>=20" "uvicorn[standard]"
+```
+
+Run:
+
+```bash
+# from repository root, with your venv activated
+gunicorn -k uvicorn.workers.UvicornWorker main:app --bind 127.0.0.1:8000 --workers 4 --log-level info
+```
+
+Example `systemd` unit (`/etc/systemd/system/ndorome.service`):
+
+```
+[Unit]
+Description=ndorome-ims FastAPI app
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/home/deploy/ndorome-ims
+Environment="PATH=/home/deploy/ndorome-ims/venv/bin"
+ExecStart=/home/deploy/ndorome-ims/venv/bin/gunicorn -k uvicorn.workers.UvicornWorker main:app --bind 127.0.0.1:8000 --workers 4
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start the service:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now ndorome.service
+```
+
+2) PM2-managed process (optional)
+
+If you already use `pm2` to manage processes, you can start the backend build command through PM2 which will keep it running and provide logs/auto-restart. Install PM2 on the server:
+
+```bash
+sudo npm i -g pm2
+```
+
+Start a shell command via PM2 (example using `uvicorn` from the venv):
+
+```bash
+pm2 start --name ndorome-backend --interpreter bash -- 'source /home/deploy/ndorome-ims/venv/bin/activate && uvicorn main:app --host 127.0.0.1 --port 8000 --workers 4'
+pm2 save
+```
+
+Or create an `ecosystem.config.js` to define the process and environment variables:
+
+```js
+module.exports = {
+    apps: [{
+        name: 'ndorome-backend',
+        script: '/bin/bash',
+        args: '-lc "source /home/deploy/ndorome-ims/venv/bin/activate && uvicorn main:app --host 127.0.0.1 --port 8000 --workers 4"',
+        env: {
+            PATH: '/home/deploy/ndorome-ims/venv/bin',
+        }
+    }]
+}
+```
+
+Then start:
+
+```bash
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup  # follow printed instructions to enable on boot
+```
+
+Notes on both approaches
+
+- Ensure the process binds to `127.0.0.1:8000` (not 0.0.0.0) so only Nginx can access it locally.
+- Tune `--workers` according to CPU cores and expected load (common: 2-4 per vCPU for async Uvicorn workers).
+- Forward logs to systemd / pm2 logs for easy troubleshooting.
+
+Nginx reverse-proxy for `/api/`
+
+Add this `location` into your Nginx server block that serves the static frontend (`/var/www/supafrontend`):
+
+```
+        # Route API requests to backend running on localhost:8000
+        location /api/ {
+                proxy_pass http://127.0.0.1:8000/;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_redirect off;
+        }
+```
+
+This configuration strips the `/api/` prefix and forwards the remaining path to the backend (for example, `/api/users` → `http://127.0.0.1:8000/users`). If you'd rather keep the prefix, adjust `proxy_pass` accordingly.
+
+If you want, I can also add a ready-to-use `systemd` unit file or `ecosystem.config.js` into this repo under a `deploy/` folder — tell me which you prefer.
+
 ---
 
 ## Tech Stack

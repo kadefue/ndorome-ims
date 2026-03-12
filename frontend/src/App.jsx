@@ -1142,6 +1142,8 @@ function Inventory({ locale }) {
     if (!editing) return;
     try { window._app_show_toast && window._app_show_toast('Saving product...', 'info'); } catch {}
     const body = {
+      name: form.name,
+      sku: form.sku,
       unit_price: +form.unit_price,
       // Do not allow direct quantity updates from Inventory UI; stock updates only via delivery approval
     };
@@ -1297,8 +1299,14 @@ function Inventory({ locale }) {
           footer={<><button className="btn btn-secondary" onClick={()=>setShowSidebar(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={save}>{t(locale,'btn.save')}</button></>}>
             <div className="form-grid">
               <div style={{gridColumn: '1 / -1'}}>
-                <div style={{fontWeight:700,fontSize:14,marginBottom:8}}>{form.name || editing?.name}</div>
-                <div style={{fontSize:12,color:'#8B949E',marginBottom:12}}>SKU: {form.sku || editing?.sku}</div>
+                <div className="form-group">
+                  <label className="form-label">Product name</label>
+                  <input className="form-control" placeholder="Product name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">SKU</label>
+                  <input className="form-control" placeholder="SKU" value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} />
+                </div>
               </div>
               <div className="form-group">
                 <label className="form-label">{t(locale,'form.quantity')}</label>

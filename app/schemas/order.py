@@ -11,6 +11,7 @@ class OrderCreate(BaseModel):
     quantity: int = Field(..., gt=0)
     unit_price: float = Field(..., gt=0)
     supplier: Optional[str] = Field(None, max_length=200)
+    location: Optional[str] = Field(None, max_length=100)
     expected_delivery: Optional[date] = None
     notes: Optional[str] = Field(None, max_length=500)
 
@@ -21,6 +22,7 @@ class OrderUpdate(BaseModel):
     notes: Optional[str] = None
     quantity: Optional[int] = Field(None, gt=0)
     unit_price: Optional[float] = Field(None, gt=0)
+    location: Optional[str] = Field(None, max_length=100)
 
 
 class OrderResponse(BaseModel):
@@ -31,6 +33,7 @@ class OrderResponse(BaseModel):
     unit_price: float
     total: float
     supplier: Optional[str]
+    location: Optional[str]
     status: str
     expected_delivery: Optional[date]
     notes: Optional[str]

@@ -66,6 +66,7 @@ def create_order(db: Session, order_in: OrderCreate, ordered_by_id: int) -> Orde
         unit_price=order_in.unit_price,
         total=total,
         supplier=order_in.supplier,
+        location=getattr(order_in, 'location', None),
         expected_delivery=order_in.expected_delivery,
         notes=order_in.notes,
         status="pending",

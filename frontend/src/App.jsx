@@ -1599,7 +1599,7 @@ function Orders({ locale }) {
   const [productEditorShow, setProductEditorShow] = useState(false);
   const [productEditorForm, setProductEditorForm] = useState(null);
   const [productEditorLoading, setProductEditorLoading] = useState(false);
-  const [form, setForm] = useState({product_id:"",product_name:"",quantity:"",unit_price:"",supplier:"",expected_delivery:""});
+  const [form, setForm] = useState({product_id:"",product_name:"",quantity:"",unit_price:"",supplier:"",location:"",expected_delivery:""});
   const canManage = user.role !== "employee";
 
   const load = () => Promise.all([apiFetch("/orders"),apiFetch("/products?include_unstocked=true"), apiFetch('/settings/categories'), apiFetch('/settings/templates')]).then(([o,p,c,t])=>{setOrders(o);setProducts(p); setCategories(c||[]); setTemplates(t||[]);});
@@ -1608,7 +1608,7 @@ function Orders({ locale }) {
   async function saveOrder() {
     try { window._app_show_toast && window._app_show_toast('Saving order...', 'info'); } catch {}
     const selProd = products.find(p=>p.id===form.product_id);
-    const payload = { product_id: +form.product_id, product_name: selProd?.display_name || selProd?.name || form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, supplier: form.supplier, expected_delivery: form.expected_delivery, notes: form.notes };
+    const payload = { product_id: +form.product_id, product_name: selProd?.display_name || selProd?.name || form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, supplier: form.supplier, location: form.location, expected_delivery: form.expected_delivery, notes: form.notes };
     try {
       if (editingOrder) {
         await apiFetch('/orders/' + editingOrder.id, { method: 'PUT', body: JSON.stringify(payload) });
@@ -1632,7 +1632,7 @@ function Orders({ locale }) {
   function openEditOrder(order) {
     try { window._app_show_toast && window._app_show_toast('Opening order editor', 'info'); } catch {}
     setEditingOrder(order);
-    setForm({ product_id: order.product_id?.toString() || '', product_name: order.product_name || '', quantity: order.quantity, unit_price: order.unit_price, supplier: order.supplier || '', expected_delivery: order.expected_delivery || '', status: order.status || 'pending', notes: order.notes || '' });
+    setForm({ product_id: order.product_id?.toString() || '', product_name: order.product_name || '', quantity: order.quantity, unit_price: order.unit_price, supplier: order.supplier || '', location: order.location || '', expected_delivery: order.expected_delivery || '', status: order.status || 'pending', notes: order.notes || '' });
     setShowModal(true);
   }
 
@@ -1674,7 +1674,7 @@ function Orders({ locale }) {
       setProducts(pList); setOrders(oList);
       // if created new product, set it on the order form
       if (!productEditorForm.id && res && res.id) {
-        setForm(f => ({ ...f, product_id: res.id, unit_price: res.unit_price, supplier: res.supplier, product_name: res.name }));
+        setForm(f => ({ ...f, product_id: res.id, unit_price: res.unit_price, supplier: res.supplier, location: res.location || '', product_name: res.name }));
       }
       try { window._app_show_toast && window._app_show_toast(isNew ? 'Product created' : 'Product saved', 'success'); } catch {}
     } catch (err) {
@@ -1856,7 +1856,7 @@ function Orders({ locale }) {
                   return;
                 }
                 const p = products.find(x => x.id === val);
-                setForm({ ...form, product_id: val, supplier: p?.supplier || "", unit_price: p?.unit_price || "" });
+                setForm({ ...form, product_id: val, supplier: p?.supplier || "", location: p?.location || "", unit_price: p?.unit_price || "" });
               }}>
                 <option value="">{t(locale,'form.select_product')}</option>
                 {products.map(p=><option key={p.id} value={p.id}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))}</option>)}
@@ -1870,6 +1870,7 @@ function Orders({ locale }) {
             <div className="form-group"><label className="form-label">{t(locale,'form.unit_price_tzs')}</label><input className="form-control" type="number" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})}/></div>
           </div>
           <div className="form-group"><label className="form-label">{t(locale,'form.supplier')}</label><input className="form-control" value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})}/></div>
+          <div className="form-group"><label className="form-label">{t(locale,'form.location') || 'Location'}</label><input className="form-control" value={form.location} onChange={e=>setForm({...form,location:e.target.value})}/></div>
           <div className="form-group"><label className="form-label">{t(locale,'orders.expected_delivery')}</label><input className="form-control" type="date" value={form.expected_delivery} onChange={e=>setForm({...form,expected_delivery:e.target.value})}/></div>
           <div className="form-group"><label className="form-label">{t(locale,'table.status')}</label>
             <select className="form-control" value={form.status||'pending'} onChange={e=>setForm({...form,status:e.target.value})}>

@@ -15,6 +15,7 @@ class Order(Base):
     unit_price        = Column(Float, nullable=False)
     total             = Column(Float, nullable=False)
     supplier          = Column(String(200), nullable=True)
+    location          = Column(String(100), nullable=True)
     status            = Column(String(30), default="pending", index=True)
     # Status options: pending | in_transit | delivered | cancelled
     expected_delivery = Column(Date, nullable=True)

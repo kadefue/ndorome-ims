@@ -2271,9 +2271,10 @@ function ModelsPage({ locale }) {
     <div className="page">
       <div className="page-header">
         <div>
-      
-      
-      
+          <div className="page-title">{t(locale,'page.models') || 'Motorcycle Models'}</div>
+          <div className="page-subtitle">Manage motorcycle models</div>
+        </div>
+      </div>
       <div className="card">
         <div className="card-header"><span className="card-title">Add Model</span></div>
         <div style={{padding:16}}>

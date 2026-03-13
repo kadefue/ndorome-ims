@@ -994,6 +994,7 @@ function Dashboard({ locale }) {
 
   const monthlyData = Object.entries(stats.monthly_sales).map(([m,v]) => ({month:m, revenue:v}));
   const catData = Object.entries(stats.category_stock).map(([name,value]) => ({name,value}));
+  const salesCatData = stats.category_sales ? Object.entries(stats.category_sales).map(([name,value]) => ({name,value})) : Object.entries(stats.category_stock).map(([name]) => ({name, value: 0}));
 
   return (
     <div className="page">
@@ -1020,19 +1021,33 @@ function Dashboard({ locale }) {
         </div>
           
 
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">{t(locale,'charts.stock_by_category')}</span>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,width:'100%'}}>
+          <div className="card">
+            <div className="card-header"><span className="card-title">{t(locale,'charts.stock_by_category')}</span></div>
+            <div className="card-body">
+              <ResponsiveContainer width="100%" aspect={1}>
+                <PieChart>
+                  <Pie data={catData} nameKey="name" cx="50%" cy="50%" innerRadius={"30%"} outerRadius={"60%"} paddingAngle={3} dataKey="value">
+                    {catData.map((e,i) => <Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>) }
+                  </Pie>
+                  <Tooltip formatter={(value,name) => [fmt(value), name]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:13}}/>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-          <div className="card-body">
-            <ResponsiveContainer width="100%" aspect={1}>
-              <PieChart>
-                <Pie data={catData} cx="50%" cy="50%" innerRadius={"30%"} outerRadius={"60%"} paddingAngle={3} dataKey="value">
-                  {catData.map((e,i) => <Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>)}
-                </Pie>
-                <Tooltip formatter={(value,name) => [fmt(value), name]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:13}}/>
-              </PieChart>
-            </ResponsiveContainer>
+
+          <div className="card">
+            <div className="card-header"><span className="card-title">Sales by Category</span></div>
+            <div className="card-body">
+              <ResponsiveContainer width="100%" aspect={1}>
+                <PieChart>
+                  <Pie data={salesCatData} nameKey="name" cx="50%" cy="50%" innerRadius={"28%"} outerRadius={"60%"} paddingAngle={3} dataKey="value">
+                    {salesCatData.map((e,i) => <Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>) }
+                  </Pie>
+                  <Tooltip formatter={(value,name) => [fmt(value), name]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:13}}/>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       </div>

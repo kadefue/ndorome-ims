@@ -3865,11 +3865,26 @@ export default function App() {
           body,
           styles: { fontSize: 10 },
           margin: { left: marginLeft, right: 40, bottom: 60 },
+          // Draw watermark before table content so it appears behind rows/cells.
+          willDrawPage: function () {
+            // Tiled diagonal watermark for better visibility behind dense tables.
+            doc.setFontSize(40);
+            doc.setTextColor(238, 238, 238);
+            const stepX = 280;
+            const stepY = 180;
+            for (let y = 90; y < pageHeight; y += stepY) {
+              for (let x = 80; x < pageWidth; x += stepX) {
+                doc.text('Supa Kariakoo', x, y, { angle: 32 });
+              }
+            }
+          },
+
           didDrawPage: function (data) {
             const sys = 'Spare Parts IMS';
             const now = new Date().toLocaleString();
             const footer = `${sys} • ${now} • ${uname} • IP: ${ipAddress} • ${siteUrl}`;
             doc.setFontSize(9);
+            doc.setTextColor(90, 90, 90);
             doc.text(footer, data.settings.margin.left, pageHeight - 20);
           }
         });

@@ -1018,41 +1018,58 @@ function Dashboard({ locale }) {
           <div className="stat-value">{stats.total_sales}</div>
           <div className="stat-sub">{t(locale,'stat.transactions_recorded')}</div>
         </div>
-        <div className="stat-card green">
-          <div className="stat-icon green">📦</div>
-          <div className="stat-label">{t(locale,'stat.inventory_value')}</div>
-          <div className="stat-value">{fmt(stats.inventory_value)}</div>
-          <div className="stat-sub">{t(locale,'stat.inventory_products').replace('{count}', stats.total_products)}</div>
-        </div>
-        <div className="stat-card red">
-          <div className="stat-icon red">⚠️</div>
-          <div className="stat-label">{t(locale,'stat.low_stock_alerts')}</div>
-          <div className="stat-value">{stats.low_stock_count}</div>
-          <div className="stat-sub">Items need reordering</div>
+          <div className="card">
+        <div className="card-header"><span className="card-title">{t(locale,'users.system_users_title')}</span></div>
+        <div className="table-wrap">
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:12}}>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span className="search-icon">🔍</span>
+              <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={searchUsers} onChange={e=>{ setSearchUsers(e.target.value); setUserPage(1); }} />
+            </div>
+            <div>
+              <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
+              <select value={userPageSize} onChange={e=>{ setUserPageSize(+e.target.value); setUserPage(1); }}>
+                {userPageOptions.map(n=> <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th onClick={()=>toggleUserSort('name')}>{t(locale,'table.name')}</th><th onClick={()=>toggleUserSort('email')}>{t(locale,'table.email')}</th><th onClick={()=>toggleUserSort('role')}>{t(locale,'table.role')}</th><th>{t(locale,'table.status')}</th>{user.role==="owner" && <th>{t(locale,'orders.actions') || 'Actions'}</th>}</tr></thead>
+            <tbody>
+              {userPaged.map(u=>(
+                <tr key={u.id}>
+                  <td>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div className="user-avatar">{initials(u.name)}</div>
+                      <div style={{fontWeight:500}}>{u.name}</div>
+                    </div>
+                  </td>
+                  <td className="td-muted">{u.email}</td>
+                  <td><span className={"badge role-" + u.role}>{u.role}</span></td>
+                  <td><span className={"badge " + (u.active?"badge-success":"badge-danger")}>{u.active? t(locale,'user.status.active') : t(locale,'user.status.inactive')}</span></td>
+                  {user.role==="owner" && (
+                    <td>
+                      {u.role !== 'owner' ? (
+                        <div style={{display:'flex',gap:8}}>
+                          <button className="btn btn-secondary btn-sm" onClick={()=>openEditUser(u)}>{t(locale,'btn.edit') || 'Edit'}</button>
+                          <button className="btn btn-danger btn-sm" onClick={()=>toggleActive(u)}>{u.active ? 'Deactivate' : 'Activate'}</button>
+                        </div>
+                      ) : (
+                        <span className="td-muted">—</span>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{display:'flex',justifyContent:'center',alignItems:'center',padding:10}}>
+            <button disabled={userPage<=1} onClick={()=>setUserPage(p=>Math.max(1,p-1))}>Prev</button>
+            <span style={{margin:'0 8px'}}>{Math.min((userPage-1)*userPageSize+1, userTotal || 0)}-{Math.min(userPage*userPageSize,userTotal || 0)} of {userTotal}</span>
+            <button disabled={userPage>=userPageCount} onClick={()=>setUserPage(p=>Math.min(userPageCount,p+1))}>Next</button>
+          </div>
         </div>
       </div>
-
-      <div className="charts-grid">
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">{t(locale,'charts.monthly_revenue')}</span>
-            <span className="badge-pill">2024</span>
-          </div>
-          <div className="card-body">
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={monthlyData}>
-                <defs>
-                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#C8860A" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#C8860A" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#21262D"/>
-                <XAxis dataKey="month" tick={{fill:"#8B949E",fontSize:11}} axisLine={false} tickLine={false}/>
-                <YAxis tick={{fill:"#8B949E",fontSize:11}} axisLine={false} tickLine={false} tickFormatter={v => (v/1000) + 'k'}/>
-                <Tooltip formatter={v=>[fmt(v),"Revenue"]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:12}}/>
-                <Area type="monotone" dataKey="revenue" stroke="#C8860A" strokeWidth={2} fill="url(#revGrad)"/>
-              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -2148,7 +2165,55 @@ function Settings({ locale }) {
             <input className="form-control" placeholder="Add category" value={catInput} onChange={e=>setCatInput(e.target.value)} style={{width:220}} />
             <button className="btn btn-primary" onClick={addCategory}>Add</button>
           </div>
-          <div style={{marginTop:12}}>{categories.length?categories.map(c=> <span key={c} className="badge badge-info" style={{marginRight:6}}>{c}</span>) : <span className="td-muted">No categories yet</span>}</div>
+          <div style={{marginTop:12}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div>{/* left spacer */}</div>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <span className="search-icon">🔍</span>
+                <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={searchCats} onChange={e=>{ setSearchCats(e.target.value); setCatPage(1); }} />
+              </div>
+            </div>
+            <div style={{marginTop:12}}>{categories.length ? (
+              <div className="table-wrap">
+                <table>
+                  <thead><tr><th onClick={()=>toggleCatSort('name')}>Name</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    {catPaged.map(c => (
+                      <tr key={c.id}>
+                        <td>{editingId===c.id ? <input className="form-control" value={editingName} onChange={e=>setEditingName(e.target.value)} /> : <strong>{c.name}</strong>}</td>
+                        <td>
+                          {editingId===c.id ? (
+                            <>
+                              <button className="btn btn-primary btn-sm" onClick={saveEdit}>Save</button>
+                              <button className="btn btn-secondary btn-sm" style={{marginLeft:8}} onClick={()=>{ setEditingId(null); setEditingName(''); }}>Cancel</button>
+                            </>
+                          ) : (
+                            <>
+                              <button className="btn btn-secondary btn-sm" onClick={()=>startEdit(c)}>Edit</button>
+                              <button className="btn btn-danger btn-sm" style={{marginLeft:8}} onClick={()=>deleteCategory(c.id)} disabled={(categoriesUsage[c.id]||0) > 0}>{(categoriesUsage[c.id]||0) > 0 ? `Delete (${categoriesUsage[c.id]})` : 'Delete'}</button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : <span className="td-muted">No categories yet</span>}</div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10}}>
+              <div>
+                <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
+                <select value={catPageSize} onChange={e=>{ setCatPageSize(+e.target.value); setCatPage(1); }}>
+                  {catPageOptions.map(n=> <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              <div>
+                <button disabled={catPage<=1} onClick={()=>setCatPage(p=>Math.max(1,p-1))}>Prev</button>
+                <span style={{margin:'0 8px'}}>{Math.min((catPage-1)*catPageSize+1, catTotal || 0)}-{Math.min(catPage*catPageSize,catTotal || 0)} of {catTotal}</span>
+                <button disabled={catPage>=catPageCount} onClick={()=>setCatPage(p=>Math.min(catPageCount,p+1))}>Next</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2189,10 +2254,28 @@ function CategoriesPage({ locale }) {
   const [catInput, setCatInput] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState('');
+  const [searchCats, setSearchCats] = useState('');
+  const [catPage, setCatPage] = useState(1);
+  const [catPageSize, setCatPageSize] = useState(10);
+  const catPageOptions = [10,20,50];
+  const [catSortField, setCatSortField] = useState(null);
+  const [catSortDir, setCatSortDir] = useState('asc');
   useEffect(()=>{
     apiFetch('/settings/categories').then(c=>setCategories(c||[])).catch(()=>{});
     apiFetch('/settings/categories/usage').then(u=>{ const map={}; (u||[]).forEach(x=>map[x.id]=x.count); setCategoriesUsage(map); }).catch(()=>{});
   },[]);
+
+  const filteredCategories = (categories || []).filter(c => ((c.name || '').toLowerCase().includes((searchCats||'').toLowerCase())));
+  const sortedCategories = useMemo(()=>{
+    if (!catSortField) return filteredCategories;
+    const rows = [...filteredCategories];
+    rows.sort((a,b)=> ((a[catSortField]||'').toString().localeCompare((b[catSortField]||'').toString())) * (catSortDir==='asc'?1:-1));
+    return rows;
+  }, [filteredCategories, catSortField, catSortDir]);
+  const catTotal = sortedCategories.length;
+  const catPageCount = Math.max(1, Math.ceil(catTotal / catPageSize));
+  const catPaged = sortedCategories.slice((catPage-1)*catPageSize, catPage*catPageSize);
+  function toggleCatSort(field) { if (catSortField===field) setCatSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setCatSortField(field); setCatSortDir('asc'); } }
 
   async function addCategory(){
     const v = catInput.trim(); if (!v) return;
@@ -2277,7 +2360,25 @@ function ModelsPage({ locale }) {
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState('');
   const [modelsUsage, setModelsUsage] = useState({});
+  const [searchModels, setSearchModels] = useState('');
+  const [modelPage, setModelPage] = useState(1);
+  const [modelPageSize, setModelPageSize] = useState(10);
+  const modelPageOptions = [10,20,50];
+  const [modelSortField, setModelSortField] = useState(null);
+  const [modelSortDir, setModelSortDir] = useState('asc');
   useEffect(()=>{ apiFetch('/settings/models').then(m=>setModels(m||[])).catch(()=>{}); apiFetch('/settings/models/usage').then(u=>{ const map={}; (u||[]).forEach(x=>map[x.id]=x.count); setModelsUsage(map); }).catch(()=>{}); },[]);
+
+  const filteredModels = (models || []).filter(m => ((m.name||'').toLowerCase().includes((searchModels||'').toLowerCase())));
+  const sortedModels = useMemo(()=>{
+    if (!modelSortField) return filteredModels;
+    const rows = [...filteredModels];
+    rows.sort((a,b)=> ((a[modelSortField]||'').toString().localeCompare((b[modelSortField]||'').toString())) * (modelSortDir==='asc'?1:-1));
+    return rows;
+  }, [filteredModels, modelSortField, modelSortDir]);
+  const modelTotal = sortedModels.length;
+  const modelPageCount = Math.max(1, Math.ceil(modelTotal / modelPageSize));
+  const modelPaged = sortedModels.slice((modelPage-1)*modelPageSize, modelPage*modelPageSize);
+  function toggleModelSort(field) { if (modelSortField===field) setModelSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setModelSortField(field); setModelSortDir('asc'); } }
 
   async function addModel(){
     if (!modelInput.name) { window._app_show_toast && window._app_show_toast('Provide model name', 'warning'); return; }
@@ -2300,27 +2401,49 @@ function ModelsPage({ locale }) {
       <div className="card">
         <div className="card-header"><span className="card-title">Add Model</span></div>
         <div style={{padding:16}}>
-          <div style={{display:'grid',gridTemplateColumns:'200px 120px',gap:8}}>
+          <div style={{display:'grid',gridTemplateColumns:'200px 300px 120px',gap:8}}>
             <input className="form-control" placeholder="Model name (e.g. CG125)" value={modelInput.name} onChange={e=>setModelInput({...modelInput,name:e.target.value})} />
             <button className="btn btn-primary" onClick={addModel}>Add</button>
           </div>
             <div style={{marginTop:12}}>
-            {models.length ? (
-              <div className="table-wrap">
-                <table>
-                  <thead><tr><th>Name</th><th>Actions</th></tr></thead>
-                  <tbody>
-                    {models.map(m=> (
-                      <tr key={m.id}>
-                        <td>{editingId===m.id ? <input className="form-control" value={editingName} onChange={e=>setEditingName(e.target.value)} /> : <strong>{m.name}</strong>}</td>
-                        <td>{editingId===m.id ? (<><button className="btn btn-primary btn-sm" onClick={saveEdit}>Save</button><button className="btn btn-secondary btn-sm" style={{marginLeft:8}} onClick={()=>{ setEditingId(null); setEditingName(''); }}>Cancel</button></>) : (<><button className="btn btn-secondary btn-sm" onClick={()=>startEdit(m)}>Edit</button><button className="btn btn-danger btn-sm" style={{marginLeft:8}} onClick={()=>deleteModel(m.id)} disabled={(modelsUsage[m.id]||0) > 0}>{(modelsUsage[m.id]||0) > 0 ? `Delete (${modelsUsage[m.id]})` : 'Delete'}</button></>)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div>{/* spacer */}</div>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <span className="search-icon">🔍</span>
+                  <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={searchModels} onChange={e=>{ setSearchModels(e.target.value); setModelPage(1); }} />
+                </div>
               </div>
-            ) : <span className="td-muted">No models yet</span>}
-          </div>
+              <div style={{marginTop:12}}>
+              {models.length ? (
+                <div className="table-wrap">
+                  <table>
+                    <thead><tr><th onClick={()=>toggleModelSort('name')}>Name</th><th>Actions</th></tr></thead>
+                    <tbody>
+                      {modelPaged.map(m=> (
+                        <tr key={m.id}>
+                          <td>{editingId===m.id ? <input className="form-control" value={editingName} onChange={e=>setEditingName(e.target.value)} /> : <strong>{m.name}</strong>}</td>
+                          <td>{editingId===m.id ? (<><button className="btn btn-primary btn-sm" onClick={saveEdit}>Save</button><button className="btn btn-secondary btn-sm" style={{marginLeft:8}} onClick={()=>{ setEditingId(null); setEditingName(''); }}>Cancel</button></>) : (<><button className="btn btn-secondary btn-sm" onClick={()=>startEdit(m)}>Edit</button><button className="btn btn-danger btn-sm" style={{marginLeft:8}} onClick={()=>deleteModel(m.id)} disabled={(modelsUsage[m.id]||0) > 0}>{(modelsUsage[m.id]||0) > 0 ? `Delete (${modelsUsage[m.id]})` : 'Delete'}</button></>)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : <span className="td-muted">No models yet</span>}
+              </div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10}}>
+                <div>
+                  <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
+                  <select value={modelPageSize} onChange={e=>{ setModelPageSize(+e.target.value); setModelPage(1); }}>
+                    {modelPageOptions.map(n=> <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <button disabled={modelPage<=1} onClick={()=>setModelPage(p=>Math.max(1,p-1))}>Prev</button>
+                  <span style={{margin:'0 8px'}}>{Math.min((modelPage-1)*modelPageSize+1, modelTotal || 0)}-{Math.min(modelPage*modelPageSize,modelTotal || 0)} of {modelTotal}</span>
+                  <button disabled={modelPage>=modelPageCount} onClick={()=>setModelPage(p=>Math.min(modelPageCount,p+1))}>Next</button>
+                </div>
+              </div>
+            </div>
         </div>
       </div>
     </div>
@@ -2333,6 +2456,12 @@ function ProductsPage({ locale }) {
   const [templates, setTemplates] = useState([]);
   const [models, setModels] = useState([]);
   const [products, setProducts] = useState([]);
+  const [searchProducts, setSearchProducts] = useState("");
+  const [prodPage, setProdPage] = useState(1);
+  const [prodPageSize, setProdPageSize] = useState(10);
+  const prodPageOptions = [10,20,50];
+  const [prodSortField, setProdSortField] = useState(null);
+  const [prodSortDir, setProdSortDir] = useState('asc');
   const [form, setForm] = useState({name:'',sku:'',category:'',model:'',min_quantity:5, supplier:'', location:''});
   useEffect(()=>{ Promise.all([apiFetch('/settings/categories'), apiFetch('/settings/templates'), apiFetch('/settings/models'), apiFetch('/products?include_unstocked=true')]).then(([c,t,m,p])=>{ setCategories(c||[]); setTemplates(t||[]); setModels(m||[]); setProducts(p||[]); }).catch(()=>{}); },[]);
 
@@ -2375,6 +2504,43 @@ function ProductsPage({ locale }) {
     } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
 
+  // Products table: filter, sort, paginate
+  const filteredProducts = (products || []).filter(p => {
+    const q = (searchProducts || '').toLowerCase();
+    return (p.display_name || p.name || '').toLowerCase().includes(q)
+      || (p.sku || '').toLowerCase().includes(q)
+      || (p.category || '').toLowerCase().includes(q)
+      || (inferModelName(p) || '').toLowerCase().includes(q);
+  });
+
+  const sortedProducts = useMemo(() => {
+    if (!prodSortField) return filteredProducts;
+    const rows = [...filteredProducts];
+    rows.sort((a,b) => {
+      const getVal = (it, field) => {
+        switch(field) {
+          case 'name': return (it.display_name || it.name || '');
+          case 'sku': return it.sku || '';
+          case 'category': return it.category || '';
+          case 'model': return inferModelName(it) || '';
+          default: return it[field] ?? '';
+        }
+      };
+      const va = (getVal(a, prodSortField) || '').toString();
+      const vb = (getVal(b, prodSortField) || '').toString();
+      if (!isNaN(Date.parse(va)) && !isNaN(Date.parse(vb))) return (new Date(va) - new Date(vb)) * (prodSortDir==='asc'?1:-1);
+      if (!isNaN(parseFloat(va)) && !isNaN(parseFloat(vb))) return (parseFloat(va) - parseFloat(vb)) * (prodSortDir==='asc'?1:-1);
+      return va.localeCompare(vb) * (prodSortDir==='asc'?1:-1);
+    });
+    return rows;
+  }, [filteredProducts, prodSortField, prodSortDir]);
+
+  const prodTotal = sortedProducts.length;
+  const prodPageCount = Math.max(1, Math.ceil(prodTotal / prodPageSize));
+  const prodPaged = sortedProducts.slice((prodPage-1)*prodPageSize, prodPage*prodPageSize);
+
+  function toggleProdSort(field) { if (prodSortField===field) setProdSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setProdSortField(field); setProdSortDir('asc'); } }
+
   return (
     <div className="page">
       <div className="page-header">
@@ -2413,12 +2579,39 @@ function ProductsPage({ locale }) {
       </div>
 
       <div className="card" style={{marginTop:12}}>
-        <div className="card-header"><span className="card-title">Existing Products</span></div>
+        <div className="card-header"><span className="card-title">Existing Products</span>
+          <div className="search-wrap">
+            <span className="search-icon">🔍</span>
+            <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={searchProducts} onChange={e=>{ setSearchProducts(e.target.value); setProdPage(1); }} />
+          </div>
+        </div>
         <div className="table-wrap" style={{padding:16}}>
           <table>
-            <thead><tr><th>Name</th><th>SKU</th><th>Category</th><th>Model</th></tr></thead>
-            <tbody>{products.length?products.map(p=> <tr key={p.id}><td>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))}</td><td className="td-muted">{p.sku}</td><td className="td-muted">{p.category}</td><td className="td-muted">{inferModelName(p) || ''}</td></tr>) : <tr><td colSpan={4} style={{padding:20}} className="td-muted">No products yet</td></tr>}</tbody>
+            <thead><tr>
+              <th onClick={()=>toggleProdSort('name')}>Name</th>
+              <th onClick={()=>toggleProdSort('sku')}>SKU</th>
+              <th onClick={()=>toggleProdSort('category')}>Category</th>
+              <th onClick={()=>toggleProdSort('model')}>Model</th>
+            </tr></thead>
+            <tbody>
+              {prodPaged.length ? prodPaged.map(p=> (
+                <tr key={p.id}><td>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))}</td><td className="td-muted">{p.sku}</td><td className="td-muted">{p.category}</td><td className="td-muted">{inferModelName(p) || ''}</td></tr>
+              )) : <tr><td colSpan={4} style={{padding:20}} className="td-muted">No products yet</td></tr>}
+            </tbody>
           </table>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10}}>
+            <div>
+              <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
+              <select value={prodPageSize} onChange={e=>{ setProdPageSize(+e.target.value); setProdPage(1); }}>
+                {prodPageOptions.map(n=> <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+            <div>
+              <button disabled={prodPage<=1} onClick={()=>setProdPage(p=>Math.max(1,p-1))}>Prev</button>
+              <span style={{margin:'0 8px'}}>{Math.min((prodPage-1)*prodPageSize+1, prodTotal || 0)}-{Math.min(prodPage*prodPageSize,prodTotal || 0)} of {prodTotal}</span>
+              <button disabled={prodPage>=prodPageCount} onClick={()=>setProdPage(p=>Math.min(prodPageCount,p+1))}>Next</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2510,9 +2703,31 @@ function Users({ locale }) {
   const [saving, setSaving] = useState(false);
   const [modalMsg, setModalMsg] = useState({ type: "", text: "" });
   const [editingUserId, setEditingUserId] = useState(null);
+  const [searchUsers, setSearchUsers] = useState('');
+  const [userPage, setUserPage] = useState(1);
+  const [userPageSize, setUserPageSize] = useState(10);
+  const userPageOptions = [10,20,50];
+  const [userSortField, setUserSortField] = useState(null);
+  const [userSortDir, setUserSortDir] = useState('asc');
 
   const load = () => apiFetch("/auth/users").then(setUsers);
   useEffect(()=>{ load(); },[]);
+
+  const filteredUsers = (users || []).filter(u => {
+    const q = (searchUsers||'').toLowerCase();
+    return (u.name||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q) || (u.role||'').toLowerCase().includes(q);
+  });
+  const sortedUsers = useMemo(()=>{
+    if (!userSortField) return filteredUsers;
+    const rows = [...filteredUsers];
+    const getVal = (it, f) => { switch(f){ case 'name': return it.name||''; case 'email': return it.email||''; case 'role': return it.role||''; default: return it[f]||''; } };
+    rows.sort((a,b)=>{ const va = (getVal(a,userSortField)||'').toString(); const vb = (getVal(b,userSortField)||'').toString(); return va.localeCompare(vb) * (userSortDir==='asc'?1:-1); });
+    return rows;
+  }, [filteredUsers, userSortField, userSortDir]);
+  const userTotal = sortedUsers.length;
+  const userPageCount = Math.max(1, Math.ceil(userTotal / userPageSize));
+  const userPaged = sortedUsers.slice((userPage-1)*userPageSize, userPage*userPageSize);
+  function toggleUserSort(field) { if (userSortField===field) setUserSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setUserSortField(field); setUserSortDir('asc'); } }
 
   function openCreateUser() {
     setEditingUserId(null);

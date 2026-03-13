@@ -1070,9 +1070,6 @@ function Dashboard({ locale }) {
           </div>
         </div>
       </div>
-            </ResponsiveContainer>
-          </div>
-        </div>
 
         <div className="card">
           <div className="card-header">

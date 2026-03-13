@@ -230,7 +230,12 @@ const css = `
   .stat-sub { font-size: 11px; color: #8B949E; margin-top: 6px; }
 
   /* ── Charts Grid ── */
-  .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .charts-grid .card { min-height: 360px; padding: 12px; }
+  .charts-grid .card .card-body { height: calc(100% - 56px); display:flex; align-items:center; }
+  .small-pies-grid { margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 12px; width: 100%; }
+  .small-pie-card { padding: 8px; }
+  .small-pie-card .card-body { padding: 8px 0 0 0; height: 120px; display:flex; align-items:center; justify-content:center; }
   .dashboard-bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
   /* ── Tables ── */
@@ -666,6 +671,7 @@ const themeCss = `
       "role.manager": "Manager",
       "role.employee": "Employee",
       "btn.change_password": "Change password",
+      "charts.sales_by_category": "Sales by Category",
     },
     sw: {
       "title.dashboard": "Mfumo wa Kuuza na Kusambaza Spea",
@@ -832,6 +838,7 @@ const themeCss = `
       "role.manager": "Meneja",
       "role.employee": "Mfanyakazi",
       "btn.change_password": "Badili nywila",
+      "charts.sales_by_category": "Mauzo kwa Aina za Spea",
     }
 };
 
@@ -1047,27 +1054,27 @@ function Dashboard({ locale }) {
       </div>
 
       <div className="stats-grid">
-        <div className="stat-card gold" style={{minHeight:140}}>
+        <div className="stat-card gold">
           <div className="stat-icon gold">💰</div>
           <div className="stat-label">{t(locale,'stat.total_revenue')}</div>
           <div className="stat-value">{fmt(stats.total_revenue)}</div>
           <div className="stat-sub">{t(locale,'stat.all_time_sales')}</div>
         </div>
-        <div className="stat-card blue" style={{minHeight:140}}>
+        <div className="stat-card blue">
           <div className="stat-icon blue">🛒</div>
           <div className="stat-label">{t(locale,'stat.total_sales')}</div>
           <div className="stat-value">{stats.total_sales}</div>
           <div className="stat-sub">{t(locale,'stat.transactions_recorded')}</div>
         </div>
           
-
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,width:'100%'}}>
+          
+          <div className="charts-grid">
           <div className="card">
             <div className="card-header"><span className="card-title">{t(locale,'charts.stock_by_category')}</span></div>
             <div className="card-body">
-              <ResponsiveContainer width="100%" aspect={1.2}>
+              <ResponsiveContainer width="100%" height={'100%'}>
                 <PieChart>
-                  <Pie data={catData} nameKey="name" cx="50%" cy="50%" innerRadius={"30%"} outerRadius={"60%"} paddingAngle={3} dataKey="value">
+                  <Pie data={catData} nameKey="name" cx="50%" cy="50%" innerRadius={"20%"} outerRadius={"80%"} paddingAngle={3} dataKey="value">
                     {catData.map((e,i) => <Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>) }
                   </Pie>
                   <Tooltip formatter={(value,name) => [fmt(value), name]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:13}}/>
@@ -1077,11 +1084,11 @@ function Dashboard({ locale }) {
           </div>
 
           <div className="card">
-            <div className="card-header"><span className="card-title">Sales by Category</span></div>
+            <div className="card-header"><span className="card-title">{t(locale,'charts.sales_by_category')}</span></div>
             <div className="card-body">
-              <ResponsiveContainer width="100%" aspect={1.2}>
+              <ResponsiveContainer width="100%" height={'100%'}>
                 <PieChart>
-                  <Pie data={salesCatData} nameKey="name" cx="50%" cy="50%" innerRadius={"28%"} outerRadius={"60%"} paddingAngle={3} dataKey="value">
+                  <Pie data={salesCatData} nameKey="name" cx="50%" cy="50%" innerRadius={"20%"} outerRadius={"80%"} paddingAngle={3} dataKey="value">
                     {salesCatData.map((e,i) => <Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>) }
                   </Pie>
                   <Tooltip formatter={(value,name) => [fmt(value), name]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:13}}/>
@@ -1138,11 +1145,11 @@ function Dashboard({ locale }) {
         </div>
       </div>
       {/* Sales by category last 7 days: small pies (moved below bottom grid to form third row) */}
-      <div style={{marginTop:12,display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,width:'100%'}}>
+      <div className="small-pies-grid">
         {last7Sales.length ? last7Sales.map((day, idx) => (
-          <div key={day.date} className="card" style={{padding:8}}>
+          <div key={day.date} className="card small-pie-card">
             <div style={{fontSize:12,fontWeight:700,padding:'6px 8px'}}>{new Date(day.date + "T00:00:00").toLocaleDateString('en-GB')} Sales</div>
-            <div style={{height:120}}>
+            <div className="card-body">
               <ResponsiveContainer width="100%" height={120}>
                 <PieChart>
                   <Pie data={day.data.length?day.data:[{name:'No sales', value:1}]} nameKey="name" dataKey="value" innerRadius={28} outerRadius={48} paddingAngle={2}>

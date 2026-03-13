@@ -1441,6 +1441,17 @@ function Inventory({ locale }) {
 
   async function save() {
     // Inventory page only allows updating unit_price and quantity
+    // Validate required fields for creation
+    if (!editing) {
+      if (!form.name || !String(form.name).trim()) {
+        window._app_show_toast && window._app_show_toast('Product name is required', 'warning');
+        return;
+      }
+      if (form.unit_price === undefined || form.unit_price === null || form.unit_price === '') {
+        window._app_show_toast && window._app_show_toast('Unit price is required', 'warning');
+        return;
+      }
+    }
     try { window._app_show_toast && window._app_show_toast('Saving product...', 'info'); } catch {}
 
     // If no `editing` product, create a new product
@@ -1870,6 +1881,10 @@ function Orders({ locale }) {
   useEffect(()=>{ load(); },[]);
 
   async function saveOrder() {
+    if (!form.product_id || !form.quantity) {
+      window._app_show_toast && window._app_show_toast(t(locale,'alert.fill_product_qty') || 'Select product and quantity', 'warning');
+      return;
+    }
     try { window._app_show_toast && window._app_show_toast('Saving order...', 'info'); } catch {}
     const selProd = products.find(p=>p.id===form.product_id);
     const payload = { product_id: +form.product_id, product_name: selProd?.display_name || selProd?.name || form.product_name, quantity:+form.quantity, unit_price:+form.unit_price, supplier: form.supplier, location: form.location, expected_delivery: form.expected_delivery, notes: form.notes };
@@ -1921,6 +1936,14 @@ function Orders({ locale }) {
 
   async function saveProductEditor() {
     if (!productEditorForm) return;
+    if (!productEditorForm.name || !String(productEditorForm.name).trim()) {
+      window._app_show_toast && window._app_show_toast('Product name is required', 'warning');
+      return;
+    }
+    if (productEditorForm.unit_price === undefined || productEditorForm.unit_price === null || productEditorForm.unit_price === '') {
+      window._app_show_toast && window._app_show_toast('Unit price is required', 'warning');
+      return;
+    }
     try { window._app_show_toast && window._app_show_toast('Saving product...', 'info'); } catch {}
     const body = {
       name: productEditorForm.name,
@@ -2245,6 +2268,10 @@ function Deliveries({ locale }) {
   function toggleSort(field) { if (sortField===field) setSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setSortField(field); setSortDir('asc'); } }
 
   async function saveDelivery() {
+    if (!form.order_id || !form.quantity) {
+      window._app_show_toast && window._app_show_toast('Select an order and quantity', 'warning');
+      return;
+    }
     try { window._app_show_toast && window._app_show_toast('Saving delivery...', 'info'); } catch {}
     const selOrder = orders.find(o=>o.id===form.order_id);
     const body = {...form, product_id:selOrder?.product_id, product_name:selOrder?.product_name||form.product_name, quantity:+form.quantity, supplier:selOrder?.supplier||form.supplier};

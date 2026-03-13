@@ -331,6 +331,32 @@ const css = `
     background: linear-gradient(90deg,var(--accent), #66A3FF); color: white; box-shadow: 0 8px 24px rgba(0,113,227,0.18);
   }
   .btn-primary:hover { transform: translateY(-2px); }
+  .btn:active { transform: translateY(0); box-shadow: none; }
+  .btn[disabled], .btn[aria-disabled='true'] { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* Nav icons */
+  .nav-item .icon { font-size: 18px; width: 36px; height: 36px; display:flex; align-items:center; justify-content:center; border-radius:9px; background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); margin-right:8px; }
+
+  /* Card hover lift */
+  .card { transition: transform 240ms cubic-bezier(.2,.8,.2,1), box-shadow 240ms; }
+  .card:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(2,6,23,0.45); }
+
+  /* Tables: header gradient, zebra rows and subtle hover */
+  thead th { background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
+  tbody tr:nth-child(odd) { background: linear-gradient(90deg, rgba(255,255,255,0.01), transparent); }
+  tbody tr:hover { background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)); }
+  table { border-radius: 10px; overflow: hidden; }
+
+  /* Forms */
+  .form-control::placeholder { color: rgba(139,148,158,0.6); }
+  .form-control:focus { outline: none; box-shadow: 0 10px 30px rgba(0,113,227,0.12); }
+
+  /* Search input focus */
+  .search-wrap input:focus { box-shadow: 0 8px 30px rgba(0,113,227,0.08); border-color: var(--accent); }
+
+  /* Subtle page fade-in */
+  .page { animation: pageFade 320ms ease both; }
+  @keyframes pageFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   .btn-secondary {
     background: #21262D; color: #E6EDF3; border: 1px solid #30363D;
   }

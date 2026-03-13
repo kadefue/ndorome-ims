@@ -3863,7 +3863,11 @@ export default function App() {
           startY: 60,
           head,
           body,
-          styles: { fontSize: 10 },
+          theme: 'plain',
+          styles: { fontSize: 10, fillColor: false, textColor: [45, 45, 45] },
+          headStyles: { fillColor: false, textColor: [30, 30, 30], fontStyle: 'bold' },
+          bodyStyles: { fillColor: false, textColor: [55, 55, 55] },
+          alternateRowStyles: { fillColor: false },
           margin: { left: marginLeft, right: 40, bottom: 60 },
           // Draw watermark before table content so it appears behind rows/cells.
           willDrawPage: function () {

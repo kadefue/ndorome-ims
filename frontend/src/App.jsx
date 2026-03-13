@@ -28,7 +28,17 @@ async function apiFetch(path, options = {}) {
     try { window._app_show_toast && window._app_show_toast(msg, 'danger'); } catch {}
     throw new Error(msg);
   }
-  return res.json();
+  // Some endpoints (DELETE) may return 204 No Content or an empty body.
+  // Safely handle empty responses to avoid throwing when calling res.json().
+  if (res.status === 204) return null;
+  const text = await res.text().catch(() => '');
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    // Not JSON, return raw text
+    return text;
+  }
 }
 
 const formatDateTime = (d) => {

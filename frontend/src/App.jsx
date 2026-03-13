@@ -721,12 +721,9 @@ function DatePicker({ value, onChange, min }) {
   );
 }
 
-  // ── Translations ───────────────────────────────────────────────────────────
+  
   const TRANSLATIONS = {
     en: {
-      "nav.audits": "Audit Log",
-      "page.audits": "Audit Log",
-      "audits.title": "Audit Log",
       "audits.subtitle": "System actions and changes",
       "audits.search_placeholder": "search action, user, id or data",
       "title.dashboard": "Spare Parts IMS",
@@ -840,6 +837,7 @@ function DatePicker({ value, onChange, min }) {
       "btn.edit": "Edit",
       "btn.delete": "Del",
       "btn.edit_user": "Edit User",
+      "btn.continue": "Continue",
       "sales.total_revenue_label": "Total Revenue",
       "sales.total_transactions": "Total Transactions",
       "sales.todays_sales": "Today's Sales",
@@ -894,6 +892,7 @@ function DatePicker({ value, onChange, min }) {
       "role.employee": "Employee",
       "btn.change_password": "Change password",
       "charts.sales_by_category": "Sales by Category",
+      "confirm.warning": "Missing Data - Are you sure you want to proceed?",
     },
     sw: {
       "nav.audits": "Rekodi za Audit",
@@ -932,6 +931,7 @@ function DatePicker({ value, onChange, min }) {
       "btn.add_user": "＋ Ongeza Mtumiaji",
       "btn.edit_user": "Hariri Mtumiaji",
       "btn.approve": "Kubali",
+      "btn.continue": "Endelea",
       "sign_out": "Toka",
       "theme.light": "☀️ Mwanga",
       "theme.dark": "🌙 Giza",
@@ -1067,6 +1067,7 @@ function DatePicker({ value, onChange, min }) {
       "role.employee": "Mfanyakazi",
       "btn.change_password": "Badili nywila",
       "charts.sales_by_category": "Mauzo kwa Aina za Spea",
+      "confirm.warning": "Data haiko sawa - Una uhakika unataka kuendelea?",
     }
 };
 
@@ -1442,6 +1443,7 @@ function Inventory({ locale }) {
     }
   };
   useEffect(()=>{ load(); },[]);
+  const [deletingIds, setDeletingIds] = useState([]);
   
   // For inventory we want to indicate products that have been sold below current product price
   // load will be replaced in Inventory component to fetch sales too
@@ -1585,9 +1587,20 @@ function Inventory({ locale }) {
         return;
       }
       if (!(await window._app_confirm(t(locale,'confirm.delete_product')))) return;
-      await apiFetch('/products/' + id,{method:"DELETE"});
-      await load();
-      try { window._app_show_toast && window._app_show_toast('Product deleted', 'success'); } catch {}
+      // mark deleting to trigger UI animation
+      setDeletingIds(d => Array.from(new Set([...(d||[]), id])));
+      try {
+        await apiFetch('/products/' + id,{method:"DELETE"});
+        try { window._app_show_toast && window._app_show_toast('Product deleted', 'success'); } catch {}
+        // wait for animation to complete then refresh
+        setTimeout(() => {
+          setDeletingIds(d => (d || []).filter(x => x !== id));
+          load();
+        }, 380);
+      } catch (e) {
+        setDeletingIds(d => (d || []).filter(x => x !== id));
+        // apiFetch will show error
+      }
     } catch (err) {
       // apiFetch shows toast on error
     }
@@ -1609,6 +1622,24 @@ function Inventory({ locale }) {
           <div className="search-wrap">
             <span className="search-icon">🔍</span>
             <input className="form-control" style={{width:220}} placeholder={t(locale,'inventory.search_placeholder')} value={search} onChange={e=>setSearch(e.target.value)}/>
+            <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
+              const cols = [
+                { label: t(locale,'inventory.table.product')||'Product', key: 'display_name' },
+                { label: t(locale,'inventory.table.sku')||'SKU', key: 'sku' },
+                { label: t(locale,'inventory.table.category')||'Category', key: 'category' },
+                { label: t(locale,'inventory.table.qty')||'Qty', key: 'quantity' },
+                { label: t(locale,'inventory.table.unit_price')||'Unit Price', key: 'unit_price' },
+                { label: t(locale,'inventory.table.supplier')||'Supplier', key: 'supplier' },
+                { label: t(locale,'inventory.table.location')||'Location', key: 'location' },
+                { label: t(locale,'inventory.table.status')||'Status', key: 'status', render: r => (r.quantity<=r.min_quantity ? (t(locale,'inventory.status.low')||'Low') : (t(locale,'inventory.status.in_stock')||'In Stock')) }
+              ];
+              const rows = (products || []).filter(p => {
+                if (!search) return true;
+                const q = (p.name||'') + (p.sku||'') + (p.category||'');
+                return q.toLowerCase().includes(search.toLowerCase());
+              }).map(p => ({ display_name: p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : '')), sku: p.sku, category: p.category, quantity: p.quantity, unit_price: p.unit_price, supplier: p.supplier, location: p.location, min_quantity: p.min_quantity }));
+              window._exportTablePDF({ title: t(locale,'page.inventory')||'Inventory', columns: cols, rows, filename: 'inventory.pdf' });
+            }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
           </div>
         </div>
         <div className="table-wrap">
@@ -1628,7 +1659,7 @@ function Inventory({ locale }) {
             </thead>
             <tbody>
               {paged.map(p => (
-                <tr key={p.id}>
+                <tr key={p.id} className={deletingIds.includes(p.id) ? 'deleting-row' : ''}>
                   <td>
                     <div style={{display:'flex',alignItems:'center',gap:8}}>
                       <div style={{flex:1,fontWeight:500}}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))} {p.soldBelow && <span style={{marginLeft:8}} className="badge badge-danger">{formatMessage(t(locale,'inventory.sold_below')||'Sold below price', { threshold: fmt(p.soldBelowValue), current_price: fmt(p.unit_price), currency: 'TZS' })}</span>}</div>
@@ -1842,6 +1873,37 @@ function Sales({ locale }) {
           <div className="search-wrap">
             <span className="search-icon">🔍</span>
             <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={search} onChange={e=>setSearch(e.target.value)}/>
+            <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
+              const from = window.prompt('Start date (YYYY-MM-DD) or leave blank');
+              const to = window.prompt('End date (YYYY-MM-DD) or leave blank');
+              const cols = [
+                { label: t(locale,'table.date')||'Date', key: 'date' },
+                { label: t(locale,'table.product')||'Product', key: 'product_name' },
+                { label: t(locale,'table.customer')||'Customer', key: 'customer' },
+                { label: t(locale,'table.qty')||'Qty', key: 'quantity' },
+                { label: t(locale,'table.unit_price')||'Unit Price', key: 'unit_price' },
+                { label: t(locale,'table.total')||'Total', key: 'total' },
+                { label: t(locale,'table.payment')||'Payment', key: 'payment' },
+                { label: t(locale,'table.employee')||'Employee', key: 'employee_name' },
+                { label: t(locale,'table.status')||'Status', key: 'status' }
+              ];
+              const rows = (sales || []).filter(s => {
+                if (search) {
+                  const q = (s.product_name||'') + (s.customer||'') + (s.employee_name||'') + (s.payment||'');
+                  if (!q.toLowerCase().includes(search.toLowerCase())) return false;
+                }
+                if (from) {
+                  const d = s.date ? (new Date(s.date)).toISOString().slice(0,10) : '';
+                  if (!d || d < from) return false;
+                }
+                if (to) {
+                  const d = s.date ? (new Date(s.date)).toISOString().slice(0,10) : '';
+                  if (!d || d > to) return false;
+                }
+                return true;
+              }).map(s => ({ date: s.date, product_name: s.product_name || s.product?.name, customer: s.customer, quantity: s.quantity, unit_price: s.unit_price, total: s.total, payment: s.payment, employee_name: s.employee_name, status: s.status }));
+              window._exportTablePDF({ title: t(locale,'page.sales')||'Sales', columns: cols, rows, filename: 'sales.pdf' });
+            }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
           </div>
         </div>
         <div className="table-wrap">
@@ -1991,15 +2053,16 @@ function Orders({ locale }) {
           if (form.location) prodUpdate.location = form.location;
           try { await apiFetch('/products/' + pid, { method: 'PUT', body: JSON.stringify(prodUpdate) }); } catch (e) { /* apiFetch will show toast */ }
         }
-      } catch (e) {}
+      } catch(e) {
+        // ignore propagation errors
+      }
 
+      try { window._app_show_toast && window._app_show_toast(editingOrder ? 'Order updated' : 'Order created', 'success'); } catch {}
       setShowModal(false);
-      const wasEdit = !!editingOrder;
-      setEditingOrder(null);
-      await load();
-      try { window._app_show_toast && window._app_show_toast(wasEdit ? 'Order updated' : 'Order created', 'success'); } catch {}
+      setForm({product_id:"",product_name:"",quantity:"",unit_price:"",supplier:"",location:"",expected_delivery:""});
+      load();
     } catch (err) {
-      // apiFetch shows toast
+      window._app_show_toast && window._app_show_toast(err.message||err,'danger');
     }
   }
 
@@ -2149,6 +2212,36 @@ function Orders({ locale }) {
           <div className="search-wrap">
             <span className="search-icon">🔍</span>
             <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} />
+            <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
+              const from = window.prompt('Start date (YYYY-MM-DD) or leave blank');
+              const to = window.prompt('End date (YYYY-MM-DD) or leave blank');
+              const cols = [
+                { label: t(locale,'table.date')||'Date', key: 'date' },
+                { label: t(locale,'table.product')||'Product', key: 'product_name' },
+                { label: t(locale,'table.supplier')||'Supplier', key: 'supplier' },
+                { label: t(locale,'table.qty')||'Qty', key: 'quantity' },
+                { label: t(locale,'table.total')||'Total', key: 'total' },
+                { label: t(locale,'orders.expected_delivery')||'Expected', key: 'expected_delivery' },
+                { label: t(locale,'orders.ordered_by')||'Ordered By', key: 'ordered_by_name' },
+                { label: t(locale,'table.status')||'Status', key: 'status' }
+              ];
+              const rows = (orders || []).filter(o => {
+                if (search) {
+                  const q = (o.product_name||'') + (o.supplier||'') + (o.ordered_by_name||'');
+                  if (!q.toLowerCase().includes(search.toLowerCase())) return false;
+                }
+                if (from) {
+                  const d = o.date ? (new Date(o.date)).toISOString().slice(0,10) : '';
+                  if (!d || d < from) return false;
+                }
+                if (to) {
+                  const d = o.date ? (new Date(o.date)).toISOString().slice(0,10) : '';
+                  if (!d || d > to) return false;
+                }
+                return true;
+              }).map(o => ({ date: o.date, product_name: o.product_name, supplier: o.supplier, quantity: o.quantity, total: o.total, expected_delivery: o.expected_delivery, ordered_by_name: o.ordered_by_name, status: o.status }));
+              window._exportTablePDF({ title: t(locale,'page.orders')||'Orders', columns: cols, rows, filename: 'orders.pdf' });
+            }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
           </div>
         </div>
         <div className="table-wrap">
@@ -2381,6 +2474,35 @@ function Deliveries({ locale }) {
           <div className="search-wrap">
             <span className="search-icon">🔍</span>
             <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} />
+            <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
+              const from = window.prompt('Start date (YYYY-MM-DD) or leave blank');
+              const to = window.prompt('End date (YYYY-MM-DD) or leave blank');
+              const cols = [
+                { label: t(locale,'table.date')||'Date', key: 'date' },
+                { label: t(locale,'table.product')||'Product', key: 'product_name' },
+                { label: t(locale,'table.supplier')||'Supplier', key: 'supplier' },
+                { label: t(locale,'table.qty')||'Qty', key: 'quantity' },
+                { label: t(locale,'table.employee')||'Received By', key: 'received_by_name' },
+                { label: t(locale,'table.notes')||'Notes', key: 'notes' },
+                { label: t(locale,'table.status')||'Status', key: 'status' }
+              ];
+              const rows = (deliveries || []).filter(d => {
+                if (search) {
+                  const q = (d.product_name||'') + (d.supplier||'') + (d.received_by_name||'');
+                  if (!q.toLowerCase().includes(search.toLowerCase())) return false;
+                }
+                if (from) {
+                  const dd = d.date ? (new Date(d.date)).toISOString().slice(0,10) : '';
+                  if (!dd || dd < from) return false;
+                }
+                if (to) {
+                  const dd = d.date ? (new Date(d.date)).toISOString().slice(0,10) : '';
+                  if (!dd || dd > to) return false;
+                }
+                return true;
+              }).map(d => ({ date: d.date, product_name: d.product_name, supplier: d.supplier, quantity: d.quantity, received_by_name: d.received_by_name, notes: d.notes, status: d.status }));
+              window._exportTablePDF({ title: t(locale,'page.deliveries')||'Deliveries', columns: cols, rows, filename: 'deliveries.pdf' });
+            }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
           </div>
         </div>
         <div className="table-wrap">
@@ -2470,6 +2592,8 @@ function Settings({ locale }) {
     apiFetch('/settings/templates').then(t=>setTemplates(t||[])).catch(()=>{});
     apiFetch('/settings/models').then(m=>setModels(m||[])).catch(()=>{});
   },[]);
+  const [deletingCategoryIds, setDeletingCategoryIds] = useState([]);
+  const [deletingModelIds, setDeletingModelIds] = useState([]);
 
   async function addCategory() {
     const v = catInput.trim(); if (!v) return;
@@ -2514,6 +2638,11 @@ function Settings({ locale }) {
               <div style={{display:'flex',alignItems:'center',gap:8}}>
                 <span className="search-icon">🔍</span>
                 <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={searchCats} onChange={e=>{ setSearchCats(e.target.value); setCatPage(1); }} />
+                <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
+                  const cols = [ { label: 'ID', key: 'id' }, { label: 'Name', key: 'name' } ];
+                  const rows = (categories || []).filter(c => { if (!searchCats) return true; return (c.name||'').toLowerCase().includes(searchCats.toLowerCase()); }).map(c => ({ id: c.id, name: c.name }));
+                  window._exportTablePDF({ title: 'Categories', columns: cols, rows, filename: 'categories.pdf' });
+                }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
               </div>
             </div>
             <div style={{marginTop:12}}>{categories.length ? (
@@ -2522,7 +2651,7 @@ function Settings({ locale }) {
                   <thead><tr><th onClick={()=>toggleCatSort('name')}>Name</th><th>Actions</th></tr></thead>
                   <tbody>
                     {catPaged.map(c => (
-                      <tr key={c.id}>
+                      <tr key={c.id} className={deletingCategoryIds.includes(c.id) ? 'deleting-row' : ''}>
                         <td>{editingId===c.id ? <input className="form-control" value={editingName} onChange={e=>setEditingName(e.target.value)} /> : <strong>{c.name}</strong>}</td>
                         <td>
                           {editingId===c.id ? (
@@ -2628,6 +2757,7 @@ function CategoriesPage({ locale }) {
       try { window._app_show_toast && window._app_show_toast('Category added', 'success'); } catch {}
     } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); }
   }
+  const [deletingIds, setDeletingIds] = useState([]);
 
   function startEdit(cat){ try { window._app_show_toast && window._app_show_toast('Editing category', 'info'); } catch {} setEditingId(cat.id); setEditingName(cat.name); }
 
@@ -2643,7 +2773,14 @@ function CategoriesPage({ locale }) {
 
   async function deleteCategory(id){
     if (!(await window._app_confirm('Delete category?', { title: 'Delete category', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
-    try { await apiFetch('/settings/categories/' + id, { method: 'DELETE' }); setCategories(cs=>cs.filter(c=>c.id!==id)); window._app_show_toast && window._app_show_toast('Deleted', 'success'); } catch(e){ }
+    setDeletingIds(d => Array.from(new Set([...(d||[]), id])));
+    try {
+      await apiFetch('/settings/categories/' + id, { method: 'DELETE' });
+      try { window._app_show_toast && window._app_show_toast('Deleted', 'success'); } catch {}
+      setTimeout(() => { setDeletingIds(d => (d||[]).filter(x => x !== id)); setCategories(cs=>cs.filter(c=>c.id!==id)); }, 380);
+    } catch(e) {
+      setDeletingIds(d => (d||[]).filter(x => x !== id));
+    }
   }
 
   return (
@@ -2668,7 +2805,7 @@ function CategoriesPage({ locale }) {
                   <thead><tr><th>Name</th><th>Actions</th></tr></thead>
                   <tbody>
                     {categories.map(c => (
-                      <tr key={c.id}>
+                      <tr key={c.id} className={deletingIds.includes(c.id) ? 'deleting-row' : ''}>
                             <td>{editingId===c.id ? <input className="form-control" value={editingName} onChange={e=>setEditingName(e.target.value)} /> : <strong>{c.name}</strong>}</td>
                             <td>
                               {editingId===c.id ? (
@@ -2709,6 +2846,7 @@ function ModelsPage({ locale }) {
   const modelPageOptions = [10,20,50];
   const [modelSortField, setModelSortField] = useState(null);
   const [modelSortDir, setModelSortDir] = useState('asc');
+  const [deletingModelIds, setDeletingModelIds] = useState([]);
   useEffect(()=>{ apiFetch('/settings/models').then(m=>setModels(m||[])).catch(()=>{}); apiFetch('/settings/models/usage').then(u=>{ const map={}; (u||[]).forEach(x=>map[x.id]=x.count); setModelsUsage(map); }).catch(()=>{}); },[]);
 
   const filteredModels = (models || []).filter(m => ((m.name||'').toLowerCase().includes((searchModels||'').toLowerCase())));
@@ -2731,7 +2869,19 @@ function ModelsPage({ locale }) {
   function startEdit(m){ try { window._app_show_toast && window._app_show_toast('Editing model', 'info'); } catch {} setEditingId(m.id); setEditingName(m.name); }
   async function saveEdit(){ if (!editingName.trim()) return; try { const res = await apiFetch('/settings/models/' + editingId, { method: 'PUT', body: JSON.stringify({ name: editingName.trim(), categories: [] }) }); setModels(ms=>ms.map(x=> x.id === res.id ? res : x)); setEditingId(null); setEditingName(''); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); } }
 
-  async function deleteModel(id){ if (!(await window._app_confirm('Delete model?', { title: 'Delete model', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return; try { await apiFetch('/settings/models/' + id, { method: 'DELETE' }); setModels(ms=>ms.filter(m=>m.id!==id)); window._app_show_toast && window._app_show_toast('Deleted', 'success'); } catch(e){ window._app_show_toast && window._app_show_toast(e.message||e,'danger'); } }
+  async function deleteModel(id){
+    if (!(await window._app_confirm('Delete model?', { title: 'Delete model', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
+    setDeletingModelIds(d => Array.from(new Set([...(d||[]), id])));
+    try {
+      await apiFetch('/settings/models/' + id, { method: 'DELETE' });
+      try { window._app_show_toast && window._app_show_toast('Deleted', 'success'); } catch {}
+      setTimeout(() => { setDeletingModelIds(d => (d||[]).filter(x => x !== id)); setModels(ms=>ms.filter(m=>m.id!==id)); }, 380);
+    } catch(e) {
+      setDeletingModelIds(d => (d||[]).filter(x => x !== id));
+      try { window._app_show_toast && window._app_show_toast(e.message||e,'danger'); } catch {}
+    }
+  }
+
 
   return (
     <div className="page">
@@ -2754,6 +2904,11 @@ function ModelsPage({ locale }) {
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
                   <span className="search-icon">🔍</span>
                   <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={searchModels} onChange={e=>{ setSearchModels(e.target.value); setModelPage(1); }} />
+                  <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
+                    const cols = [ { label: 'Name', key: 'name' } ];
+                    const rows = (models || []).filter(m => { if (!searchModels) return true; return (m.name||'').toLowerCase().includes(searchModels.toLowerCase()); }).map(m => ({ name: m.name }));
+                    window._exportTablePDF({ title: 'Models', columns: cols, rows, filename: 'models.pdf' });
+                  }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
                 </div>
               </div>
               <div style={{marginTop:12}}>
@@ -2761,15 +2916,15 @@ function ModelsPage({ locale }) {
                 <div className="table-wrap">
                   <table>
                     <thead><tr><th onClick={()=>toggleModelSort('name')}>Name</th><th>Actions</th></tr></thead>
-                    <tbody>
-                      {modelPaged.map(m=> (
-                        <tr key={m.id}>
-                          <td>{editingId===m.id ? <input className="form-control" value={editingName} onChange={e=>setEditingName(e.target.value)} /> : <strong>{m.name}</strong>}</td>
-                          <td>{editingId===m.id ? (<><button className="btn btn-primary btn-sm" onClick={saveEdit}>Save</button><button className="btn btn-secondary btn-sm" style={{marginLeft:8}} onClick={()=>{ setEditingId(null); setEditingName(''); }}>Cancel</button></>) : (<><button className="btn btn-secondary btn-sm" onClick={()=>startEdit(m)}>Edit</button><button className="btn btn-danger btn-sm" style={{marginLeft:8}} onClick={()=>deleteModel(m.id)} disabled={(modelsUsage[m.id]||0) > 0}>{(modelsUsage[m.id]||0) > 0 ? `Delete (${modelsUsage[m.id]})` : 'Delete'}</button></>)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      <tbody>
+                        {modelPaged.map(m=> (
+                          <tr key={m.id} className={deletingModelIds.includes(m.id) ? 'deleting-row' : ''}>
+                            <td>{editingId===m.id ? <input className="form-control" value={editingName} onChange={e=>setEditingName(e.target.value)} /> : <strong>{m.name}</strong>}</td>
+                            <td>{editingId===m.id ? (<><button className="btn btn-primary btn-sm" onClick={saveEdit}>Save</button><button className="btn btn-secondary btn-sm" style={{marginLeft:8}} onClick={()=>{ setEditingId(null); setEditingName(''); }}>Cancel</button></>) : (<><button className="btn btn-secondary btn-sm" onClick={()=>startEdit(m)}>Edit</button><button className="btn btn-danger btn-sm" style={{marginLeft:8}} onClick={()=>deleteModel(m.id)} disabled={(modelsUsage[m.id]||0) > 0}>{(modelsUsage[m.id]||0) > 0 ? `Delete (${modelsUsage[m.id]})` : 'Delete'}</button></>)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                 </div>
               ) : <span className="td-muted">No models yet</span>}
               </div>
@@ -2926,6 +3081,11 @@ function ProductsPage({ locale }) {
           <div className="search-wrap">
             <span className="search-icon">🔍</span>
             <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={searchProducts} onChange={e=>{ setSearchProducts(e.target.value); setProdPage(1); }} />
+            <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
+              const cols = [ { label: 'Name', key: 'display_name' }, { label: 'SKU', key: 'sku' }, { label: 'Category', key: 'category' }, { label: 'Model', key: 'model' } ];
+              const rows = (products || []).filter(p => { if (!searchProducts) return true; const q = (p.name||'') + (p.sku||'') + (p.category||''); return q.toLowerCase().includes(searchProducts.toLowerCase()); }).map(p => ({ display_name: p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : '')), sku: p.sku, category: p.category, model: inferModelName(p) }));
+              window._exportTablePDF({ title: 'Products', columns: cols, rows, filename: 'products.pdf' });
+            }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
           </div>
         </div>
         <div className="table-wrap" style={{padding:16}}>
@@ -3165,7 +3325,14 @@ function Users({ locale }) {
     <div className="page">
       <div className="page-header">
         <div><div className="page-title">{t(locale,'page.users')}</div><div className="page-subtitle">{t(locale,'users.subtitle').replace('{count}', users.length)}</div></div>
-        {user.role==="owner" && <button className="btn btn-primary" onClick={openCreateUser}>{t(locale,'btn.add_user')}</button>}
+        {user.role==="owner" && <>
+          <button className="btn btn-primary" onClick={openCreateUser}>{t(locale,'btn.add_user')}</button>
+          <button className="btn btn-outline" style={{marginLeft:8}} onClick={() => {
+            const cols = [ { label: 'Name', key: 'name' }, { label: 'Email', key: 'email' }, { label: 'Role', key: 'role' }, { label: 'Active', key: 'active' } ];
+            const rows = (users || []).map(u => ({ name: u.name, email: u.email, role: u.role, active: u.active ? 'Active' : 'Inactive' }));
+            window._exportTablePDF({ title: t(locale,'page.users')||'Users', columns: cols, rows, filename: 'users.pdf' });
+          }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
+        </>}
       </div>
 
       <div className="card">
@@ -3472,6 +3639,43 @@ export default function App() {
         setConfirmState({ message, resolve, opts });
       });
     };
+    // export helper: generates a PDF of tabular data and signs each page
+    window._exportTablePDF = async ({ title = 'Export', columns = [], rows = [], filename }) => {
+      try {
+        const { jsPDF } = await import('jspdf');
+        await import('jspdf-autotable');
+        const doc = new jsPDF('p','pt','a4');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const marginLeft = 40;
+        doc.setFontSize(14);
+        doc.text(title, marginLeft, 40);
+        const head = [columns.map(c=>c.label)];
+        const body = (rows || []).map(r => columns.map(c => {
+          const v = typeof c.render === 'function' ? c.render(r) : (r[c.key] ?? '');
+          return (v === null || v === undefined) ? '' : String(v);
+        }));
+        doc.autoTable({
+          startY: 60,
+          head,
+          body,
+          styles: { fontSize: 10 },
+          margin: { left: marginLeft, right: 40, bottom: 60 },
+          didDrawPage: function (data) {
+            const sys = 'Spare Parts IMS';
+            let uname = 'unknown';
+            try { const u = JSON.parse(localStorage.getItem('user')); if (u) uname = u.name || u.email || uname; } catch {}
+            const now = new Date().toLocaleString();
+            const footer = `${sys} • ${now} • ${uname}`;
+            doc.setFontSize(9);
+            doc.text(footer, data.settings.margin.left, pageHeight - 20);
+          }
+        });
+        doc.save(filename || (title.replace(/\s+/g,'_') + '.pdf'));
+      } catch (err) {
+        try { window._app_show_toast && window._app_show_toast('PDF export failed: ' + (err.message||err), 'danger'); } catch {}
+      }
+    };
     // show toast for global JS errors and unhandled promise rejections
     const onWindowError = (e) => {
       try {
@@ -3505,7 +3709,7 @@ export default function App() {
       } catch (err) { /* ignore */ }
     };
     document.addEventListener('pointerdown', onPointerDown);
-    return () => { try { delete window._app_show_toast; delete window._app_confirm; document.removeEventListener('pointerdown', onPointerDown); window.removeEventListener('error', onWindowError); window.removeEventListener('unhandledrejection', onUnhandledRejection); } catch {} };
+    return () => { try { delete window._app_show_toast; delete window._app_confirm; delete window._exportTablePDF; document.removeEventListener('pointerdown', onPointerDown); window.removeEventListener('error', onWindowError); window.removeEventListener('unhandledrejection', onUnhandledRejection); } catch {} };
   }, []);
 
   // Theme state persisted across sessions

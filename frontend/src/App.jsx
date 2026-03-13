@@ -988,7 +988,46 @@ function LoginPage({ onLogin, locale }) {
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 function Dashboard({ locale }) {
   const [stats, setStats] = useState(null);
+  const [last7Sales, setLast7Sales] = useState([]);
   useEffect(() => { apiFetch("/dashboard/stats").then(setStats); }, []);
+
+  // fetch sales and products to compute last-7-days sales by category
+  useEffect(() => {
+    let mounted = true;
+    async function loadSales() {
+      try {
+        const [sales, products] = await Promise.all([apiFetch('/sales').catch(()=>[]), apiFetch('/products').catch(()=>[])]);
+        // map product id to category
+        const prodById = (products || []).reduce((m,p)=>{ m[p.id]=p; return m; }, {});
+        const now = new Date();
+        const days = [];
+        for (let i=6;i>=0;i--) {
+          const d = new Date(now);
+          d.setDate(now.getDate() - i);
+          days.push(d);
+        }
+
+        const byDay = days.map(d => ({ date: d, key: d.toISOString().slice(0,10), totals: {} }));
+
+        (sales || []).forEach(s => {
+          const when = (s.date && (new Date(s.date)).toISOString().slice(0,10)) || (new Date().toISOString().slice(0,10));
+          const day = byDay.find(b => b.key === when);
+          if (!day) return;
+          const prod = prodById[s.product_id] || s.product || {};
+          const category = prod.category || s.category || 'Uncategorized';
+          const amount = Number(s.total || (s.unit_price? s.unit_price * s.quantity : 0)) || 0;
+          day.totals[category] = (day.totals[category] || 0) + amount;
+        });
+
+        const result = byDay.map(b => ({ date: b.key, data: Object.entries(b.totals).map(([name,value])=>({ name, value })) }));
+        if (mounted) setLast7Sales(result);
+      } catch (e) {
+        if (mounted) setLast7Sales([]);
+      }
+    }
+    loadSales();
+    return () => { mounted = false; };
+  }, []);
 
     if (!stats) return <div className="loading"><div className="spinner"/><span>{t(locale,'loading.dashboard')}</span></div>;
 
@@ -1049,6 +1088,27 @@ function Dashboard({ locale }) {
               </ResponsiveContainer>
             </div>
           </div>
+        </div>
+
+        {/* Sales by category last 7 days: small pies */}
+        <div style={{marginTop:12,display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:12}}>
+          {last7Sales.length ? last7Sales.map((day, idx) => (
+            <div key={day.date} className="card" style={{padding:8}}>
+              <div style={{fontSize:12,fontWeight:700,padding:'6px 8px'}}>{new Date(day.date).toLocaleDateString()}</div>
+              <div style={{height:120}}>
+                <ResponsiveContainer width="100%" height={120}>
+                  <PieChart>
+                    <Pie data={day.data.length?day.data:[{name:'No sales', value:1}]} nameKey="name" dataKey="value" innerRadius={28} outerRadius={48} paddingAngle={2}>
+                      {(day.data.length?day.data:[{name:'No sales', value:1}]).map((d,i)=><Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>) }
+                    </Pie>
+                    <Tooltip formatter={(value,name)=>[fmt(value), name]} contentStyle={{background:'#1C2333',border:'1px solid #30363D',borderRadius:8,fontSize:12}}/>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )) : (
+            <div className="card"><div className="card-body">No recent sales data</div></div>
+          )}
         </div>
       </div>
 

@@ -1030,8 +1030,7 @@ function Dashboard({ locale }) {
                 <Pie data={catData} cx="50%" cy="50%" innerRadius={"30%"} outerRadius={"60%"} paddingAngle={3} dataKey="value">
                   {catData.map((e,i) => <Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>)}
                 </Pie>
-                <Tooltip contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:13}}/>
-                <Legend verticalAlign="bottom" align="center" iconSize={12} wrapperStyle={{fontSize:12,color:"#8B949E"}}/>
+                <Tooltip formatter={(value,name) => [fmt(value), name]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:13}}/>
               </PieChart>
             </ResponsiveContainer>
           </div>

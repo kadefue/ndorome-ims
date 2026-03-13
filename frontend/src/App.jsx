@@ -2716,6 +2716,19 @@ function Deliveries({ locale }) {
             </tbody>
           </table>
         </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10}}>
+          <div>
+            <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
+            <select value={pageSize} onChange={e=>{ setPageSize(+e.target.value); setPage(1); }}>
+              {pageOptions.map(n=> <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div>
+            <button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Prev</button>
+            <span style={{margin:'0 8px'}}>{Math.min((page-1)*pageSize+1, total || 0)}-{Math.min(page*pageSize,total || 0)} of {total}</span>
+            <button disabled={page>=pageCount} onClick={()=>setPage(p=>Math.min(pageCount,p+1))}>Next</button>
+          </div>
+        </div>
       </div>
 
       <ExportRangeModal
@@ -3513,12 +3526,18 @@ function Users({ locale }) {
       </div>
 
       <div className="card">
-        <div className="card-header"><span className="card-title">{t(locale,'users.system_users_title')}</span></div>
+        <div className="card-header">
+          <span className="card-title">{t(locale,'users.system_users_title')}</span>
+          <div className="search-wrap" style={{display:'flex',alignItems:'center',gap:8}}>
+            <span className="search-icon">🔍</span>
+            <input className="form-control" style={{width:240}} placeholder={t(locale,'search.placeholder') || 'Search'} value={searchUsers} onChange={e=>{ setSearchUsers(e.target.value); setUserPage(1); }} />
+          </div>
+        </div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>{t(locale,'table.name')}</th><th>{t(locale,'table.email')}</th><th>{t(locale,'table.role')}</th><th>{t(locale,'table.status')}</th>{user.role==="owner" && <th>{t(locale,'orders.actions') || 'Actions'}</th>}</tr></thead>
+            <thead><tr><th onClick={()=>toggleUserSort('name')}>{t(locale,'table.name')}</th><th onClick={()=>toggleUserSort('email')}>{t(locale,'table.email')}</th><th onClick={()=>toggleUserSort('role')}>{t(locale,'table.role')}</th><th onClick={()=>toggleUserSort('active')}>{t(locale,'table.status')}</th>{user.role==="owner" && <th>{t(locale,'orders.actions') || 'Actions'}</th>}</tr></thead>
             <tbody>
-              {users.map(u=>(
+              {userPaged.map(u=>(
                 <tr key={u.id}>
                   <td>
                     <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -3543,8 +3562,22 @@ function Users({ locale }) {
                   )}
                 </tr>
               ))}
+              {userTotal===0 && <tr><td colSpan={user.role==="owner" ? 5 : 4} style={{textAlign:'center',color:'#8B949E',padding:40}}>{t(locale,'users.no_records') || 'No users found'}</td></tr>}
             </tbody>
           </table>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10}}>
+          <div>
+            <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
+            <select value={userPageSize} onChange={e=>{ setUserPageSize(+e.target.value); setUserPage(1); }}>
+              {userPageOptions.map(n=> <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div>
+            <button disabled={userPage<=1} onClick={()=>setUserPage(p=>Math.max(1,p-1))}>Prev</button>
+            <span style={{margin:'0 8px'}}>{Math.min((userPage-1)*userPageSize+1, userTotal || 0)}-{Math.min(userPage*userPageSize,userTotal || 0)} of {userTotal}</span>
+            <button disabled={userPage>=userPageCount} onClick={()=>setUserPage(p=>Math.min(userPageCount,p+1))}>Next</button>
+          </div>
         </div>
       </div>
 
@@ -3588,6 +3621,9 @@ function Audits({ locale }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+  const pageOptions = [25, 50, 100, 200];
+  const [sortField, setSortField] = useState('created_at');
+  const [sortDir, setSortDir] = useState('desc');
   const load = (q) => apiFetch('/audits' + (q ? '?q=' + encodeURIComponent(q) : '')).then(setEntries).catch(()=>setEntries([]));
 
   // initial load
@@ -3601,6 +3637,31 @@ function Audits({ locale }) {
     }, 300);
     return () => clearTimeout(id);
   }, [search]);
+
+  const sorted = useMemo(() => {
+    const rows = [...(entries || [])];
+    const getVal = (e, f) => {
+      switch (f) {
+        case 'created_at': return e.created_at || '';
+        case 'action': return e.action || '';
+        case 'username': return e.username || '';
+        case 'ip_address': return e.ip_address || '';
+        default: return e[f] || '';
+      }
+    };
+    rows.sort((a,b) => {
+      const va = getVal(a, sortField);
+      const vb = getVal(b, sortField);
+      if (sortField === 'created_at') return (new Date(va) - new Date(vb)) * (sortDir === 'asc' ? 1 : -1);
+      return String(va).localeCompare(String(vb)) * (sortDir === 'asc' ? 1 : -1);
+    });
+    return rows;
+  }, [entries, sortField, sortDir]);
+
+  const total = sorted.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const paged = sorted.slice((page-1)*pageSize, page*pageSize);
+  function toggleSort(field) { if (sortField===field) setSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setSortField(field); setSortDir(field === 'created_at' ? 'desc' : 'asc'); } }
 
   return (
     <div className="page">
@@ -3621,10 +3682,10 @@ function Audits({ locale }) {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>{t(locale,'table.date')||'Date'}</th><th>Action</th><th>{t(locale,'table.name')||'User'}</th><th>IP</th><th>Data</th></tr>
+              <tr><th onClick={()=>toggleSort('created_at')}>{t(locale,'table.date')||'Date'}</th><th onClick={()=>toggleSort('action')}>Action</th><th onClick={()=>toggleSort('username')}>{t(locale,'table.name')||'User'}</th><th onClick={()=>toggleSort('ip_address')}>IP</th><th>Data</th></tr>
             </thead>
             <tbody>
-              {entries.map(e => (
+              {paged.map(e => (
                 <tr key={e.id}>
                   <td>{new Date(e.created_at).toLocaleString()}</td>
                   <td style={{fontWeight:700}}>{e.action}</td>
@@ -3633,8 +3694,22 @@ function Audits({ locale }) {
                   <td style={{fontFamily:'monospace',fontSize:12}}>{typeof e.data === 'string' ? e.data : JSON.stringify(e.data)}</td>
                 </tr>
               ))}
+              {total===0 && <tr><td colSpan={5} style={{textAlign:'center',color:'#8B949E',padding:40}}>{t(locale,'audits.no_records') || 'No audit records found'}</td></tr>}
             </tbody>
           </table>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10}}>
+          <div>
+            <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
+            <select value={pageSize} onChange={e=>{ setPageSize(+e.target.value); setPage(1); }}>
+              {pageOptions.map(n=> <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div>
+            <button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Prev</button>
+            <span style={{margin:'0 8px'}}>{Math.min((page-1)*pageSize+1, total || 0)}-{Math.min(page*pageSize,total || 0)} of {total}</span>
+            <button disabled={page>=pageCount} onClick={()=>setPage(p=>Math.min(pageCount,p+1))}>Next</button>
+          </div>
         </div>
       </div>
     </div>

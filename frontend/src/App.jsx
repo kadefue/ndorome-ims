@@ -724,6 +724,9 @@ function DatePicker({ value, onChange, min }) {
   
   const TRANSLATIONS = {
     en: {
+      "nav.audits": "Audit Records",
+      "page.audits": "Audit Management",
+      "audits.title": "Audit Trail",
       "audits.subtitle": "System actions and changes",
       "audits.search_placeholder": "search action, user, id or data",
       "title.dashboard": "Spare Parts IMS",
@@ -895,9 +898,9 @@ function DatePicker({ value, onChange, min }) {
       "confirm.warning": "Missing Data - Are you sure you want to proceed?",
     },
     sw: {
-      "nav.audits": "Rekodi za Audit",
-      "page.audits": "Rekodi za Audit",
-      "audits.title": "Rekodi za Audit",
+      "nav.audits": "Rekodi za Ukaguzi",
+      "page.audits": "Rekodi za Ukaguzi",
+      "audits.title": "Rekodi za Ukaguzi",
       "audits.subtitle": "Vitendo na mabadiliko ya mfumo",
       "audits.search_placeholder": "tafuta vitendo, mtumiaji, id au data",
       "title.dashboard": "Mfumo wa Kuuza na Kusambaza Spea",
@@ -1687,6 +1690,75 @@ function Inventory({ locale }) {
             </tbody>
           </table>
         </div>
+      {showExportModal && (
+        <Modal title={t(locale,'deliveries.export_range')||'Export Deliveries Range'} onClose={()=>setShowExportModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowExportModal(false)}>{t(locale,'btn.cancel')||'Cancel'}</button><button className="btn btn-primary" onClick={()=>{
+            const cols = [
+              { label: t(locale,'table.date')||'Date', key: 'date' },
+              { label: t(locale,'table.product')||'Product', key: 'product_name' },
+              { label: t(locale,'table.supplier')||'Supplier', key: 'supplier' },
+              { label: t(locale,'table.qty')||'Qty', key: 'quantity' },
+              { label: t(locale,'table.employee')||'Received By', key: 'received_by_name' },
+              { label: t(locale,'table.notes')||'Notes', key: 'notes' },
+              { label: t(locale,'table.status')||'Status', key: 'status' }
+            ];
+            const rows = (deliveries || []).filter(d => {
+              if (search) {
+                const q = (d.product_name||'') + (d.supplier||'') + (d.received_by_name||'');
+                if (!q.toLowerCase().includes(search.toLowerCase())) return false;
+              }
+              if (exportFrom) {
+                const dd = d.date ? (new Date(d.date)).toISOString().slice(0,10) : '';
+                if (!dd || dd < exportFrom) return false;
+              }
+              if (exportTo) {
+                const dd = d.date ? (new Date(d.date)).toISOString().slice(0,10) : '';
+                if (!dd || dd > exportTo) return false;
+              }
+              return true;
+            }).map(d => ({ date: d.date, product_name: d.product_name, supplier: d.supplier, quantity: d.quantity, received_by_name: d.received_by_name, notes: d.notes, status: d.status }));
+            window._exportTablePDF({ title: t(locale,'page.deliveries')||'Deliveries', columns: cols, rows, filename: 'deliveries.pdf' });
+            setShowExportModal(false); setExportFrom(''); setExportTo('');
+          }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button></>}>
+          <div className="form-group"><label className="form-label">From</label><DatePicker value={exportFrom} onChange={v=>setExportFrom(v)} /></div>
+          <div className="form-group"><label className="form-label">To</label><DatePicker value={exportTo} onChange={v=>setExportTo(v)} /></div>
+        </Modal>
+      )}
+      {showExportModal && (
+        <Modal title={t(locale,'orders.export_range')||'Export Orders Range'} onClose={()=>setShowExportModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowExportModal(false)}>{t(locale,'btn.cancel')||'Cancel'}</button><button className="btn btn-primary" onClick={()=>{
+            const cols = [
+              { label: t(locale,'table.date')||'Date', key: 'date' },
+              { label: t(locale,'table.product')||'Product', key: 'product_name' },
+              { label: t(locale,'table.supplier')||'Supplier', key: 'supplier' },
+              { label: t(locale,'table.qty')||'Qty', key: 'quantity' },
+              { label: t(locale,'table.total')||'Total', key: 'total' },
+              { label: t(locale,'orders.expected_delivery')||'Expected', key: 'expected_delivery' },
+              { label: t(locale,'orders.ordered_by')||'Ordered By', key: 'ordered_by_name' },
+              { label: t(locale,'table.status')||'Status', key: 'status' }
+            ];
+            const rows = (orders || []).filter(o => {
+              if (search) {
+                const q = (o.product_name||'') + (o.supplier||'') + (o.ordered_by_name||'');
+                if (!q.toLowerCase().includes(search.toLowerCase())) return false;
+              }
+              if (exportFrom) {
+                const d = o.date ? (new Date(o.date)).toISOString().slice(0,10) : '';
+                if (!d || d < exportFrom) return false;
+              }
+              if (exportTo) {
+                const d = o.date ? (new Date(o.date)).toISOString().slice(0,10) : '';
+                if (!d || d > exportTo) return false;
+              }
+              return true;
+            }).map(o => ({ date: o.date, product_name: o.product_name, supplier: o.supplier, quantity: o.quantity, total: o.total, expected_delivery: o.expected_delivery, ordered_by_name: o.ordered_by_name, status: o.status }));
+            window._exportTablePDF({ title: t(locale,'page.orders')||'Orders', columns: cols, rows, filename: 'orders.pdf' });
+            setShowExportModal(false); setExportFrom(''); setExportTo('');
+          }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button></>}>
+          <div className="form-group"><label className="form-label">From</label><DatePicker value={exportFrom} onChange={v=>setExportFrom(v)} /></div>
+          <div className="form-group"><label className="form-label">To</label><DatePicker value={exportTo} onChange={v=>setExportTo(v)} /></div>
+        </Modal>
+      )}
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10}}>
           <div>
             <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
@@ -1748,6 +1820,9 @@ function Sales({ locale }) {
   const [sortField, setSortField] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
   const [form, setForm] = useState({product_id:"",quantity:"",customer:"",customer_email:"",customer_phone:"",payment:"Cash"});
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportFrom, setExportFrom] = useState('');
+  const [exportTo, setExportTo] = useState('');
 
   const load = () => Promise.all([apiFetch("/sales"),apiFetch("/products")]).then(([s,p])=>{setSales(s);setProducts(p);});
   useEffect(()=>{ load(); },[]);
@@ -1873,37 +1948,7 @@ function Sales({ locale }) {
           <div className="search-wrap">
             <span className="search-icon">🔍</span>
             <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={search} onChange={e=>setSearch(e.target.value)}/>
-            <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
-              const from = window.prompt('Start date (YYYY-MM-DD) or leave blank');
-              const to = window.prompt('End date (YYYY-MM-DD) or leave blank');
-              const cols = [
-                { label: t(locale,'table.date')||'Date', key: 'date' },
-                { label: t(locale,'table.product')||'Product', key: 'product_name' },
-                { label: t(locale,'table.customer')||'Customer', key: 'customer' },
-                { label: t(locale,'table.qty')||'Qty', key: 'quantity' },
-                { label: t(locale,'table.unit_price')||'Unit Price', key: 'unit_price' },
-                { label: t(locale,'table.total')||'Total', key: 'total' },
-                { label: t(locale,'table.payment')||'Payment', key: 'payment' },
-                { label: t(locale,'table.employee')||'Employee', key: 'employee_name' },
-                { label: t(locale,'table.status')||'Status', key: 'status' }
-              ];
-              const rows = (sales || []).filter(s => {
-                if (search) {
-                  const q = (s.product_name||'') + (s.customer||'') + (s.employee_name||'') + (s.payment||'');
-                  if (!q.toLowerCase().includes(search.toLowerCase())) return false;
-                }
-                if (from) {
-                  const d = s.date ? (new Date(s.date)).toISOString().slice(0,10) : '';
-                  if (!d || d < from) return false;
-                }
-                if (to) {
-                  const d = s.date ? (new Date(s.date)).toISOString().slice(0,10) : '';
-                  if (!d || d > to) return false;
-                }
-                return true;
-              }).map(s => ({ date: s.date, product_name: s.product_name || s.product?.name, customer: s.customer, quantity: s.quantity, unit_price: s.unit_price, total: s.total, payment: s.payment, employee_name: s.employee_name, status: s.status }));
-              window._exportTablePDF({ title: t(locale,'page.sales')||'Sales', columns: cols, rows, filename: 'sales.pdf' });
-            }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
+            <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => setShowExportModal(true)}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
           </div>
         </div>
         <div className="table-wrap">
@@ -1960,6 +2005,43 @@ function Sales({ locale }) {
           </div>
         </div>
       </div>
+        
+      {showExportModal && (
+        <Modal title={t(locale,'sales.export_range')||'Export Sales Range'} onClose={()=>setShowExportModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={()=>setShowExportModal(false)}>{t(locale,'btn.cancel')||'Cancel'}</button><button className="btn btn-primary" onClick={()=>{
+            const cols = [
+              { label: t(locale,'table.date')||'Date', key: 'date' },
+              { label: t(locale,'table.product')||'Product', key: 'product_name' },
+              { label: t(locale,'table.customer')||'Customer', key: 'customer' },
+              { label: t(locale,'table.qty')||'Qty', key: 'quantity' },
+              { label: t(locale,'table.unit_price')||'Unit Price', key: 'unit_price' },
+              { label: t(locale,'table.total')||'Total', key: 'total' },
+              { label: t(locale,'table.payment')||'Payment', key: 'payment' },
+              { label: t(locale,'table.employee')||'Employee', key: 'employee_name' },
+              { label: t(locale,'table.status')||'Status', key: 'status' }
+            ];
+            const rows = (sales || []).filter(s => {
+              if (search) {
+                const q = (s.product_name||'') + (s.customer||'') + (s.employee_name||'') + (s.payment||'');
+                if (!q.toLowerCase().includes(search.toLowerCase())) return false;
+              }
+              if (exportFrom) {
+                const d = s.date ? (new Date(s.date)).toISOString().slice(0,10) : '';
+                if (!d || d < exportFrom) return false;
+              }
+              if (exportTo) {
+                const d = s.date ? (new Date(s.date)).toISOString().slice(0,10) : '';
+                if (!d || d > exportTo) return false;
+              }
+              return true;
+            }).map(s => ({ date: s.date, product_name: s.product_name || s.product?.name, customer: s.customer, quantity: s.quantity, unit_price: s.unit_price, total: s.total, payment: s.payment, employee_name: s.employee_name, status: s.status }));
+            window._exportTablePDF({ title: t(locale,'page.sales')||'Sales', columns: cols, rows, filename: 'sales.pdf' });
+            setShowExportModal(false); setExportFrom(''); setExportTo('');
+          }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button></>}>
+          <div className="form-group"><label className="form-label">From</label><DatePicker value={exportFrom} onChange={v=>setExportFrom(v)} /></div>
+          <div className="form-group"><label className="form-label">To</label><DatePicker value={exportTo} onChange={v=>setExportTo(v)} /></div>
+        </Modal>
+      )}
 
       {showModal && (
         <Modal title={t(locale,'sales.record_sale')} onClose={()=>setShowModal(false)}
@@ -2022,6 +2104,9 @@ function Orders({ locale }) {
   const [productEditorLoading, setProductEditorLoading] = useState(false);
   const [form, setForm] = useState({product_id:"",product_name:"",quantity:"",unit_price:"",supplier:"",location:"",expected_delivery:""});
   const canManage = user.role !== "employee";
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportFrom, setExportFrom] = useState('');
+  const [exportTo, setExportTo] = useState('');
 
   const load = () => Promise.all([apiFetch("/orders"),apiFetch("/products?include_unstocked=true"), apiFetch('/settings/categories'), apiFetch('/settings/templates')]).then(([o,p,c,t])=>{setOrders(o);setProducts(p); setCategories(c||[]); setTemplates(t||[]);});
   useEffect(()=>{ load(); },[]);
@@ -2212,36 +2297,7 @@ function Orders({ locale }) {
           <div className="search-wrap">
             <span className="search-icon">🔍</span>
             <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} />
-            <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
-              const from = window.prompt('Start date (YYYY-MM-DD) or leave blank');
-              const to = window.prompt('End date (YYYY-MM-DD) or leave blank');
-              const cols = [
-                { label: t(locale,'table.date')||'Date', key: 'date' },
-                { label: t(locale,'table.product')||'Product', key: 'product_name' },
-                { label: t(locale,'table.supplier')||'Supplier', key: 'supplier' },
-                { label: t(locale,'table.qty')||'Qty', key: 'quantity' },
-                { label: t(locale,'table.total')||'Total', key: 'total' },
-                { label: t(locale,'orders.expected_delivery')||'Expected', key: 'expected_delivery' },
-                { label: t(locale,'orders.ordered_by')||'Ordered By', key: 'ordered_by_name' },
-                { label: t(locale,'table.status')||'Status', key: 'status' }
-              ];
-              const rows = (orders || []).filter(o => {
-                if (search) {
-                  const q = (o.product_name||'') + (o.supplier||'') + (o.ordered_by_name||'');
-                  if (!q.toLowerCase().includes(search.toLowerCase())) return false;
-                }
-                if (from) {
-                  const d = o.date ? (new Date(o.date)).toISOString().slice(0,10) : '';
-                  if (!d || d < from) return false;
-                }
-                if (to) {
-                  const d = o.date ? (new Date(o.date)).toISOString().slice(0,10) : '';
-                  if (!d || d > to) return false;
-                }
-                return true;
-              }).map(o => ({ date: o.date, product_name: o.product_name, supplier: o.supplier, quantity: o.quantity, total: o.total, expected_delivery: o.expected_delivery, ordered_by_name: o.ordered_by_name, status: o.status }));
-              window._exportTablePDF({ title: t(locale,'page.orders')||'Orders', columns: cols, rows, filename: 'orders.pdf' });
-            }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
+            <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => setShowExportModal(true)}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
           </div>
         </div>
         <div className="table-wrap">
@@ -2410,6 +2466,9 @@ function Deliveries({ locale }) {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({order_id:"",product_id:"",product_name:"",quantity:"",supplier:"",notes:""});
   const canManage = user.role !== "employee";
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportFrom, setExportFrom] = useState('');
+  const [exportTo, setExportTo] = useState('');
 
   const load = () => Promise.all([apiFetch("/deliveries"),apiFetch("/orders"),apiFetch("/products?include_unstocked=true"),apiFetch("/auth/users")]).then(([d,o,p,u])=>{setDeliveries(d);setOrders(o);setProducts(p);setUsers(u);});
   useEffect(()=>{ load(); },[]);
@@ -2474,35 +2533,7 @@ function Deliveries({ locale }) {
           <div className="search-wrap">
             <span className="search-icon">🔍</span>
             <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} />
-            <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
-              const from = window.prompt('Start date (YYYY-MM-DD) or leave blank');
-              const to = window.prompt('End date (YYYY-MM-DD) or leave blank');
-              const cols = [
-                { label: t(locale,'table.date')||'Date', key: 'date' },
-                { label: t(locale,'table.product')||'Product', key: 'product_name' },
-                { label: t(locale,'table.supplier')||'Supplier', key: 'supplier' },
-                { label: t(locale,'table.qty')||'Qty', key: 'quantity' },
-                { label: t(locale,'table.employee')||'Received By', key: 'received_by_name' },
-                { label: t(locale,'table.notes')||'Notes', key: 'notes' },
-                { label: t(locale,'table.status')||'Status', key: 'status' }
-              ];
-              const rows = (deliveries || []).filter(d => {
-                if (search) {
-                  const q = (d.product_name||'') + (d.supplier||'') + (d.received_by_name||'');
-                  if (!q.toLowerCase().includes(search.toLowerCase())) return false;
-                }
-                if (from) {
-                  const dd = d.date ? (new Date(d.date)).toISOString().slice(0,10) : '';
-                  if (!dd || dd < from) return false;
-                }
-                if (to) {
-                  const dd = d.date ? (new Date(d.date)).toISOString().slice(0,10) : '';
-                  if (!dd || dd > to) return false;
-                }
-                return true;
-              }).map(d => ({ date: d.date, product_name: d.product_name, supplier: d.supplier, quantity: d.quantity, received_by_name: d.received_by_name, notes: d.notes, status: d.status }));
-              window._exportTablePDF({ title: t(locale,'page.deliveries')||'Deliveries', columns: cols, rows, filename: 'deliveries.pdf' });
-            }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
+            <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => setShowExportModal(true)}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
           </div>
         </div>
         <div className="table-wrap">

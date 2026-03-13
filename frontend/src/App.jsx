@@ -1018,58 +1018,7 @@ function Dashboard({ locale }) {
           <div className="stat-value">{stats.total_sales}</div>
           <div className="stat-sub">{t(locale,'stat.transactions_recorded')}</div>
         </div>
-          <div className="card">
-        <div className="card-header"><span className="card-title">{t(locale,'users.system_users_title')}</span></div>
-        <div className="table-wrap">
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:12}}>
-            <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <span className="search-icon">🔍</span>
-              <input className="form-control" style={{width:220}} placeholder={t(locale,'search.placeholder')} value={searchUsers} onChange={e=>{ setSearchUsers(e.target.value); setUserPage(1); }} />
-            </div>
-            <div>
-              <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
-              <select value={userPageSize} onChange={e=>{ setUserPageSize(+e.target.value); setUserPage(1); }}>
-                {userPageOptions.map(n=> <option key={n} value={n}>{n}</option>)}
-              </select>
-            </div>
-          </div>
-          <table>
-            <thead><tr><th onClick={()=>toggleUserSort('name')}>{t(locale,'table.name')}</th><th onClick={()=>toggleUserSort('email')}>{t(locale,'table.email')}</th><th onClick={()=>toggleUserSort('role')}>{t(locale,'table.role')}</th><th>{t(locale,'table.status')}</th>{user.role==="owner" && <th>{t(locale,'orders.actions') || 'Actions'}</th>}</tr></thead>
-            <tbody>
-              {userPaged.map(u=>(
-                <tr key={u.id}>
-                  <td>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <div className="user-avatar">{initials(u.name)}</div>
-                      <div style={{fontWeight:500}}>{u.name}</div>
-                    </div>
-                  </td>
-                  <td className="td-muted">{u.email}</td>
-                  <td><span className={"badge role-" + u.role}>{u.role}</span></td>
-                  <td><span className={"badge " + (u.active?"badge-success":"badge-danger")}>{u.active? t(locale,'user.status.active') : t(locale,'user.status.inactive')}</span></td>
-                  {user.role==="owner" && (
-                    <td>
-                      {u.role !== 'owner' ? (
-                        <div style={{display:'flex',gap:8}}>
-                          <button className="btn btn-secondary btn-sm" onClick={()=>openEditUser(u)}>{t(locale,'btn.edit') || 'Edit'}</button>
-                          <button className="btn btn-danger btn-sm" onClick={()=>toggleActive(u)}>{u.active ? 'Deactivate' : 'Activate'}</button>
-                        </div>
-                      ) : (
-                        <span className="td-muted">—</span>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div style={{display:'flex',justifyContent:'center',alignItems:'center',padding:10}}>
-            <button disabled={userPage<=1} onClick={()=>setUserPage(p=>Math.max(1,p-1))}>Prev</button>
-            <span style={{margin:'0 8px'}}>{Math.min((userPage-1)*userPageSize+1, userTotal || 0)}-{Math.min(userPage*userPageSize,userTotal || 0)} of {userTotal}</span>
-            <button disabled={userPage>=userPageCount} onClick={()=>setUserPage(p=>Math.min(userPageCount,p+1))}>Next</button>
-          </div>
-        </div>
-      </div>
+          
 
         <div className="card">
           <div className="card-header">

@@ -2170,7 +2170,7 @@ function Orders({ locale }) {
             <label className="form-label">{t(locale,'form.product_name')}</label>
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
               <SearchableSelect
-                options={[{ id: '__new', name: '＋ Create new product' }, ...(products || [])]}
+                options={[...(products || [])]}
                 value={form.product_id}
                 onChange={v => {
                   if (v === '__new') {

@@ -14,3 +14,16 @@ class AuditResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class AuditEventCreate(BaseModel):
+    action: str
+    data: Optional[Any] = None
+    site_url: Optional[str] = None
+
+
+class AuditEventResponse(BaseModel):
+    id: int
+    ip_address: Optional[str] = None
+    site_url: Optional[str] = None
+    created_at: datetime

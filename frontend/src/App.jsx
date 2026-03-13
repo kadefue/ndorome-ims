@@ -732,20 +732,20 @@ function DatePicker({ value, onChange, min }) {
       "title.dashboard": "Spare Parts IMS",
       "nav.dashboard": "Dashboard",
       "nav.inventory": "Inventory",
-      "nav.sales": "Sales",
-      "nav.orders": "Orders",
-      "nav.deliveries": "Deliveries",
+      "nav.sales": "Sales Management",
+      "nav.orders": "Purchase Orders",
+      "nav.deliveries": "Delivery Management",
       "nav.categories": "Motorcycle Categories/Types",
       "nav.models": "Motorcycle Models/Brands",
       "nav.products": "Motorcycle Products/Parts",
-      "nav.reports": "Reports",
-      "nav.users": "Users",
+      "nav.reports": "Reports & Analytics",
+      "nav.users": "User Management",
       "nav.navigation": "Navigation",
       "page.dashboard": "Dashboard",
       "page.inventory": "Inventory Management",
       "page.sales": "Sales Management",
       "page.orders": "Purchase Orders",
-      "page.deliveries": "Deliveries",
+      "page.deliveries": "Delivery Management",
       "page.categories": "Motorcycle Categories/Types",
       "page.models": "Motorcycle Models/Brands",
       "page.products": "Motorcycle Products/Parts",
@@ -1143,6 +1143,50 @@ function Modal({ title, onClose, children, footer }) {
         {footer && <div className="modal-footer">{footer}</div>}
       </div>
     </div>
+  );
+}
+
+// Shared date-range export modal used by Sales/Orders/Deliveries.
+function ExportRangeModal({
+  visible,
+  title,
+  onClose,
+  onExport,
+  cancelLabel = 'Cancel',
+  exportLabel = 'Export PDF'
+}) {
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+
+  useEffect(() => {
+    if (!visible) {
+      setFrom('');
+      setTo('');
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Modal
+      title={title}
+      onClose={onClose}
+      footer={
+        <>
+          <button className="btn btn-secondary" onClick={onClose}>{cancelLabel}</button>
+          <button className="btn btn-primary" onClick={() => onExport && onExport(from, to)}>{exportLabel}</button>
+        </>
+      }
+    >
+      <div className="form-group">
+        <label className="form-label">From</label>
+        <DatePicker value={from} onChange={setFrom} />
+      </div>
+      <div className="form-group">
+        <label className="form-label">To</label>
+        <DatePicker value={to} onChange={setTo} />
+      </div>
+    </Modal>
   );
 }
 
@@ -1692,75 +1736,6 @@ function Inventory({ locale }) {
             </tbody>
           </table>
         </div>
-      {showExportModal && (
-        <Modal title={t(locale,'deliveries.export_range')||'Export Deliveries Range'} onClose={()=>setShowExportModal(false)}
-          footer={<><button className="btn btn-secondary" onClick={()=>setShowExportModal(false)}>{t(locale,'btn.cancel')||'Cancel'}</button><button className="btn btn-primary" onClick={()=>{
-            const cols = [
-              { label: t(locale,'table.date')||'Date', key: 'date' },
-              { label: t(locale,'table.product')||'Product', key: 'product_name' },
-              { label: t(locale,'table.supplier')||'Supplier', key: 'supplier' },
-              { label: t(locale,'table.qty')||'Qty', key: 'quantity' },
-              { label: t(locale,'table.employee')||'Received By', key: 'received_by_name' },
-              { label: t(locale,'table.notes')||'Notes', key: 'notes' },
-              { label: t(locale,'table.status')||'Status', key: 'status' }
-            ];
-            const rows = (deliveries || []).filter(d => {
-              if (search) {
-                const q = (d.product_name||'') + (d.supplier||'') + (d.received_by_name||'');
-                if (!q.toLowerCase().includes(search.toLowerCase())) return false;
-              }
-              if (exportFrom) {
-                const dd = d.date ? (new Date(d.date)).toISOString().slice(0,10) : '';
-                if (!dd || dd < exportFrom) return false;
-              }
-              if (exportTo) {
-                const dd = d.date ? (new Date(d.date)).toISOString().slice(0,10) : '';
-                if (!dd || dd > exportTo) return false;
-              }
-              return true;
-            }).map(d => ({ date: d.date, product_name: d.product_name, supplier: d.supplier, quantity: d.quantity, received_by_name: d.received_by_name, notes: d.notes, status: d.status }));
-            window._exportTablePDF({ title: t(locale,'page.deliveries')||'Deliveries', columns: cols, rows, filename: 'deliveries.pdf' });
-            setShowExportModal(false); setExportFrom(''); setExportTo('');
-          }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button></>}>
-          <div className="form-group"><label className="form-label">From</label><DatePicker value={exportFrom} onChange={v=>setExportFrom(v)} /></div>
-          <div className="form-group"><label className="form-label">To</label><DatePicker value={exportTo} onChange={v=>setExportTo(v)} /></div>
-        </Modal>
-      )}
-      {showExportModal && (
-        <Modal title={t(locale,'orders.export_range')||'Export Orders Range'} onClose={()=>setShowExportModal(false)}
-          footer={<><button className="btn btn-secondary" onClick={()=>setShowExportModal(false)}>{t(locale,'btn.cancel')||'Cancel'}</button><button className="btn btn-primary" onClick={()=>{
-            const cols = [
-              { label: t(locale,'table.date')||'Date', key: 'date' },
-              { label: t(locale,'table.product')||'Product', key: 'product_name' },
-              { label: t(locale,'table.supplier')||'Supplier', key: 'supplier' },
-              { label: t(locale,'table.qty')||'Qty', key: 'quantity' },
-              { label: t(locale,'table.total')||'Total', key: 'total' },
-              { label: t(locale,'orders.expected_delivery')||'Expected', key: 'expected_delivery' },
-              { label: t(locale,'orders.ordered_by')||'Ordered By', key: 'ordered_by_name' },
-              { label: t(locale,'table.status')||'Status', key: 'status' }
-            ];
-            const rows = (orders || []).filter(o => {
-              if (search) {
-                const q = (o.product_name||'') + (o.supplier||'') + (o.ordered_by_name||'');
-                if (!q.toLowerCase().includes(search.toLowerCase())) return false;
-              }
-              if (exportFrom) {
-                const d = o.date ? (new Date(o.date)).toISOString().slice(0,10) : '';
-                if (!d || d < exportFrom) return false;
-              }
-              if (exportTo) {
-                const d = o.date ? (new Date(o.date)).toISOString().slice(0,10) : '';
-                if (!d || d > exportTo) return false;
-              }
-              return true;
-            }).map(o => ({ date: o.date, product_name: o.product_name, supplier: o.supplier, quantity: o.quantity, total: o.total, expected_delivery: o.expected_delivery, ordered_by_name: o.ordered_by_name, status: o.status }));
-            window._exportTablePDF({ title: t(locale,'page.orders')||'Orders', columns: cols, rows, filename: 'orders.pdf' });
-            setShowExportModal(false); setExportFrom(''); setExportTo('');
-          }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button></>}>
-          <div className="form-group"><label className="form-label">From</label><DatePicker value={exportFrom} onChange={v=>setExportFrom(v)} /></div>
-          <div className="form-group"><label className="form-label">To</label><DatePicker value={exportTo} onChange={v=>setExportTo(v)} /></div>
-        </Modal>
-      )}
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10}}>
           <div>
             <label style={{marginRight:8}}>{t(locale,'table.page_size')||'Page size'}:</label>
@@ -2107,8 +2082,6 @@ function Orders({ locale }) {
   const [form, setForm] = useState({product_id:"",product_name:"",quantity:"",unit_price:"",supplier:"",location:"",expected_delivery:""});
   const canManage = user.role !== "employee";
   const [showExportModal, setShowExportModal] = useState(false);
-  const [exportFrom, setExportFrom] = useState('');
-  const [exportTo, setExportTo] = useState('');
 
   const load = () => Promise.all([apiFetch("/orders"),apiFetch("/products?include_unstocked=true"), apiFetch('/settings/categories'), apiFetch('/settings/templates')]).then(([o,p,c,t])=>{setOrders(o);setProducts(p); setCategories(c||[]); setTemplates(t||[]);});
   useEffect(()=>{ load(); },[]);
@@ -2283,6 +2256,89 @@ function Orders({ locale }) {
 
   function toggleSort(field) { if (sortField===field) setSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setSortField(field); setSortDir('asc'); } }
 
+  function exportOrdersPDF(from, to) {
+    const q = (search || '').toLowerCase().trim();
+    const toDateKey = (v) => {
+      if (!v) return '';
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return '';
+      return d.toISOString().slice(0, 10);
+    };
+
+    const rowsSource = (orders || []).filter(o => {
+      const product = o.product?.display_name || o.product_name || o.product?.name || '';
+      const orderedBy = o.ordered_by_user?.name || o.ordered_by_name || '';
+      const searchText = `${o.order_id || ''} ${product} ${o.supplier || ''} ${orderedBy} ${o.status || ''} ${o.location || ''}`.toLowerCase();
+      if (q && !searchText.includes(q)) return false;
+      const day = toDateKey(o.date);
+      if (from && (!day || day < from)) return false;
+      if (to && (!day || day > to)) return false;
+      return true;
+    });
+
+    if (!rowsSource.length) {
+      window._app_show_toast && window._app_show_toast('No purchase orders found for selected filters', 'warning');
+      return;
+    }
+
+    const totalQty = rowsSource.reduce((acc, o) => acc + Number(o.quantity || 0), 0);
+    const totalAmount = rowsSource.reduce((acc, o) => acc + Number(o.total || (Number(o.quantity || 0) * Number(o.unit_price || 0))), 0);
+
+    const cols = [
+      { label: '#', key: 'no' },
+      { label: t(locale,'table.date') || 'Date', key: 'date' },
+      { label: 'PO Ref', key: 'order_ref' },
+      { label: t(locale,'table.product') || 'Product', key: 'product' },
+      { label: t(locale,'table.supplier') || 'Supplier', key: 'supplier' },
+      { label: t(locale,'table.qty') || 'Qty', key: 'quantity' },
+      { label: t(locale,'table.unit_price') || 'Unit Price', key: 'unit_price' },
+      { label: t(locale,'table.total') || 'Total', key: 'total' },
+      { label: t(locale,'orders.expected_delivery') || 'Expected', key: 'expected_delivery' },
+      { label: t(locale,'orders.ordered_by') || 'Ordered By', key: 'ordered_by' },
+      { label: t(locale,'form.location') || 'Location', key: 'location' },
+      { label: t(locale,'table.status') || 'Status', key: 'status' }
+    ];
+
+    const rows = rowsSource.map((o, idx) => ({
+      no: idx + 1,
+      date: humanDate(o.date),
+      order_ref: o.order_id || o.id,
+      product: o.product?.display_name || o.product_name || o.product?.name || '—',
+      supplier: o.supplier || '—',
+      quantity: Number(o.quantity || 0),
+      unit_price: fmt(o.unit_price),
+      total: fmt(o.total || (Number(o.quantity || 0) * Number(o.unit_price || 0))),
+      expected_delivery: o.expected_delivery ? new Date(o.expected_delivery).toLocaleDateString() : '—',
+      ordered_by: o.ordered_by_user?.name || o.ordered_by_name || o.ordered_by_id || '—',
+      location: o.location || '—',
+      status: (o.status || 'pending').replace('_', ' ')
+    }));
+
+    rows.push({
+      no: '',
+      date: '',
+      order_ref: 'TOTAL',
+      product: '',
+      supplier: '',
+      quantity: totalQty,
+      unit_price: '',
+      total: fmt(totalAmount),
+      expected_delivery: '',
+      ordered_by: '',
+      location: '',
+      status: ''
+    });
+
+    const fileSuffix = `${from || 'all'}_to_${to || 'all'}`;
+    window._exportTablePDF({
+      title: `${t(locale,'page.orders') || 'Purchase Orders'} (${from || 'all'} to ${to || 'all'})`,
+      columns: cols,
+      rows,
+      filename: `purchase_orders_${fileSuffix}.pdf`
+    });
+    setShowExportModal(false);
+  }
+
   return (
     <div className="page">
       <div className="page-header">
@@ -2373,6 +2429,15 @@ function Orders({ locale }) {
           </div>
         </div>
       </div>
+
+      <ExportRangeModal
+        visible={showExportModal}
+        title={t(locale,'orders.export_range') || 'Export Purchase Orders'}
+        onClose={() => setShowExportModal(false)}
+        onExport={(from, to) => exportOrdersPDF(from, to)}
+        cancelLabel={t(locale,'btn.cancel') || 'Cancel'}
+        exportLabel={t(locale,'btn.export_pdf') || 'Export PDF'}
+      />
 
       {showModal && (
         <Modal title={t(locale,'orders.create_order')} onClose={()=>setShowModal(false)}
@@ -2469,8 +2534,6 @@ function Deliveries({ locale }) {
   const [form, setForm] = useState({order_id:"",product_id:"",product_name:"",quantity:"",supplier:"",notes:""});
   const canManage = user.role !== "employee";
   const [showExportModal, setShowExportModal] = useState(false);
-  const [exportFrom, setExportFrom] = useState('');
-  const [exportTo, setExportTo] = useState('');
 
   const load = () => Promise.all([apiFetch("/deliveries"),apiFetch("/orders"),apiFetch("/products?include_unstocked=true"),apiFetch("/auth/users")]).then(([d,o,p,u])=>{setDeliveries(d);setOrders(o);setProducts(p);setUsers(u);});
   useEffect(()=>{ load(); },[]);
@@ -2504,6 +2567,78 @@ function Deliveries({ locale }) {
   const paged = sorted.slice((page-1)*pageSize, page*pageSize);
 
   function toggleSort(field) { if (sortField===field) setSortDir(d=> d==='asc' ? 'desc' : 'asc'); else { setSortField(field); setSortDir('asc'); } }
+
+  function exportDeliveriesPDF(from, to) {
+    const q = (search || '').toLowerCase().trim();
+    const toDateKey = (v) => {
+      if (!v) return '';
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return '';
+      return d.toISOString().slice(0, 10);
+    };
+
+    const rowsSource = (deliveries || []).filter(d => {
+      const product = d.product?.display_name || d.product_name || d.product?.name || '';
+      const receivedBy = d.received_by_user?.name || d.received_by_name || '';
+      const searchText = `${d.order_id || ''} ${product} ${d.supplier || ''} ${receivedBy} ${d.notes || ''} ${d.status || ''}`.toLowerCase();
+      if (q && !searchText.includes(q)) return false;
+      const day = toDateKey(d.date);
+      if (from && (!day || day < from)) return false;
+      if (to && (!day || day > to)) return false;
+      return true;
+    });
+
+    if (!rowsSource.length) {
+      window._app_show_toast && window._app_show_toast('No deliveries found for selected filters', 'warning');
+      return;
+    }
+
+    const totalQty = rowsSource.reduce((acc, d) => acc + Number(d.quantity || 0), 0);
+    const cols = [
+      { label: '#', key: 'no' },
+      { label: t(locale,'table.date') || 'Date', key: 'date' },
+      { label: 'Order Ref', key: 'order_ref' },
+      { label: t(locale,'table.product') || 'Product', key: 'product' },
+      { label: t(locale,'table.supplier') || 'Supplier', key: 'supplier' },
+      { label: t(locale,'table.qty') || 'Qty', key: 'quantity' },
+      { label: t(locale,'table.employee') || 'Received By', key: 'received_by' },
+      { label: t(locale,'table.notes') || 'Notes', key: 'notes' },
+      { label: t(locale,'table.status') || 'Status', key: 'status' }
+    ];
+
+    const rows = rowsSource.map((d, idx) => ({
+      no: idx + 1,
+      date: humanDate(d.date),
+      order_ref: d.order_id || '—',
+      product: d.product?.display_name || d.product_name || d.product?.name || '—',
+      supplier: d.supplier || '—',
+      quantity: Number(d.quantity || 0),
+      received_by: d.received_by_user?.name || d.received_by_name || (users.find(u => u.id === d.received_by_id)?.name) || '—',
+      notes: d.notes || '—',
+      status: (d.status || 'pending').replace('_', ' ')
+    }));
+
+    rows.push({
+      no: '',
+      date: '',
+      order_ref: 'TOTAL',
+      product: '',
+      supplier: '',
+      quantity: totalQty,
+      received_by: '',
+      notes: '',
+      status: ''
+    });
+
+    const fileSuffix = `${from || 'all'}_to_${to || 'all'}`;
+    window._exportTablePDF({
+      title: `${t(locale,'page.deliveries') || 'Deliveries'} (${from || 'all'} to ${to || 'all'})`,
+      columns: cols,
+      rows,
+      filename: `deliveries_${fileSuffix}.pdf`
+    });
+    setShowExportModal(false);
+  }
 
   async function saveDelivery() {
     if (!form.order_id || !form.quantity) {
@@ -2582,6 +2717,15 @@ function Deliveries({ locale }) {
           </table>
         </div>
       </div>
+
+      <ExportRangeModal
+        visible={showExportModal}
+        title={t(locale,'deliveries.export_range') || 'Export Deliveries'}
+        onClose={() => setShowExportModal(false)}
+        onExport={(from, to) => exportDeliveriesPDF(from, to)}
+        cancelLabel={t(locale,'btn.cancel') || 'Cancel'}
+        exportLabel={t(locale,'btn.export_pdf') || 'Export PDF'}
+      />
 
       {showModal && (
         <Modal title={t(locale,'deliveries.record_incoming')} onClose={()=>setShowModal(false)}
@@ -3675,9 +3819,36 @@ export default function App() {
     // export helper: generates a PDF of tabular data and signs each page
     window._exportTablePDF = async ({ title = 'Export', columns = [], rows = [], filename }) => {
       try {
+        const siteUrl = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'unknown';
+        let ipAddress = 'unknown';
+        let uname = 'unknown';
+        try {
+          const u = JSON.parse(localStorage.getItem('user'));
+          if (u) uname = u.name || u.email || uname;
+        } catch {}
+
+        // Log export action first so we can include server-observed client IP in the PDF footer.
+        try {
+          const fileNameValue = filename || (title.replace(/\s+/g,'_') + '.pdf');
+          const auditEvent = await apiFetch('/audits/event', {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'export_pdf',
+              site_url: siteUrl,
+              data: {
+                title,
+                filename: fileNameValue,
+                row_count: (rows || []).length,
+                column_count: (columns || []).length,
+              }
+            })
+          });
+          if (auditEvent && auditEvent.ip_address) ipAddress = auditEvent.ip_address;
+        } catch {}
+
         const { jsPDF } = await import('jspdf');
         await import('jspdf-autotable');
-        const doc = new jsPDF('p','pt','a4');
+        const doc = new jsPDF('l','pt','a4');
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
         const marginLeft = 40;
@@ -3696,10 +3867,8 @@ export default function App() {
           margin: { left: marginLeft, right: 40, bottom: 60 },
           didDrawPage: function (data) {
             const sys = 'Spare Parts IMS';
-            let uname = 'unknown';
-            try { const u = JSON.parse(localStorage.getItem('user')); if (u) uname = u.name || u.email || uname; } catch {}
             const now = new Date().toLocaleString();
-            const footer = `${sys} • ${now} • ${uname}`;
+            const footer = `${sys} • ${now} • ${uname} • IP: ${ipAddress} • ${siteUrl}`;
             doc.setFontSize(9);
             doc.text(footer, data.settings.margin.left, pageHeight - 20);
           }

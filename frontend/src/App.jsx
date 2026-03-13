@@ -31,6 +31,23 @@ async function apiFetch(path, options = {}) {
   return res.json();
 }
 
+const formatDateTime = (d) => {
+  const date = new Date(d);
+  return (
+    date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: '2-digit'
+    }) +
+    ' ' +
+    date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
+  );
+};
+
 function initials(name) {
   return (name || "")
     .split(" ")
@@ -60,6 +77,8 @@ const C = {
 };
 
 const PIE_COLORS = ["#C8860A", "#58A6FF", "#3FB950", "#F85149", "#BC8CFF", "#D29922"];
+// alternate palette for sales pie (rotated colors for visual distinction)
+const SALES_PIE_COLORS = [...PIE_COLORS.slice(2), ...PIE_COLORS.slice(0,2)];
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
@@ -231,6 +250,8 @@ const css = `
 
   /* ── Charts Grid ── */
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  /* inside the 4-column stats-grid the charts grid should span two columns so it gets more width */
+  .stats-grid > .charts-grid { grid-column: span 2; }
   .charts-grid .card { min-height: 360px; padding: 12px; }
   .charts-grid .card .card-body { height: calc(100% - 56px); display:flex; align-items:center; }
   .small-pies-grid { margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 12px; width: 100%; }
@@ -587,6 +608,7 @@ const themeCss = `
       "loading.dashboard": "Loading dashboard…",
       "dashboard.low_stock_title": "⚠️ Low Stock Alerts",
       "dashboard.recent_sales": "🕐 Recent Sales",
+      "dashboard.sales": "Sales",
       "label.left": "left",
       "label.min": "Min:",
       "table.date": "Date",
@@ -754,6 +776,7 @@ const themeCss = `
       "loading.dashboard": "Inapakia dashibodi…",
       "dashboard.low_stock_title": "⚠️ Onyo: Stoku Kidogo",
       "dashboard.recent_sales": "🕐 Mauzo ya Hivi Karibuni",
+      "dashboard.sales": "Mauzo",
       "label.left": "baki",
       "label.min": "Kiwango cha Chini:",
       "table.date": "Tarehe",
@@ -996,6 +1019,7 @@ function LoginPage({ onLogin, locale }) {
 function Dashboard({ locale }) {
   const [stats, setStats] = useState(null);
   const [last7Sales, setLast7Sales] = useState([]);
+  const [salesTotals, setSalesTotals] = useState([]);
   useEffect(() => { apiFetch("/dashboard/stats").then(setStats); }, []);
 
   // fetch sales and products to compute last-7-days sales by category
@@ -1028,7 +1052,19 @@ function Dashboard({ locale }) {
         });
 
         const result = byDay.map(b => ({ date: b.key, data: Object.entries(b.totals).map(([name,value])=>({ name, value })) }));
-        if (mounted) setLast7Sales(result);
+        // compute overall sales totals by category as a fallback if stats.category_sales is not provided
+        const totals = {};
+        (sales || []).forEach(s => {
+          const prod = prodById[s.product_id] || s.product || {};
+          const category = prod.category || s.category || 'Uncategorized';
+          const amount = Number(s.total || (s.unit_price? s.unit_price * s.quantity : 0)) || 0;
+          totals[category] = (totals[category] || 0) + amount;
+        });
+        const totalsArr = Object.entries(totals).map(([name,value]) => ({name,value}));
+        if (mounted) {
+          setLast7Sales(result);
+          setSalesTotals(totalsArr);
+        }
       } catch (e) {
         if (mounted) setLast7Sales([]);
       }
@@ -1041,7 +1077,7 @@ function Dashboard({ locale }) {
 
   const monthlyData = Object.entries(stats.monthly_sales).map(([m,v]) => ({month:m, revenue:v}));
   const catData = Object.entries(stats.category_stock).map(([name,value]) => ({name,value}));
-  const salesCatData = stats.category_sales ? Object.entries(stats.category_sales).map(([name,value]) => ({name,value})) : Object.entries(stats.category_stock).map(([name,value]) => ({name, value}));
+  const salesCatData = stats.category_sales ? Object.entries(stats.category_sales).map(([name,value]) => ({name,value})) : (salesTotals.length ? salesTotals : Object.entries(stats.category_stock).map(([name,value]) => ({name, value})));
 
   return (
     <div className="page">
@@ -1088,8 +1124,8 @@ function Dashboard({ locale }) {
             <div className="card-body">
               <ResponsiveContainer width="100%" height={'100%'}>
                 <PieChart>
-                  <Pie data={salesCatData} nameKey="name" cx="50%" cy="50%" innerRadius={"20%"} outerRadius={"80%"} paddingAngle={3} dataKey="value">
-                    {salesCatData.map((e,i) => <Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>) }
+                  <Pie data={salesCatData} nameKey="name" cx="50%" cy="50%" innerRadius={"18%"} outerRadius={"82%"} paddingAngle={3} dataKey="value" stroke="#0D1117" strokeWidth={2}>
+                    {salesCatData.map((e,i) => <Cell key={i} fill={SALES_PIE_COLORS[i%SALES_PIE_COLORS.length]}/>) }
                   </Pie>
                   <Tooltip formatter={(value,name) => [fmt(value), name]} contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:13}}/>
                 </PieChart>
@@ -1134,7 +1170,7 @@ function Dashboard({ locale }) {
               <tbody>
                 {stats.recent_sales.map(s => (
                   <tr key={s.id}>
-                    <td><div style={{fontSize:13}}>{s.product_name}</div><div style={{fontSize:11,color:"#8B949E"}}>{s.date}</div></td>
+                    <td><div style={{fontSize:13}}>{s.product_name}</div><div style={{fontSize:11,color:"#8B949E"}}>{formatDateTime(s.date)}</div></td>
                     <td className="td-muted">{s.customer}</td>
                     <td style={{color:"#3FB950",fontWeight:600}}>{fmt(s.total)}</td>
                   </tr>
@@ -1148,7 +1184,7 @@ function Dashboard({ locale }) {
       <div className="small-pies-grid">
         {last7Sales.length ? last7Sales.map((day, idx) => (
           <div key={day.date} className="card small-pie-card">
-            <div style={{fontSize:12,fontWeight:700,padding:'6px 8px'}}>{new Date(day.date + "T00:00:00").toLocaleDateString('en-GB')} Sales</div>
+            <div style={{fontSize:12,fontWeight:700,padding:'6px 8px'}}>{new Date(day.date + "T00:00:00").toLocaleDateString('en-GB')} {t(locale,'dashboard.sales')}</div>
             <div className="card-body">
               <ResponsiveContainer width="100%" height={120}>
                 <PieChart>

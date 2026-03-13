@@ -851,6 +851,31 @@ const formatMessage = (template, vars = {}) => {
   return Object.keys(vars).reduce((s, k) => s.split('{' + k + '}').join(vars[k]), template);
 };
 
+// Simple searchable select component: shows a small filter input and a native select
+function SearchableSelect({ options = [], value, onChange, idField = 'id', label = (o) => o.name || o.display_name || o, placeholder = 'Search…' }) {
+  const [filter, setFilter] = (useState(''));
+  const normalized = (options || []).slice().sort((a,b)=>{
+    const A = (String(typeof a === 'object' ? label(a) : a) || '').toLowerCase();
+    const B = (String(typeof b === 'object' ? label(b) : b) || '').toLowerCase();
+    return A.localeCompare(B);
+  });
+  const filtered = normalized.filter(opt => {
+    const text = (typeof opt === 'object' ? label(opt) : String(opt) || '').toLowerCase();
+    return text.includes(filter.toLowerCase());
+  });
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:6}}>
+      <input className="form-control" placeholder={placeholder} value={filter} onChange={e=>setFilter(e.target.value)} />
+      <select className="form-control" value={value ?? ''} onChange={e=>onChange(e.target.value)}>
+        <option value="">{placeholder}</option>
+        {filtered.map(opt => (
+          <option key={typeof opt === 'object' ? opt[idField] : opt} value={typeof opt === 'object' ? opt[idField] : opt}>{typeof opt === 'object' ? label(opt) : opt}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 const humanDate = (value) => {
   if (!value) return '';
   const date = new Date(value);
@@ -1544,10 +1569,7 @@ function Sales({ locale }) {
           footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveSale}>{t(locale,'btn.save')}</button></>}>
           <div className="form-group">
             <label className="form-label">{t(locale,'form.product_name')}</label>
-            <select className="form-control" value={form.product_id} onChange={e=>setForm({...form,product_id:e.target.value})}>
-              <option value="">{t(locale,'form.select_product')}</option>
-              {products.map(p=><option key={p.id} value={p.id}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))} (Stock: {p.quantity})</option>)}
-            </select>
+            <SearchableSelect options={products} value={form.product_id} onChange={v=>setForm({...form,product_id:v})} label={p=> (p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))) + (p.quantity!=null ? ` (Stock: ${p.quantity})` : '')} placeholder={t(locale,'form.select_product')||'-- Select Product --'} />
           </div>
           {selProd && <div style={{padding:"10px 12px",background:"rgba(200,134,10,0.1)",borderRadius:8,marginBottom:16,fontSize:13}}>Unit Price: <strong style={{color:"#C8860A"}}>{fmt(selProd.unit_price)}</strong></div>}
           <div className="form-grid">
@@ -1860,20 +1882,22 @@ function Orders({ locale }) {
           <div className="form-group">
             <label className="form-label">{t(locale,'form.product_name')}</label>
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
-              <select className="form-control" value={form.product_id} onChange={e=>{
-                const val = e.target.value;
-                if (val === "__new") {
-                  setProductEditorForm({ name: "", sku: "", category: "", min_quantity: 5, unit_price: 0, supplier: "", location: "" });
-                  setProductEditorShow(true);
-                  setForm(f => ({ ...f, product_id: "" }));
-                  return;
-                }
-                const p = products.find(x => x.id === val);
-                setForm({ ...form, product_id: val, supplier: p?.supplier || "", location: p?.location || "", unit_price: p?.unit_price || "" });
-              }}>
-                <option value="">{t(locale,'form.select_product')}</option>
-                {products.map(p=><option key={p.id} value={p.id}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))}</option>)}
-              </select>
+              <SearchableSelect
+                options={[{ id: '__new', name: '＋ Create new product' }, ...(products || [])]}
+                value={form.product_id}
+                onChange={v => {
+                  if (v === '__new') {
+                    setProductEditorForm({ name: '', sku: '', category: '', min_quantity: 5, unit_price: 0, supplier: '', location: '' });
+                    setProductEditorShow(true);
+                    setForm(f => ({ ...f, product_id: '' }));
+                    return;
+                  }
+                  const p = (products || []).find(x => String(x.id) === String(v));
+                  setForm({ ...form, product_id: v, supplier: p?.supplier || '', location: p?.location || '', unit_price: p?.unit_price || '' });
+                }}
+                label={p => p.display_name || p.name}
+                placeholder={t(locale,'form.select_product') || '-- Select Product --'}
+              />
               {/* Edit/Delete moved to table actions */}
             </div>
           </div>
@@ -1899,21 +1923,22 @@ function Orders({ locale }) {
           <div className="form-grid">
             <div className="form-group">
               <label className="form-label">{t(locale,'form.product_name')}</label>
-              <select className="form-control" value={productEditorForm?.name||""} onChange={e=>setProductEditorForm({...productEditorForm,name:e.target.value})}>
-                <option value="">(select product)</option>
-                {/* templates from settings */}
-                {templates && templates.map(t => <option key={`tmpl-${t.id}`} value={t.name}>{t.name}</option>)}
-                {/* existing product names */}
-                {products && products.map(p=> <option key={p.id} value={p.name}>{p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : ''))}</option>)}
-              </select>
+              <SearchableSelect
+                options={[...(templates||[]).map(t=>t.name), ...(products||[]).map(p=>p.display_name || p.name)]}
+                value={productEditorForm?.name||""}
+                onChange={v=>setProductEditorForm({...productEditorForm,name:v})}
+                placeholder="(select product)"
+              />
             </div>
             <div className="form-group"><label className="form-label">{t(locale,'form.sku')}</label><input className="form-control" value={productEditorForm?.sku||""} onChange={e=>setProductEditorForm({...productEditorForm,sku:e.target.value})}/></div>
             <div className="form-group">
               <label className="form-label">{t(locale,'form.category')}</label>
-              <select className="form-control" value={productEditorForm?.category||""} onChange={e=>setProductEditorForm({...productEditorForm,category:e.target.value})}>
-                <option value="">(select category)</option>
-                {categories && categories.length ? categories.map(c=> <option key={c.id} value={c.name}>{c.name}</option>) : ['Brakes','Tires','Engine','Transmission','Fluids','Body','Electrical','Accessories','Drive','Controls','Gaskets','Fuel System'].map(c=> <option key={c} value={c}>{c}</option>)}
-              </select>
+              <SearchableSelect
+                options={ (categories && categories.length) ? (categories.map(c=>c.name)) : ['Brakes','Tires','Engine','Transmission','Fluids','Body','Electrical','Accessories','Drive','Controls','Gaskets','Fuel System'] }
+                value={productEditorForm?.category||""}
+                onChange={v=>setProductEditorForm({...productEditorForm,category:v})}
+                placeholder="(select category)"
+              />
             </div>
             <div className="form-group"><label className="form-label">{t(locale,'form.min_qty')}</label><input className="form-control" type="number" value={productEditorForm?.min_quantity||0} onChange={e=>setProductEditorForm({...productEditorForm,min_quantity:e.target.value})}/></div>
             <div className="form-group"><label className="form-label">{t(locale,'form.unit_price_tzs')}</label><input className="form-control" type="number" value={productEditorForm?.unit_price||0} onChange={e=>setProductEditorForm({...productEditorForm,unit_price:e.target.value})}/></div>
@@ -2054,13 +2079,16 @@ function Deliveries({ locale }) {
           footer={<><button className="btn btn-secondary" onClick={()=>setShowModal(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={saveDelivery}>{t(locale,'btn.save')}</button></>}>
           <div className="form-group">
             <label className="form-label">{t(locale,'deliveries.linked_order_label')}</label>
-            <select className="form-control" value={form.order_id} onChange={e=>{
-              const o=orders.find(x=>x.id===e.target.value);
-              setForm({...form,order_id:e.target.value,product_name:o?.product_name||"",supplier:o?.supplier||"",quantity:o?.quantity||""});
-            }}>
-              <option value="">{t(locale,'form.select_order')}</option>
-              {pendingOrders.map(o=><option key={o.id} value={o.id}>{o.product_name} ({o.supplier})</option>)}
-            </select>
+            <SearchableSelect
+              options={pendingOrders || []}
+              value={form.order_id}
+              onChange={v=>{
+                const o = (orders || []).find(x => String(x.id) === String(v));
+                setForm({...form, order_id: v, product_name: o?.product_name || "", supplier: o?.supplier || "", quantity: o?.quantity || ""});
+              }}
+              label={o => (o.product_name || o.product?.display_name || o.product?.name) + (o.supplier ? ` (${o.supplier})` : '')}
+              placeholder={t(locale,'form.select_order')}
+            />
           </div>
           <div className="form-grid">
             <div className="form-group"><label className="form-label">Product Name</label><input className="form-control" value={form.product_name} onChange={e=>setForm({...form,product_name:e.target.value})}/></div>
@@ -2367,14 +2395,19 @@ function ProductsPage({ locale }) {
           <div style={{display:'grid',gridTemplateColumns:'1fr 200px 160px 200px',gap:8}}>
             <input className="form-control" placeholder="Product name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} />
             <input className="form-control" placeholder="SKU" value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} />
-            <select className="form-control" value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>
-              <option value="">Select category</option>
-              {(categories||[]).map(c=> <option key={c.id} value={c.name}>{c.name}</option>)}
-            </select>
-            <select className="form-control" value={form.model} onChange={e=>setForm({...form,model:e.target.value})}>
-              <option value="">Select model (optional)</option>
-              {(models||[]).map(m=> <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
+            <SearchableSelect
+              options={(categories||[]).map(c=>c.name)}
+              value={form.category}
+              onChange={v=>setForm({...form,category:v})}
+              placeholder="Select category"
+            />
+            <SearchableSelect
+              options={models || []}
+              value={form.model}
+              onChange={v=>setForm({...form,model:v})}
+              label={m => m.name}
+              placeholder="Select model (optional)"
+            />
           </div>
           <div style={{display:'grid',gridTemplateColumns:'200px',gap:8,marginTop:8}}>
             <input className="form-control" placeholder="Min qty" type="number" value={form.min_quantity} onChange={e=>setForm({...form,min_quantity:e.target.value})} />

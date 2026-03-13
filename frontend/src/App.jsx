@@ -1621,6 +1621,17 @@ function Orders({ locale }) {
           try { await apiFetch('/orders/' + created.id, { method: 'PUT', body: JSON.stringify({ status: form.status }) }); } catch {}
         }
       }
+      // Propagate supplier/location from order form into product record so inventory shows updated info
+      try {
+        const pid = +form.product_id;
+        if (pid && (form.supplier || form.location)) {
+          const prodUpdate = {};
+          if (form.supplier) prodUpdate.supplier = form.supplier;
+          if (form.location) prodUpdate.location = form.location;
+          try { await apiFetch('/products/' + pid, { method: 'PUT', body: JSON.stringify(prodUpdate) }); } catch (e) { /* apiFetch will show toast */ }
+        }
+      } catch (e) {}
+
       setShowModal(false);
       const wasEdit = !!editingOrder;
       setEditingOrder(null);
@@ -2260,10 +2271,21 @@ function ModelsPage({ locale }) {
     <div className="page">
       <div className="page-header">
         <div>
-          <div className="page-title">{t(locale,'page.models') || 'Motorcycle Models'}</div>
-          <div className="page-subtitle">Manage motorcycle models</div>
-        </div>
-      </div>
+      // If supplier/location were provided on the order form, propagate them to the product record
+      try {
+        const pid = +form.product_id;
+        if (pid && (form.supplier || form.location)) {
+          const prodUpdate = {};
+          if (form.supplier) prodUpdate.supplier = form.supplier;
+          if (form.location) prodUpdate.location = form.location;
+          try { await apiFetch('/products/' + pid, { method: 'PUT', body: JSON.stringify(prodUpdate) }); } catch (e) { /* ignore - apiFetch will show toast */ }
+        }
+      } catch (e) {}
+
+      setShowModal(false);
+      const wasEdit = !!editingOrder;
+      setEditingOrder(null);
+      await load();
       <div className="card">
         <div className="card-header"><span className="card-title">Add Model</span></div>
         <div style={{padding:16}}>

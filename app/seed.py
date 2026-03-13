@@ -177,7 +177,7 @@ def seed_database(db: Session) -> None:
             order = Order(
                 product_id=prod.id, ordered_by_id=manager.id,
                 quantity=qty, unit_price=prod.unit_price, total=qty * prod.unit_price,
-                supplier=prod.supplier, status="pending",
+                supplier=prod.supplier, location=prod.location, status="pending",
                 expected_delivery=date.today() + timedelta(days=random.randint(1,12)),
                 date=_days_ago(random.randint(1,30)),
             )

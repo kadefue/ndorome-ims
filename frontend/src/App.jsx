@@ -1025,13 +1025,13 @@ function Dashboard({ locale }) {
             <span className="card-title">{t(locale,'charts.stock_by_category')}</span>
           </div>
           <div className="card-body">
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" aspect={1}>
               <PieChart>
-                <Pie data={catData} cx="50%" cy="46%" innerRadius={40} outerRadius={62} paddingAngle={3} dataKey="value">
+                <Pie data={catData} cx="50%" cy="50%" innerRadius={"30%"} outerRadius={"60%"} paddingAngle={3} dataKey="value">
                   {catData.map((e,i) => <Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>)}
                 </Pie>
-                <Tooltip contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:12}}/>
-                <Legend verticalAlign="bottom" align="center" iconSize={10} wrapperStyle={{fontSize:11,color:"#8B949E"}}/>
+                <Tooltip contentStyle={{background:"#1C2333",border:"1px solid #30363D",borderRadius:8,fontSize:13}}/>
+                <Legend verticalAlign="bottom" align="center" iconSize={12} wrapperStyle={{fontSize:12,color:"#8B949E"}}/>
               </PieChart>
             </ResponsiveContainer>
           </div>

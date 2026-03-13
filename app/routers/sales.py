@@ -10,6 +10,8 @@ from app.schemas.sale import SaleCreate, SaleResponse
 from app.models.user import User
 from fastapi import Request
 from app.crud.audit import create_audit
+from app.crud.sale import update_sale, delete_sale
+from app.auth import require_manager_above
 
 router = APIRouter(prefix="/sales", tags=["Sales"])
 
@@ -58,5 +60,50 @@ def record_sale(
         except Exception:
             pass
         return created
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+
+@router.put("/{sale_id}", response_model=SaleResponse, summary="Update a sale")
+def update_existing_sale(
+    sale_id: int,
+    sale_in: SaleCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_manager_above),
+    request: Request = None,
+):
+    sale = get_sale(db, sale_id)
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+    try:
+        updated = update_sale(db, sale, sale_in)
+        try:
+            ip = request.client.host if request and request.client else None
+            create_audit(db, action='update_sale', data={'id': updated.id, 'changes': sale_in.model_dump()}, user_id=current_user.id, username=current_user.name, ip_address=ip)
+        except Exception:
+            pass
+        return updated
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/{sale_id}", status_code=204, summary="Delete a sale")
+def delete_existing_sale(
+    sale_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_manager_above),
+    request: Request = None,
+):
+    sale = get_sale(db, sale_id)
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+    try:
+        delete_sale(db, sale)
+        try:
+            ip = request.client.host if request and request.client else None
+            create_audit(db, action='delete_sale', data={'id': sale_id, 'product_id': sale.product_id, 'quantity': sale.quantity}, user_id=current_user.id, username=current_user.name, ip_address=ip)
+        except Exception:
+            pass
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

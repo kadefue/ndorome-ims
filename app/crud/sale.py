@@ -97,3 +97,46 @@ def get_recent_sales(db: Session, limit: int = 5) -> list[Sale]:
         .limit(limit)
         .all()
     )
+
+
+def update_sale(db: Session, sale: Sale, sale_in: SaleCreate) -> Sale:
+    # If quantity changes, adjust product stock accordingly
+    from app.models.product import Product
+
+    product = db.query(Product).filter(Product.id == sale.product_id).first()
+    if not product:
+        raise ValueError("Product not found")
+
+    old_qty = sale.quantity
+    new_qty = sale_in.quantity
+    delta = new_qty - old_qty
+    if delta > 0 and product.quantity < delta:
+        raise ValueError(f"Insufficient stock to increase sale quantity. Available: {product.quantity}, needed: {delta}")
+
+    # update sale fields
+    sale.quantity = new_qty
+    sale.customer = sale_in.customer
+    sale.customer_email = getattr(sale_in, 'customer_email', None)
+    sale.customer_phone = getattr(sale_in, 'customer_phone', None)
+    sale.payment = sale_in.payment
+    sale.notes = sale_in.notes
+    # recalc total based on stored unit_price
+    sale.total = sale.unit_price * sale.quantity
+
+    # adjust product stock
+    product.quantity -= delta
+
+    db.commit()
+    db.refresh(sale)
+    return get_sale(db, sale.id)
+
+
+def delete_sale(db: Session, sale: Sale) -> None:
+    # Restock product quantity
+    from app.models.product import Product
+
+    product = db.query(Product).filter(Product.id == sale.product_id).first()
+    if product:
+        product.quantity += sale.quantity
+    db.delete(sale)
+    db.commit()

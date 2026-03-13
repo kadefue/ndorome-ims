@@ -1746,6 +1746,8 @@ function Sales({ locale }) {
 
   const selProd = products.find(p=>p.id===form.product_id);
   const calcTotal = selProd ? selProd.unit_price * (+form.quantity||0) : 0;
+  const [editingSale, setEditingSale] = useState(null);
+  const canManage = user.role !== 'employee';
 
   async function saveSale() {
     if (!form.product_id || !form.quantity) {
@@ -1763,9 +1765,34 @@ function Sales({ locale }) {
       total: calcTotal, customer: form.customer || null, payment: form.payment,
       customer_email: form.customer_email || null, customer_phone: form.customer_phone || null,
     };
-    await apiFetch("/sales",{method:"POST",body:JSON.stringify(body)});
-    window._app_show_toast && window._app_show_toast('Sale recorded', 'success');
-    setShowModal(false); setForm({product_id:"",quantity:"",customer:"",payment:"Cash",customer_email:"",customer_phone:""}); load();
+    if (editingSale) {
+      await apiFetch("/sales/" + editingSale.id, { method: 'PUT', body: JSON.stringify(body) });
+      window._app_show_toast && window._app_show_toast('Sale updated', 'success');
+      setEditingSale(null);
+    } else {
+      await apiFetch("/sales",{method:"POST",body:JSON.stringify(body)});
+      window._app_show_toast && window._app_show_toast('Sale recorded', 'success');
+    }
+    setShowModal(false);
+    setForm({product_id:"",quantity:"",customer:"",payment:"Cash",customer_email:"",customer_phone:""});
+    load();
+  }
+
+  function openEditSale(sale) {
+    setEditingSale(sale);
+    setForm({ product_id: sale.product_id, quantity: sale.quantity, customer: sale.customer || '', customer_email: sale.customer_email || '', customer_phone: sale.customer_phone || '', payment: sale.payment || 'Cash' });
+    setShowModal(true);
+  }
+
+  async function deleteSale(id) {
+    if (!(await window._app_confirm('Delete sale? This will restock the product. Continue?', { title: 'Confirm', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
+    try {
+      await apiFetch('/sales/' + id, { method: 'DELETE' });
+      window._app_show_toast && window._app_show_toast('Sale deleted', 'success');
+      load();
+    } catch (e) {
+      // apiFetch shows error
+    }
   }
 
   return (
@@ -1819,6 +1846,14 @@ function Sales({ locale }) {
                   <td><span className="badge badge-purple">{s.payment}</span></td>
                   <td className="td-muted" style={{fontSize:12}}>{s.employee?.name || s.employee_name || s.employee_id || "—"}</td>
                   <td>{statusBadge(s.status, locale)}</td>
+                  <td>
+                    {canManage && (
+                      <div style={{display:'flex',gap:8}}>
+                        <button className="btn btn-secondary btn-sm" onClick={()=>openEditSale(s)}>✎</button>
+                        <button className="btn btn-danger btn-sm" onClick={()=>deleteSale(s.id)}>🗑</button>
+                      </div>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

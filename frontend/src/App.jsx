@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, useMemo } from "react";
+import { useState, useEffect, createContext, useContext, useMemo, useRef } from "react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -505,6 +505,11 @@ const css = `
     th, td { white-space: nowrap; }
     .btn { padding: 8px 12px; }
   }
+
+  /* DatePicker popup animations */
+  .calendar-popup { opacity: 0; transform: translateY(-6px); transition: opacity 220ms ease, transform 220ms ease; }
+  .calendar-popup.enter { opacity: 1; transform: translateY(0); }
+  .calendar-popup.exit { opacity: 0; transform: translateY(-6px); }
 `;
 
 const themeCss = `
@@ -525,6 +530,107 @@ const themeCss = `
   .theme-light thead th { background: rgba(15,23,42,0.02); color: #6B7280; border-bottom-color: #EEF2F7; }
   .theme-light .badge { background: rgba(0,0,0,0.03); color: #0D1117; }
 `;
+
+// Small interactive date picker component (lightweight, no external deps)
+function DatePicker({ value, onChange, min }) {
+  const [open, setOpen] = useState(false); // logical open state
+  const [visible, setVisible] = useState(false); // mounted state for animation
+  const [anim, setAnim] = useState('');
+  const timerRef = useRef(null);
+  const ref = useRef(null);
+  const [viewDate, setViewDate] = useState(value ? new Date(value) : new Date());
+
+  useEffect(()=>{
+    function onDoc(e){ if (ref.current && !ref.current.contains(e.target)) closePopup(); }
+    document.addEventListener('mousedown', onDoc);
+    return ()=>document.removeEventListener('mousedown', onDoc);
+  },[]);
+
+  useEffect(()=>{ if (value) setViewDate(new Date(value)); },[value]);
+
+  const startOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
+  const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth()+1, 0).getDate();
+  const startWeekday = startOfMonth.getDay();
+
+  const minDate = min ? new Date(min) : null;
+  const isLight = (typeof document !== 'undefined') && document.documentElement.classList.contains('theme-light');
+  const popupBg = isLight ? '#FFFFFF' : '#161B22';
+  const popupBorder = isLight ? '#E6EDF3' : '#21262D';
+  const textNormal = isLight ? '#0D1117' : '#E6EDF3';
+  const textMuted = isLight ? '#6B7280' : '#444';
+
+  function openPopup(){
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setVisible(true);
+    // allow mount then animate
+    requestAnimationFrame(()=>{ setAnim('enter'); setOpen(true); });
+  }
+  function closePopup(){
+    setAnim('exit');
+    setOpen(false);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(()=>{ setVisible(false); timerRef.current = null; }, 240);
+  }
+
+  function pick(day){
+    const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
+    const iso = d.toISOString().slice(0,10);
+    if (minDate && d < minDate) return;
+    onChange && onChange(iso);
+    closePopup();
+  }
+
+  function prevMonth(){ const d = new Date(viewDate); d.setMonth(d.getMonth()-1); setViewDate(d); }
+  function nextMonth(){ const d = new Date(viewDate); d.setMonth(d.getMonth()+1); setViewDate(d); }
+
+  const label = value ? new Date(value).toLocaleDateString() : '';
+
+  return (
+    <div className="datepicker-wrapper" ref={ref} style={{position:'relative',display:'flex',alignItems:'center',gap:8}}>
+      <input
+        readOnly
+        className="form-control"
+        value={label}
+        placeholder="Select date"
+        onClick={()=> visible ? closePopup() : openPopup() }
+        style={{cursor:'pointer'}}
+      />
+      <button type="button" className="btn btn-secondary btn-sm" onClick={()=>{ const today = new Date().toISOString().slice(0,10); onChange && onChange(today); }} title="Set to today">Today</button>
+
+      {visible && (
+        <div className={`calendar-popup ${anim}`} style={{position:'absolute',top:'44px',right:0,width:260,background:popupBg,border:`1px solid ${popupBorder}`,borderRadius:8,padding:10,zIndex:400,color:textNormal}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+            <button className="btn btn-sm" onClick={prevMonth}>&lt;</button>
+            <div style={{fontWeight:700}}>{viewDate.toLocaleString(undefined,{month:'long',year:'numeric'})}</div>
+            <button className="btn btn-sm" onClick={nextMonth}>&gt;</button>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:6,marginBottom:6,color:'#8B949E',fontSize:12}}>
+            {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=> <div key={d} style={{textAlign:'center'}}>{d}</div>)}
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:6}}>
+            {Array.from({length: startWeekday}).map((_,i)=>(<div key={'e'+i} />))}
+            {Array.from({length: daysInMonth}).map((_,i)=>{
+              const day = i + 1;
+              const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
+              const disabled = minDate && d < minDate;
+              const isSelected = value && (new Date(value).toDateString() === d.toDateString());
+              return (
+                <button key={day}
+                  onClick={()=>!disabled && pick(day)}
+                  style={{
+                    padding:6, borderRadius:6, border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
+                    background: isSelected ? '#C8860A' : 'transparent',
+                    color: isSelected ? (isLight ? '#0D1117' : '#0D1117') : (disabled ? textMuted : textNormal)
+                  }}
+                >{day}</button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
   // ── Translations ───────────────────────────────────────────────────────────
   const TRANSLATIONS = {
@@ -1984,7 +2090,10 @@ function Orders({ locale }) {
           </div>
           <div className="form-group"><label className="form-label">{t(locale,'form.supplier')}</label><input className="form-control" value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})}/></div>
           <div className="form-group"><label className="form-label">{t(locale,'form.location') || 'Location'}</label><input className="form-control" value={form.location} onChange={e=>setForm({...form,location:e.target.value})}/></div>
-          <div className="form-group"><label className="form-label">{t(locale,'orders.expected_delivery')}</label><input className="form-control" type="date" value={form.expected_delivery} onChange={e=>setForm({...form,expected_delivery:e.target.value})}/></div>
+          <div className="form-group">
+            <label className="form-label">{t(locale,'orders.expected_delivery')}</label>
+            <DatePicker value={form.expected_delivery} onChange={d=>setForm({...form,expected_delivery:d})} min={new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0,10)} />
+          </div>
           <div className="form-group"><label className="form-label">{t(locale,'table.status')}</label>
             <select className="form-control" value={form.status||'pending'} onChange={e=>setForm({...form,status:e.target.value})}>
               {['pending','in_transit','delivered','cancelled'].map(s=> <option key={s} value={s}>{s.replace('_',' ')}</option>)}

@@ -13,6 +13,8 @@ from app.crud.product import get_product_by_name
 from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse
 from app.models.user import User
 from app.models.order import Order
+from fastapi import Request
+from app.crud.audit import create_audit
 
 router = APIRouter(prefix="/products", tags=["Inventory / Products"])
 
@@ -55,12 +57,19 @@ def add_product(
     product_in: ProductCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_manager_above),
+    request: Request = None,
 ):
     if get_product_by_sku(db, product_in.sku):
         raise HTTPException(status_code=400, detail=f"SKU '{product_in.sku}' already exists")
     if get_product_by_name(db, product_in.name):
         raise HTTPException(status_code=400, detail=f"Product name '{product_in.name}' already exists")
-    return create_product(db, product_in)
+    created = create_product(db, product_in)
+    try:
+        ip = request.client.host if request and request.client else None
+        create_audit(db, action='create_product', data={'id': created.id, 'name': created.name, 'sku': created.sku}, user_id=current_user.id, username=current_user.name, ip_address=ip)
+    except Exception:
+        pass
+    return created
 
 
 @router.put("/{product_id}", response_model=ProductResponse, summary="Update a product")
@@ -69,6 +78,7 @@ def edit_product(
     product_in: ProductUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    request: Request = None,
 ):
     product = get_product(db, product_id)
     if not product:
@@ -104,7 +114,13 @@ def edit_product(
         if existing_name and existing_name.id != product.id:
             raise HTTPException(status_code=400, detail=f"Product name '{product_in.name}' already exists")
 
-    return update_product(db, product, product_in)
+    updated = update_product(db, product, product_in)
+    try:
+        ip = request.client.host if request and request.client else None
+        create_audit(db, action='update_product', data={'id': updated.id, 'changes': product_in.model_dump(exclude_unset=True)}, user_id=current_user.id, username=current_user.name, ip_address=ip)
+    except Exception:
+        pass
+    return updated
 
 
 @router.delete("/{product_id}", status_code=204, summary="Delete a product")
@@ -112,11 +128,17 @@ def remove_product(
     product_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_manager_above),
+    request: Request = None,
 ):
     product = get_product(db, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     try:
         delete_product(db, product)
+        try:
+            ip = request.client.host if request and request.client else None
+            create_audit(db, action='delete_product', data={'id': product.id, 'name': product.name, 'sku': product.sku}, user_id=current_user.id, username=current_user.name, ip_address=ip)
+        except Exception:
+            pass
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

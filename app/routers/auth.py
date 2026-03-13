@@ -8,6 +8,8 @@ from app.auth import create_access_token, get_current_user, require_manager_abov
 from app.crud.user import authenticate_user, create_user, get_all_users, get_user_by_email, update_user, verify_password, hash_password
 from app.schemas.user import Token, UserCreate, UserResponse, UserListResponse, UserUpdate, ChangePassword
 from app.models.user import User
+from fastapi import Request
+from app.crud.audit import create_audit
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -53,6 +55,7 @@ def create_new_user(
     user_in: UserCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_manager_above),
+    request: Request = None,
 ):
     # Only owner can create other owners
     if user_in.role == "owner" and current_user.role != "owner":
@@ -62,7 +65,13 @@ def create_new_user(
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    return create_user(db, user_in)
+    created = create_user(db, user_in)
+    try:
+        ip = request.client.host if request and request.client else None
+        create_audit(db, action='create_user', data={'id': created.id, 'email': created.email, 'role': created.role}, user_id=current_user.id, username=current_user.name, ip_address=ip)
+    except Exception:
+        pass
+    return created
 
 
 @router.put("/users/{user_id}", response_model=UserResponse, summary="Update a user")
@@ -71,6 +80,7 @@ def update_existing_user(
     user_in: UserUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_owner),
+    request: Request = None,
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -89,7 +99,13 @@ def update_existing_user(
         if existing and existing.id != user.id:
             raise HTTPException(status_code=400, detail="Email already registered")
 
-    return update_user(db, user, user_in)
+    updated = update_user(db, user, user_in)
+    try:
+        ip = request.client.host if request and request.client else None
+        create_audit(db, action='update_user', data={'id': updated.id, 'changes': user_in.model_dump(exclude_unset=True)}, user_id=current_user.id, username=current_user.name, ip_address=ip)
+    except Exception:
+        pass
+    return updated
 
 
 @router.post('/change-password', summary='Change current user password')

@@ -8,6 +8,8 @@ from app.auth import get_current_user
 from app.crud.sale import get_all_sales, get_sale, create_sale
 from app.schemas.sale import SaleCreate, SaleResponse
 from app.models.user import User
+from fastapi import Request
+from app.crud.audit import create_audit
 
 router = APIRouter(prefix="/sales", tags=["Sales"])
 
@@ -46,8 +48,15 @@ def record_sale(
     sale_in: SaleCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    request: Request = None,
 ):
     try:
-        return create_sale(db, sale_in, employee_id=current_user.id)
+        created = create_sale(db, sale_in, employee_id=current_user.id)
+        try:
+            ip = request.client.host if request and request.client else None
+            create_audit(db, action='create_sale', data={'id': created.id, 'product_id': created.product_id, 'total': created.total}, user_id=current_user.id, username=current_user.name, ip_address=ip)
+        except Exception:
+            pass
+        return created
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

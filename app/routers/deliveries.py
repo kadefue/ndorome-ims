@@ -8,6 +8,8 @@ from app.crud.delivery import get_all_deliveries, get_delivery, create_delivery
 from app.crud.delivery import approve_delivery
 from app.schemas.delivery import DeliveryCreate, DeliveryResponse
 from app.models.user import User
+from fastapi import Request
+from app.crud.audit import create_audit
 
 router = APIRouter(prefix="/deliveries", tags=["Deliveries"])
 
@@ -39,9 +41,16 @@ def record_delivery(
     delivery_in: DeliveryCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_manager_above),
+    request: Request = None,
 ):
     try:
-        return create_delivery(db, delivery_in, received_by_id=current_user.id)
+        created = create_delivery(db, delivery_in, received_by_id=current_user.id)
+        try:
+            ip = request.client.host if request and request.client else None
+            create_audit(db, action='create_delivery', data={'id': created.id, 'order_id': created.order_id, 'quantity': created.quantity}, user_id=current_user.id, username=current_user.name, ip_address=ip)
+        except Exception:
+            pass
+        return created
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

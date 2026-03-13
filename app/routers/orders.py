@@ -6,6 +6,8 @@ from typing import Optional
 from app.database import get_db
 from app.auth import get_current_user, require_manager_above
 from app.crud.order import get_all_orders, get_order, create_order, update_order
+from fastapi import Request
+from app.crud.audit import create_audit
 from app.schemas.delivery import DeliveryCreate
 from app.crud.delivery import create_delivery
 from app.schemas.order import OrderCreate, OrderUpdate, OrderResponse
@@ -42,8 +44,15 @@ def create_new_order(
     order_in: OrderCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_manager_above),
+    request: Request = None,
 ):
-    return create_order(db, order_in, ordered_by_id=current_user.id)
+    created = create_order(db, order_in, ordered_by_id=current_user.id)
+    try:
+        ip = request.client.host if request and request.client else None
+        create_audit(db, action='create_order', data={'id': created.id, 'product_id': created.product_id, 'quantity': created.quantity}, user_id=current_user.id, username=current_user.name, ip_address=ip)
+    except Exception:
+        pass
+    return created
 
 
 @router.put("/{order_id}", response_model=OrderResponse, summary="Update order status / details")
@@ -52,6 +61,7 @@ def update_existing_order(
     order_in: OrderUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_manager_above),
+    request: Request = None,
 ):
     order = get_order(db, order_id)
     if not order:

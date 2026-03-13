@@ -369,22 +369,26 @@ const css = `
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.7);
     display: flex; align-items: center; justify-content: center;
-    z-index: 200; padding: 20px;
+    z-index: 200; padding: 0; min-height: 100vh;
     backdrop-filter: blur(4px);
   }
   .modal {
     background: #161B22; border: 1px solid #30363D;
-    border-radius: 16px; width: 100%; max-width: 520px;
-    max-height: 90vh; overflow-y: auto;
+    border-radius: 12px; width: 100%; max-width: 480px;
+    max-height: calc(100vh - 80px); overflow-y: auto;
     box-shadow: 0 12px 40px rgba(2,6,23,0.6);
+    padding: 0; /* body/header control internal spacing */
+    margin: auto; /* ensure true centering inside the overlay */
   }
   .modal-header {
-    padding: 20px 24px; border-bottom: 1px solid #21262D;
+    padding: 14px 18px; border-bottom: 1px solid #21262D;
     display: flex; align-items: center; justify-content: space-between;
   }
-  .modal-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
-  .modal-body { padding: 24px; }
-  .modal-footer { padding: 16px 24px; border-top: 1px solid #21262D; display: flex; justify-content: flex-end; gap: 10px; }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+  .modal-body { padding: 16px 18px; }
+  /* Separate first footer element to left, others to the right to avoid close Cancel/Save placement */
+  .modal-footer { padding: 12px 18px; border-top: 1px solid #21262D; display: flex; align-items: center; gap: 18px; }
+  .modal-footer > :first-child { margin-right: auto; }
   .close-btn {
     width: 28px; height: 28px; border-radius: 6px;
     background: #21262D; border: none; color: #8B949E;
@@ -473,12 +477,18 @@ const css = `
     color: #E6EDF3;
     box-shadow: 0 8px 24px rgba(2,6,23,0.5);
     animation: toastIn 220ms cubic-bezier(.2,.9,.2,1);
+    position: relative;
+    overflow: hidden;
   }
   @keyframes toastIn { from { transform: translateX(-8px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
   .toast .toast-icon { width: 28px; height: 28px; display:flex; align-items:center; justify-content:center; border-radius:6px; font-size:14px; flex-shrink:0; }
   .toast .msg { flex: 1; font-size: 13px; }
   .toast .close { background: none; border: none; color: #8B949E; cursor: pointer; font-size: 13px; padding: 6px; border-radius: 6px; }
   .toast .close:hover { color: #E6EDF3; background: rgba(255,255,255,0.02); }
+
+  .toast .progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255,255,255,0.03); }
+  .toast .progress .bar { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; animation-name: progressBar; animation-timing-function: linear; animation-fill-mode: forwards; }
+  @keyframes progressBar { from { width: 100%; } to { width: 0%; } }
 
   /* Outlined severity */
   .toast.info { border-left: 4px solid #58A6FF; }
@@ -489,6 +499,10 @@ const css = `
   .toast.success .toast-icon { background: rgba(63,185,80,0.08); }
   .toast.warning .toast-icon { background: rgba(210,153,34,0.08); }
   .toast.danger .toast-icon { background: rgba(248,81,73,0.08); }
+  .toast.info .progress .bar { background: rgba(88,166,255,0.32); }
+  .toast.success .progress .bar { background: rgba(63,185,80,0.32); }
+  .toast.warning .progress .bar { background: rgba(210,153,34,0.32); }
+  .toast.danger .progress .bar { background: rgba(248,81,73,0.32); }
 
   /* Ripple effect */
   .ripple {
@@ -693,6 +707,11 @@ function DatePicker({ value, onChange, min }) {
   // ── Translations ───────────────────────────────────────────────────────────
   const TRANSLATIONS = {
     en: {
+      "nav.audits": "Audit Log",
+      "page.audits": "Audit Log",
+      "audits.title": "Audit Log",
+      "audits.subtitle": "System actions and changes",
+      "audits.search_placeholder": "search action, user, id or data",
       "title.dashboard": "Spare Parts IMS",
       "nav.dashboard": "Dashboard",
       "nav.inventory": "Inventory",
@@ -860,6 +879,11 @@ function DatePicker({ value, onChange, min }) {
       "charts.sales_by_category": "Sales by Category",
     },
     sw: {
+      "nav.audits": "Rekodi za Audit",
+      "page.audits": "Rekodi za Audit",
+      "audits.title": "Rekodi za Audit",
+      "audits.subtitle": "Vitendo na mabadiliko ya mfumo",
+      "audits.search_placeholder": "tafuta vitendo, mtumiaji, id au data",
       "title.dashboard": "Mfumo wa Kuuza na Kusambaza Spea",
       "nav.dashboard": "Dashibodi",
       "nav.inventory": "Orodha ya Stoku",
@@ -1631,7 +1655,7 @@ function Inventory({ locale }) {
       </div>
 
       {showSidebar && (
-        <Sidebar title={editing? (t(locale,'btn.edit_product') || "Edit Product") : t(locale,'btn.add_product')} onClose={()=>setShowSidebar(false)}
+        <Modal title={editing? (t(locale,'btn.edit_product') || "Edit Product") : t(locale,'btn.add_product')} onClose={()=>setShowSidebar(false)}
           footer={<><button className="btn btn-secondary" onClick={()=>setShowSidebar(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={save}>{t(locale,'btn.save')}</button></>}>
             <div className="form-grid">
               <div style={{gridColumn: '1 / -1'}}>
@@ -1657,7 +1681,7 @@ function Inventory({ locale }) {
                 )}
               </div>
             </div>
-        </Sidebar>
+        </Modal>
       )}
     </div>
   );
@@ -3153,6 +3177,66 @@ function Users({ locale }) {
   );
 }
 
+// ── Audit Log ───────────────────────────────────────────────────────────────
+function Audits({ locale }) {
+  const { user } = useAuth();
+  const [entries, setEntries] = useState([]);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const load = (q) => apiFetch('/audits' + (q ? '?q=' + encodeURIComponent(q) : '')).then(setEntries).catch(()=>setEntries([]));
+
+  // initial load
+  useEffect(()=>{ load(''); },[]);
+
+  // debounce search as user types
+  useEffect(() => {
+    const id = setTimeout(() => {
+      load(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <div className="page-title">{t(locale, 'audits.title') || 'Audit Log'}</div>
+          <div className="page-subtitle">{t(locale, 'audits.subtitle') || 'System actions and changes'}</div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">{t(locale,'audits.title') || 'Audit Records'}</span>
+          <div className="search-wrap" style={{display:'flex',alignItems:'center',gap:8}}>
+            <span className="search-icon">🔍</span>
+            <input className="form-control" style={{width:260}} placeholder={t(locale,'audits.search_placeholder') || 'search action, user, id or data'} value={search} onChange={e=>setSearch(e.target.value)} />
+          </div>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr><th>{t(locale,'table.date')||'Date'}</th><th>Action</th><th>{t(locale,'table.name')||'User'}</th><th>IP</th><th>Data</th></tr>
+            </thead>
+            <tbody>
+              {entries.map(e => (
+                <tr key={e.id}>
+                  <td>{new Date(e.created_at).toLocaleString()}</td>
+                  <td style={{fontWeight:700}}>{e.action}</td>
+                  <td>{e.username || (e.user_id ? `#${e.user_id}` : '—')}</td>
+                  <td className="td-muted">{e.ip_address || '—'}</td>
+                  <td style={{fontFamily:'monospace',fontSize:12}}>{typeof e.data === 'string' ? e.data : JSON.stringify(e.data)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── App Shell ─────────────────────────────────────────────────────────────────
 const NAV = [
   { id:"dashboard", labelKey:"nav.dashboard", icon:"📊" },
@@ -3164,6 +3248,7 @@ const NAV = [
   { id:"reports",   labelKey:"nav.reports",   icon:"📈" },
   
   { id:"users",     labelKey:"nav.users",     icon:"👥", roles:["owner","manager"] },
+  { id:"audits",    labelKey:"nav.audits",    icon:"📜", roles:["owner"] },
   { id:"categories",labelKey:"nav.categories", icon:"🏷️", roles:["owner","manager"] },
   { id:"models",    labelKey:"nav.models",     icon:"🏍️", roles:["owner","manager"] },
   { id:"products", labelKey:"nav.products", icon:"🧩" },
@@ -3178,6 +3263,7 @@ const PAGE_TITLES = {
   deliveries:"page.deliveries",
   reports:"page.reports",
   users:"page.users",
+  audits:"page.audits",
   
   categories:"page.categories",
   models:"page.models",
@@ -3204,6 +3290,7 @@ function AppShell({ user, onLogout, locale, setLocale }) {
       case "models":    return <ModelsPage locale={locale}/>;
       case "reports":   return <Reports locale={locale}/>;
       case "users":     return <Users locale={locale}/>;
+      case "audits":    return <Audits locale={locale}/>;
       default:          return <Dashboard/>;
     }
   };
@@ -3306,9 +3393,10 @@ export default function App() {
   // Toasts for error/notification surfacing
   const [toasts, setToasts] = useState([]);
   const [confirmState, setConfirmState] = useState(null);
-  const addToast = (message, type = 'info', ttl = 5000) => {
+  // default TTL shortened to 3000ms; includes ttl on toast for progress animation
+  const addToast = (message, type = 'info', ttl = 3000) => {
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-    const t = { id, message, type };
+    const t = { id, message, type, ttl };
     setToasts(s => [t, ...s]);
     if (ttl > 0) setTimeout(() => setToasts(s => s.filter(x => x.id !== id)), ttl);
     return id;
@@ -3379,6 +3467,11 @@ export default function App() {
             <span className="toast-icon">{t.type === 'success' ? '✅' : t.type === 'danger' ? '⚠️' : t.type === 'warning' ? '⚠️' : 'ℹ️'}</span>
             <div className="msg">{t.message}</div>
             <button className="close" onClick={() => removeToast(t.id)}>✕</button>
+            {t.ttl > 0 && (
+              <div className="progress">
+                <div className="bar" style={{ animationDuration: (t.ttl || 3000) + 'ms' }} />
+              </div>
+            )}
           </div>
         ))}
       </div>

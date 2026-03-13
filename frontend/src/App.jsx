@@ -504,6 +504,13 @@ const css = `
   .toast.warning .progress .bar { background: rgba(210,153,34,0.32); }
   .toast.danger .progress .bar { background: rgba(248,81,73,0.32); }
 
+  /* Deleting row animation */
+  tr.deleting-row {
+    transition: transform 360ms ease, opacity 360ms ease;
+    opacity: 0.0;
+    transform: translateX(-16px) scaleY(0.98);
+  }
+
   /* Ripple effect */
   .ripple {
     position: absolute; border-radius: 50%; transform: scale(0);
@@ -1703,6 +1710,7 @@ function Sales({ locale }) {
 
   const load = () => Promise.all([apiFetch("/sales"),apiFetch("/products")]).then(([s,p])=>{setSales(s);setProducts(p);});
   useEffect(()=>{ load(); },[]);
+  const [deletingIds, setDeletingIds] = useState([]);
 
   const filtered = sales.filter(s =>
     s.customer?.toLowerCase().includes(search.toLowerCase()) ||
@@ -1787,10 +1795,17 @@ function Sales({ locale }) {
   async function deleteSale(id) {
     if (!(await window._app_confirm('Delete sale? This will restock the product. Continue?', { title: 'Confirm', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
     try {
+      // mark as deleting to trigger UI animation
+      setDeletingIds(d => Array.from(new Set([...d, id])));
       await apiFetch('/sales/' + id, { method: 'DELETE' });
       window._app_show_toast && window._app_show_toast('Sale deleted', 'success');
-      load();
+      // wait for animation to complete then refresh
+      setTimeout(() => {
+        setDeletingIds(d => d.filter(x => x !== id));
+        load();
+      }, 380);
     } catch (e) {
+      setDeletingIds(d => d.filter(x => x !== id));
       // apiFetch shows error
     }
   }
@@ -1836,7 +1851,7 @@ function Sales({ locale }) {
             </thead>
             <tbody>
               {paged.map(s=>(
-                <tr key={s.id}>
+                <tr key={s.id} className={deletingIds.includes(s.id) ? 'deleting-row' : ''}>
                   <td className="td-muted" style={{fontSize:12}}>{humanDate(s.date)}</td>
                   <td style={{fontWeight:500}}>{s.product?.display_name || s.product_name || (products.find(p=>p.id===s.product_id)?.display_name) || (products.find(p=>p.id===s.product_id)?.name) || "—"}</td>
                   <td className="td-muted">{s.customer}</td>

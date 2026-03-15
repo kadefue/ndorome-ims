@@ -36,10 +36,20 @@ def create_audit_event(
         ip = request.client.host if request.client else None
 
     site_url = payload.site_url or str(request.base_url).rstrip("/")
+    server_info = request.scope.get("server")
+    server_ip = None
+    if isinstance(server_info, (list, tuple)) and len(server_info) > 0:
+        server_ip = server_info[0]
+    if not server_ip:
+        try:
+            server_ip = request.url.hostname
+        except Exception:
+            server_ip = None
+
     entry = create_audit(
         db,
         action=payload.action,
-        data={**(payload.data or {}), "site_url": site_url},
+        data={**(payload.data or {}), "site_url": site_url, "server_ip": server_ip},
         user_id=current_user.id,
         username=current_user.name,
         ip_address=ip,
@@ -47,6 +57,7 @@ def create_audit_event(
     return AuditEventResponse(
         id=entry.id,
         ip_address=ip,
+        server_ip=server_ip,
         site_url=site_url,
         created_at=entry.created_at,
     )

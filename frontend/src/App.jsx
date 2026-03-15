@@ -729,7 +729,8 @@ function DatePicker({ value, onChange, min }) {
       "audits.title": "Audit Trail",
       "audits.subtitle": "System actions and changes",
       "audits.search_placeholder": "search action, user, id or data",
-      "title.dashboard": "Spare Parts IMS",
+      "title.dashboard": "Supa Kariakoo Spare Parts IMS",
+      "title.shopname": "Supa Kariakoo",
       "nav.dashboard": "Dashboard",
       "nav.inventory": "Inventory",
       "nav.sales": "Sales Management",
@@ -904,7 +905,8 @@ function DatePicker({ value, onChange, min }) {
       "audits.title": "Rekodi za Ukaguzi",
       "audits.subtitle": "Vitendo na mabadiliko ya mfumo",
       "audits.search_placeholder": "tafuta vitendo, mtumiaji, id au data",
-      "title.dashboard": "Mfumo wa Kuuza na Kusambaza Spea",
+      "title.dashboard": "Mfumo wa Kuuza na Kusambaza Spea wa Supa Kariakoo",
+      "title.shopname": "Supa Kariakoo",
       "nav.dashboard": "Dashibodi",
       "nav.inventory": "Orodha ya Stoku",
       "nav.sales": "Mauzo",
@@ -1338,10 +1340,9 @@ function Dashboard({ locale }) {
     <div className="page">
       <div className="page-header">
         <div>
-          <div className="page-title">{t(locale,'page.dashboard') || 'Dashboard'}</div>
           <div className="page-subtitle">{t(locale,'dashboard.welcome')}</div>
         </div>
-        <span className="badge-pill">📅 {new Date().toLocaleDateString("en-KE",{dateStyle:"long"})}</span>
+        <span className="badge-pill">📅 {new Date().toLocaleDateString("en-BG",{dateStyle:"long"})}</span>
       </div>
 
       <div className="stats-grid">
@@ -1493,6 +1494,9 @@ function Inventory({ locale }) {
   };
   useEffect(()=>{ load(); },[]);
   const [deletingIds, setDeletingIds] = useState([]);
+  const [showInventoryExportModal, setShowInventoryExportModal] = useState(false);
+  const [inventoryExportFrom, setInventoryExportFrom] = useState('');
+  const [inventoryExportTo, setInventoryExportTo] = useState('');
   
   // For inventory we want to indicate products that have been sold below current product price
   // load will be replaced in Inventory component to fetch sales too
@@ -1672,6 +1676,9 @@ function Inventory({ locale }) {
             <span className="search-icon">🔍</span>
             <input className="form-control" style={{width:220}} placeholder={t(locale,'inventory.search_placeholder')} value={search} onChange={e=>setSearch(e.target.value)}/>
             <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
+              // Open date-range export modal
+              setShowInventoryExportModal(true);
+              return;
               const cols = [
                 { label: t(locale,'inventory.table.product')||'Product', key: 'display_name' },
                 { label: t(locale,'inventory.table.sku')||'SKU', key: 'sku' },
@@ -1687,7 +1694,11 @@ function Inventory({ locale }) {
                 const q = (p.name||'') + (p.sku||'') + (p.category||'');
                 return q.toLowerCase().includes(search.toLowerCase());
               }).map(p => ({ display_name: p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : '')), sku: p.sku, category: p.category, quantity: p.quantity, unit_price: p.unit_price, supplier: p.supplier, location: p.location, min_quantity: p.min_quantity }));
-              window._exportTablePDF({ title: t(locale,'page.inventory')||'Inventory', columns: cols, rows, filename: 'inventory.pdf' });
+              try {
+                const p = window._exportTablePDF({ title: t(locale,'page.inventory')||'Inventory', columns: cols, rows, filename: 'inventory.pdf' });
+                try { window._app_show_toast && window._app_show_toast('Inventory PDF generation started', 'info'); } catch {}
+                if (p && typeof p.then === 'function') p.then(()=>{ try{ window._app_show_toast && window._app_show_toast('Inventory PDF downloaded', 'success'); }catch{} }).catch(err=>{ try{ window._app_show_toast && window._app_show_toast('Failed to generate Inventory PDF: ' + (err.message||err), 'danger'); }catch{} });
+              } catch (err) { try{ window._app_show_toast && window._app_show_toast('Failed to start Inventory PDF: ' + (err.message||err), 'danger'); }catch{} }
             }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
           </div>
         </div>
@@ -1749,9 +1760,54 @@ function Inventory({ locale }) {
             <button disabled={page>=pageCount} onClick={()=>setPage(p=>Math.min(pageCount,p+1))}>Next</button>
           </div>
         </div>
-      </div>
+      
+          {showInventoryExportModal && (
+            <Modal title={t(locale,'inventory.export')||'Export Inventory'} onClose={()=>setShowInventoryExportModal(false)}
+              footer={<>
+                <button className="btn btn-secondary" onClick={()=>setShowInventoryExportModal(false)}>{t(locale,'btn.cancel')||'Cancel'}</button>
+                <button className="btn btn-primary" onClick={async ()=>{
+                    const cols = [
+                      { label: t(locale,'inventory.table.product')||'Product', key: 'display_name' },
+                      { label: t(locale,'inventory.table.sku')||'SKU', key: 'sku' },
+                      { label: t(locale,'inventory.table.category')||'Category', key: 'category' },
+                      { label: t(locale,'inventory.table.qty')||'Qty', key: 'quantity' },
+                      { label: t(locale,'inventory.table.unit_price')||'Unit Price', key: 'unit_price' },
+                      { label: t(locale,'inventory.table.supplier')||'Supplier', key: 'supplier' },
+                      { label: t(locale,'inventory.table.location')||'Location', key: 'location' },
+                      { label: t(locale,'inventory.table.status')||'Status', key: 'status' }
+                    ];
+                    const rows = (products || []).filter(p => {
+                      if (!search) return true;
+                      const q = (p.name||'') + (p.sku||'') + (p.category||'');
+                      return q.toLowerCase().includes(search.toLowerCase());
+                    }).map(p => ({ display_name: p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : '')), sku: p.sku, category: p.category, quantity: p.quantity, unit_price: p.unit_price, supplier: p.supplier, location: p.location, min_quantity: p.min_quantity }));
+                    const fileSuffix = `${inventoryExportFrom||'all'}_to_${inventoryExportTo||'all'}`;
+                    try {
+                      if (!window._exportTablePDF) throw new Error('Export helper not available');
+                      const p = window._exportTablePDF({ title: t(locale,'page.inventory')||'Inventory', columns: cols, rows, filename: `inventory_${fileSuffix}.pdf` });
+                      try { window._app_show_toast && window._app_show_toast('Inventory PDF generation started', 'info'); } catch {}
+                      if (p && typeof p.then === 'function') p.then(()=>{ try{ window._app_show_toast && window._app_show_toast('Inventory PDF downloaded', 'success'); }catch{} }).catch(err=>{ try{ window._app_show_toast && window._app_show_toast('Failed to generate Inventory PDF: ' + (err.message||err), 'danger'); }catch{} });
+                    } catch (err) { try{ window._app_show_toast && window._app_show_toast('Failed to start Inventory PDF: ' + (err.message||err), 'danger'); }catch{} }
+                    (async ()=>{
+                      try {
+                        await apiFetch('/audits/event', { method: 'POST', body: JSON.stringify({ action: 'export_inventory', site_url: (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'unknown', data: { from: inventoryExportFrom || null, to: inventoryExportTo || null, row_count: rows.length } }) });
+                        try { window._app_show_toast && window._app_show_toast('Inventory export recorded', 'success'); } catch {}
+                      } catch (e) {
+                        try { window._app_show_toast && window._app_show_toast('Failed to record inventory export', 'warning'); } catch {}
+                      }
+                    })();
+                    setShowInventoryExportModal(false); setInventoryExportFrom(''); setInventoryExportTo('');
+                  }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
+              </>}
+            >
+              <div className="form-group"><label className="form-label">From</label><DatePicker value={inventoryExportFrom} onChange={v=>setInventoryExportFrom(v)} /></div>
+              <div className="form-group"><label className="form-label">To</label><DatePicker value={inventoryExportTo} onChange={v=>setInventoryExportTo(v)} /></div>
+            </Modal>
+          )}
 
-      {showSidebar && (
+        </div>
+
+        {showSidebar && (
         <Modal title={editing? (t(locale,'btn.edit_product') || "Edit Product") : t(locale,'btn.add_product')} onClose={()=>setShowSidebar(false)}
           footer={<><button className="btn btn-secondary" onClick={()=>setShowSidebar(false)}>{t(locale,'btn.cancel')}</button><button className="btn btn-primary" onClick={save}>{t(locale,'btn.save')}</button></>}>
             <div className="form-grid">
@@ -2011,8 +2067,12 @@ function Sales({ locale }) {
                 if (!d || d > exportTo) return false;
               }
               return true;
-            }).map(s => ({ date: s.date, product_name: s.product_name || s.product?.name, customer: s.customer, quantity: s.quantity, unit_price: s.unit_price, total: s.total, payment: s.payment, employee_name: s.employee_name, status: s.status }));
-            window._exportTablePDF({ title: t(locale,'page.sales')||'Sales', columns: cols, rows, filename: 'sales.pdf' });
+            }).map(s => ({ date: s.date, product_name: s.product_name || s.product?.name, customer: s.customer, quantity: s.quantity, unit_price: s.unit_price, total: s.total, payment: s.payment, employee_name: s.employee?.name || s.employee_name || s.employee_id || '—', status: s.status }));
+            try {
+              const p = window._exportTablePDF({ title: t(locale,'page.sales')||'Sales', columns: cols, rows, filename: 'sales.pdf' });
+              try { window._app_show_toast && window._app_show_toast('Sales PDF generation started', 'info'); } catch {}
+              if (p && typeof p.then === 'function') p.then(()=>{ try{ window._app_show_toast && window._app_show_toast('Sales PDF downloaded', 'success'); }catch{} }).catch(err=>{ try{ window._app_show_toast && window._app_show_toast('Failed to generate Sales PDF: ' + (err.message||err), 'danger'); }catch{} });
+            } catch (err) { try{ window._app_show_toast && window._app_show_toast('Failed to start Sales PDF: ' + (err.message||err), 'danger'); }catch{} }
             setShowExportModal(false); setExportFrom(''); setExportTo('');
           }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button></>}>
           <div className="form-group"><label className="form-label">From</label><DatePicker value={exportFrom} onChange={v=>setExportFrom(v)} /></div>
@@ -2831,7 +2891,11 @@ function Settings({ locale }) {
                 <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
                   const cols = [ { label: 'ID', key: 'id' }, { label: 'Name', key: 'name' } ];
                   const rows = (categories || []).filter(c => { if (!searchCats) return true; return (c.name||'').toLowerCase().includes(searchCats.toLowerCase()); }).map(c => ({ id: c.id, name: c.name }));
-                  window._exportTablePDF({ title: 'Categories', columns: cols, rows, filename: 'categories.pdf' });
+                  try {
+                    const p = window._exportTablePDF({ title: 'Categories', columns: cols, rows, filename: 'categories.pdf' });
+                    try { window._app_show_toast && window._app_show_toast('Categories PDF generation started', 'info'); } catch {}
+                    if (p && typeof p.then === 'function') p.then(()=>{ try{ window._app_show_toast && window._app_show_toast('Categories PDF downloaded', 'success'); }catch{} }).catch(err=>{ try{ window._app_show_toast && window._app_show_toast('Failed to generate Categories PDF: ' + (err.message||err), 'danger'); }catch{} });
+                  } catch (err) { try{ window._app_show_toast && window._app_show_toast('Failed to start Categories PDF: ' + (err.message||err), 'danger'); }catch{} }
                 }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
               </div>
             </div>
@@ -3097,7 +3161,11 @@ function ModelsPage({ locale }) {
                   <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
                     const cols = [ { label: 'Name', key: 'name' } ];
                     const rows = (models || []).filter(m => { if (!searchModels) return true; return (m.name||'').toLowerCase().includes(searchModels.toLowerCase()); }).map(m => ({ name: m.name }));
-                    window._exportTablePDF({ title: 'Models', columns: cols, rows, filename: 'models.pdf' });
+                    try {
+                      const p = window._exportTablePDF({ title: 'Models', columns: cols, rows, filename: 'models.pdf' });
+                      try { window._app_show_toast && window._app_show_toast('Models PDF generation started', 'info'); } catch {}
+                      if (p && typeof p.then === 'function') p.then(()=>{ try{ window._app_show_toast && window._app_show_toast('Models PDF downloaded', 'success'); }catch{} }).catch(err=>{ try{ window._app_show_toast && window._app_show_toast('Failed to generate Models PDF: ' + (err.message||err), 'danger'); }catch{} });
+                    } catch (err) { try{ window._app_show_toast && window._app_show_toast('Failed to start Models PDF: ' + (err.message||err), 'danger'); }catch{} }
                   }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
                 </div>
               </div>
@@ -3274,7 +3342,11 @@ function ProductsPage({ locale }) {
             <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={() => {
               const cols = [ { label: 'Name', key: 'display_name' }, { label: 'SKU', key: 'sku' }, { label: 'Category', key: 'category' }, { label: 'Model', key: 'model' } ];
               const rows = (products || []).filter(p => { if (!searchProducts) return true; const q = (p.name||'') + (p.sku||'') + (p.category||''); return q.toLowerCase().includes(searchProducts.toLowerCase()); }).map(p => ({ display_name: p.display_name || (p.name + (p.motorcycle_model?.name ? ' - ' + p.motorcycle_model.name : '')), sku: p.sku, category: p.category, model: inferModelName(p) }));
-              window._exportTablePDF({ title: 'Products', columns: cols, rows, filename: 'products.pdf' });
+              try {
+                const p = window._exportTablePDF({ title: 'Products', columns: cols, rows, filename: 'products.pdf' });
+                try { window._app_show_toast && window._app_show_toast('Products PDF generation started', 'info'); } catch {}
+                if (p && typeof p.then === 'function') p.then(()=>{ try{ window._app_show_toast && window._app_show_toast('Products PDF downloaded', 'success'); }catch{} }).catch(err=>{ try{ window._app_show_toast && window._app_show_toast('Failed to generate Products PDF: ' + (err.message||err), 'danger'); }catch{} });
+              } catch (err) { try{ window._app_show_toast && window._app_show_toast('Failed to start Products PDF: ' + (err.message||err), 'danger'); }catch{} }
             }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
           </div>
         </div>
@@ -3520,7 +3592,11 @@ function Users({ locale }) {
           <button className="btn btn-outline" style={{marginLeft:8}} onClick={() => {
             const cols = [ { label: 'Name', key: 'name' }, { label: 'Email', key: 'email' }, { label: 'Role', key: 'role' }, { label: 'Active', key: 'active' } ];
             const rows = (users || []).map(u => ({ name: u.name, email: u.email, role: u.role, active: u.active ? 'Active' : 'Inactive' }));
-            window._exportTablePDF({ title: t(locale,'page.users')||'Users', columns: cols, rows, filename: 'users.pdf' });
+            try {
+              const p = window._exportTablePDF({ title: t(locale,'page.users')||'Users', columns: cols, rows, filename: 'users.pdf' });
+              try { window._app_show_toast && window._app_show_toast('Users PDF generation started', 'info'); } catch {}
+              if (p && typeof p.then === 'function') p.then(()=>{ try{ window._app_show_toast && window._app_show_toast('Users PDF downloaded', 'success'); }catch{} }).catch(err=>{ try{ window._app_show_toast && window._app_show_toast('Failed to generate Users PDF: ' + (err.message||err), 'danger'); }catch{} });
+            } catch (err) { try{ window._app_show_toast && window._app_show_toast('Failed to start Users PDF: ' + (err.message||err), 'danger'); }catch{} }
           }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
         </>}
       </div>
@@ -3621,6 +3697,9 @@ function Audits({ locale }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+  const [showAuditExportModal, setShowAuditExportModal] = useState(false);
+  const [auditExportFrom, setAuditExportFrom] = useState('');
+  const [auditExportTo, setAuditExportTo] = useState('');
   const pageOptions = [25, 50, 100, 200];
   const [sortField, setSortField] = useState('created_at');
   const [sortDir, setSortDir] = useState('desc');
@@ -3674,9 +3753,38 @@ function Audits({ locale }) {
       <div className="card">
         <div className="card-header">
           <span className="card-title">{t(locale,'audits.title') || 'Audit Records'}</span>
-          <div className="search-wrap" style={{display:'flex',alignItems:'center',gap:8}}>
-            <span className="search-icon">🔍</span>
-            <input className="form-control" style={{width:260}} placeholder={t(locale,'audits.search_placeholder') || 'search action, user, id or data'} value={search} onChange={e=>setSearch(e.target.value)} />
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div className="search-wrap">
+              <span className="search-icon">🔍</span>
+              <input className="form-control" style={{width:260}} placeholder={t(locale,'audits.search_placeholder') || 'search action, user, id or data'} value={search} onChange={e=>setSearch(e.target.value)} />
+            </div>
+            <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={async ()=>{
+              try{ console.log('Audit export (inventory-style) clicked'); }catch{}
+              const cols = [
+                { label: t(locale,'table.date')||'Date', key: 'date' },
+                { label: 'Action', key: 'action' },
+                { label: t(locale,'table.name')||'User', key: 'username' },
+                { label: 'IP', key: 'ip' },
+                { label: 'Data', key: 'data' }
+              ];
+              // Use the currently sorted/filtered entries (not just page) like inventory export
+              const rows = (sorted || []).map(e => ({ date: e.created_at, action: e.action, username: e.username || (e.user_id ? `#${e.user_id}` : '—'), ip: e.ip_address || '—', data: typeof e.data === 'string' ? e.data : JSON.stringify(e.data) }));
+              try {
+                if (!window._exportTablePDF) throw new Error('Export helper not available');
+                window._exportTablePDF({ title: t(locale,'audits.title')||'Audit Log', columns: cols, rows, filename: 'audits.pdf' });
+                try { window._app_show_toast && window._app_show_toast('Audit PDF generation started', 'info'); } catch {}
+              } catch (err) {
+                try { window._app_show_toast && window._app_show_toast('Failed to start Audit PDF: ' + (err.message||err), 'danger'); } catch {}
+                return;
+              }
+              // record export on server in background
+              (async () => {
+                try {
+                  await apiFetch('/audits/event', { method: 'POST', body: JSON.stringify({ action: 'export_audit', site_url: (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'unknown', data: { row_count: rows.length } }) });
+                  try { window._app_show_toast && window._app_show_toast('Audit export recorded', 'success'); } catch {}
+                } catch (e) { try { window._app_show_toast && window._app_show_toast('Failed to record audit export', 'warning'); } catch {} }
+              })();
+            }}>{t(locale,'btn.export_pdf')||'Export PDF'}</button>
           </div>
         </div>
         <div className="table-wrap">
@@ -3778,7 +3886,7 @@ function AppShell({ user, onLogout, locale, setLocale }) {
     <div className="app">
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <h1>🔧 Supa Kariakoo</h1>
+          <h1>🔧 {t(locale,'title.shopname')}</h1>
           <span>{t(locale,'title.dashboard')}</span>
         </div>
         <div className="sidebar-user">
@@ -3892,19 +4000,40 @@ export default function App() {
       });
     };
     // export helper: generates a PDF of tabular data and signs each page
+    import('./pdfHelper.mjs').catch(()=>{});
     window._exportTablePDF = async ({ title = 'Export', columns = [], rows = [], filename }) => {
       try {
         const siteUrl = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'unknown';
         let ipAddress = 'unknown';
+        let serverIp = 'unknown';
         let uname = 'unknown';
         try {
           const u = JSON.parse(localStorage.getItem('user'));
           if (u) uname = u.name || u.email || uname;
         } catch {}
 
+        const baseFilename = filename || (title.replace(/\s+/g,'_') + '.pdf');
+        let stampedFilename = baseFilename;
+        try {
+          const helper = await import('./pdfHelper.mjs');
+          stampedFilename = helper && helper.stampFilename ? helper.stampFilename(baseFilename, new Date()) : baseFilename;
+        } catch (e) {
+          // Fallback: simple timestamp
+          const nowForName = new Date();
+          const yyyy = nowForName.getFullYear();
+          const mm = String(nowForName.getMonth() + 1).padStart(2, '0');
+          const dd = String(nowForName.getDate()).padStart(2, '0');
+          const hh = String(nowForName.getHours()).padStart(2, '0');
+          const mi = String(nowForName.getMinutes()).padStart(2, '0');
+          const ss = String(nowForName.getSeconds()).padStart(2, '0');
+          const ts = `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
+          stampedFilename = /\.pdf$/i.test(baseFilename)
+            ? baseFilename.replace(/\.pdf$/i, `_${ts}.pdf`)
+            : `${baseFilename}_${ts}.pdf`;
+        }
+
         // Log export action first so we can include server-observed client IP in the PDF footer.
         try {
-          const fileNameValue = filename || (title.replace(/\s+/g,'_') + '.pdf');
           const auditEvent = await apiFetch('/audits/event', {
             method: 'POST',
             body: JSON.stringify({
@@ -3912,13 +4041,14 @@ export default function App() {
               site_url: siteUrl,
               data: {
                 title,
-                filename: fileNameValue,
+                filename: stampedFilename,
                 row_count: (rows || []).length,
                 column_count: (columns || []).length,
               }
             })
           });
           if (auditEvent && auditEvent.ip_address) ipAddress = auditEvent.ip_address;
+          if (auditEvent && auditEvent.server_ip) serverIp = auditEvent.server_ip;
         } catch {}
 
         const { jsPDF } = await import('jspdf');
@@ -3944,30 +4074,49 @@ export default function App() {
           bodyStyles: { fillColor: false, textColor: [55, 55, 55] },
           alternateRowStyles: { fillColor: false },
           margin: { left: marginLeft, right: 40, bottom: 60 },
-          // Draw watermark before table content so it appears behind rows/cells.
+          // Draw a single, centered, semi-transparent diagonal watermark
+          // before table content so it appears behind rows/cells.
           willDrawPage: function () {
-            // Tiled diagonal watermark for better visibility behind dense tables.
-            doc.setFontSize(40);
-            doc.setTextColor(238, 238, 238);
-            const stepX = 280;
-            const stepY = 180;
-            for (let y = 90; y < pageHeight; y += stepY) {
-              for (let x = 80; x < pageWidth; x += stepX) {
-                doc.text('Supa Kariakoo', x, y, { angle: 32 });
+            const text = (typeof t === 'function') ? t(locale, 'title.shopname') : 'Supa Kariakoo';
+            const centerX = pageWidth / 2;
+            const centerY = pageHeight / 2;
+            doc.setFontSize(72);
+            doc.setTextColor(200, 200, 200);
+            // Compute text width/height and adjust position so the rotated text is visually centered.
+            let w = null;
+            try {
+              if (typeof doc.getTextWidth === 'function') {
+                w = doc.getTextWidth(text);
+              } else if (typeof doc.getTextDimensions === 'function') {
+                const m = doc.getTextDimensions(text);
+                w = m && m.w ? m.w : null;
               }
+            } catch (e) { w = null; }
+            const fontSize = doc.internal && doc.internal.getFontSize ? doc.internal.getFontSize() : 72;
+            const h = fontSize;
+
+            // move text down by 100 points
+            const offsetY = 100;
+            if (w) {
+              const x = centerX - (w / 2);
+              const y = centerY + offsetY;
+              doc.text(text, x, y, { angle: 45 });
+            } else {
+              // Best-effort fallback: place at center with slight vertical offset
+              doc.text(text, centerX, centerY + offsetY, { angle: 45, align: 'center' });
             }
           },
 
           didDrawPage: function (data) {
-            const sys = 'Spare Parts IMS';
+            const sys = t(locale,'title.shopname') || 'Supa Kariakoo';
             const now = new Date().toLocaleString();
-            const footer = `${sys} • ${now} • ${uname} • IP: ${ipAddress} • ${siteUrl}`;
+            const footer = `${sys} • ${now} • ${uname} • Client IP: ${ipAddress} • Server IP: ${serverIp} • ${siteUrl}`;
             doc.setFontSize(9);
             doc.setTextColor(90, 90, 90);
             doc.text(footer, data.settings.margin.left, pageHeight - 20);
           }
         });
-        doc.save(filename || (title.replace(/\s+/g,'_') + '.pdf'));
+        doc.save(stampedFilename);
       } catch (err) {
         try { window._app_show_toast && window._app_show_toast('PDF export failed: ' + (err.message||err), 'danger'); } catch {}
       }

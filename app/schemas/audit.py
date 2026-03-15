@@ -25,5 +25,6 @@ class AuditEventCreate(BaseModel):
 class AuditEventResponse(BaseModel):
     id: int
     ip_address: Optional[str] = None
+    server_ip: Optional[str] = None
     site_url: Optional[str] = None
     created_at: datetime
